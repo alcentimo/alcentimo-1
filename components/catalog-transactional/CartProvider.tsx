@@ -16,7 +16,10 @@ import {
   cartItemKey,
   type CartItem,
 } from "@/lib/catalog/cart-types";
-import { cartItemsToLines } from "@/lib/catalog/cart-lines";
+import {
+  cartItemsToLines,
+  mergeCartItemsPreferLocal,
+} from "@/lib/catalog/cart-lines";
 import { getCatalogVariantOptions } from "@/lib/products/variants";
 import {
   clearStoredCart,
@@ -110,6 +113,12 @@ export function CartProvider({
   const syncPausedRef = useRef(false);
   const persistModeRef = useRef<PersistMode>(persistMode);
   const syncTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  /** Sube en cada mutación local para invalidar syncs/bootstraps obsoletos. */
+  const cartRevisionRef = useRef(0);
+
+  const bumpCartRevision = useCallback(() => {
+    cartRevisionRef.current += 1;
+  }, []);
 
   useEffect(() => {
     persistModeRef.current = persistMode;
@@ -148,14 +157,28 @@ export function CartProvider({
     };
   }, [storeSlug]);
 
+  const applyBootstrappedItems = useCallback(
+    (nextItems: CartItem[], revisionAtStart: number) => {
+      setItems((current) => {
+        if (cartRevisionRef.current !== revisionAtStart) {
+          // El usuario agregó/quitó productos mientras cargábamos: no pisar.
+          return mergeCartItemsPreferLocal(nextItems, current);
+        }
+        return nextItems;
+      });
+    },
+    [],
+  );
+
   const bootstrapCustomerSession = useCallback(async () => {
     syncPausedRef.current = true;
     setIsSyncing(true);
+    const revisionAtStart = cartRevisionRef.current;
 
     try {
       const { items: nextItems, isCustomer: canPersist } =
         await loadCustomerCartState();
-      setItems(nextItems);
+      applyBootstrappedItems(nextItems, revisionAtStart);
       setPersistMode(canPersist ? "customer" : "guest");
       if (!canPersist && nextItems.length > 0) {
         writeStoredCart(storeSlug, nextItems);
@@ -164,7 +187,7 @@ export function CartProvider({
       syncPausedRef.current = false;
       setIsSyncing(false);
     }
-  }, [loadCustomerCartState, storeSlug]);
+  }, [applyBootstrappedItems, loadCustomerCartState, storeSlug]);
 
   useEffect(() => {
     let cancelled = false;
@@ -172,17 +195,18 @@ export function CartProvider({
     async function bootstrap() {
       syncPausedRef.current = true;
       setIsSyncing(true);
+      const revisionAtStart = cartRevisionRef.current;
 
       try {
         if (isCustomer && userId && storeId) {
           const { items: nextItems, isCustomer: canPersist } =
             await loadCustomerCartState();
           if (!cancelled) {
-            setItems(nextItems);
+            applyBootstrappedItems(nextItems, revisionAtStart);
             setPersistMode(canPersist ? "customer" : "guest");
           }
         } else if (!cancelled) {
-          setItems(readStoredCart(storeSlug));
+          applyBootstrappedItems(readStoredCart(storeSlug), revisionAtStart);
           setPersistMode("guest");
         }
       } finally {
@@ -200,7 +224,14 @@ export function CartProvider({
     return () => {
       cancelled = true;
     };
-  }, [storeSlug, storeId, userId, isCustomer, loadCustomerCartState]);
+  }, [
+    storeSlug,
+    storeId,
+    userId,
+    isCustomer,
+    loadCustomerCartState,
+    applyBootstrappedItems,
+  ]);
 
   useEffect(() => {
     const supabase = createClient();
@@ -209,6 +240,7 @@ export function CartProvider({
     } = supabase.auth.onAuthStateChange((event) => {
       if (event === "SIGNED_OUT") {
         syncPausedRef.current = true;
+        bumpCartRevision();
         setPersistMode("guest");
         setItems(readStoredCart(storeSlug));
         syncPausedRef.current = false;
@@ -223,7 +255,7 @@ export function CartProvider({
     return () => {
       subscription.unsubscribe();
     };
-  }, [storeSlug, bootstrapCustomerSession]);
+  }, [storeSlug, bootstrapCustomerSession, bumpCartRevision]);
 
   useEffect(() => {
     if (!hydrated || syncPausedRef.current) return;
@@ -248,12 +280,24 @@ export function CartProvider({
       clearTimeout(syncTimerRef.current);
     }
 
+    // Snapshot de lo que vamos a persistir. Si el carrito local cambia mientras
+    // la sync está en vuelo, descartamos el resultado para no pisar ítems nuevos.
+    const linesToSync = cartItemsToLines(items);
+    const syncedLinesKey = JSON.stringify(linesToSync);
+
     syncTimerRef.current = setTimeout(() => {
       void (async () => {
         setIsSyncing(true);
-        const result = await syncCustomerCart(storeSlug, cartItemsToLines(items));
+        const result = await syncCustomerCart(storeSlug, linesToSync);
+
         if (result.ok) {
           setItems((current) => {
+            const currentLinesKey = JSON.stringify(cartItemsToLines(current));
+            if (currentLinesKey !== syncedLinesKey) {
+              // El usuario agregó/quitó productos durante la sync: conservar local.
+              return current;
+            }
+
             // La sync remota aún puede colapsar modificadores; no pisar el carrito local.
             const hasModifiers = current.some(
               (item) => (item.modifiers?.length ?? 0) > 0,
@@ -287,6 +331,7 @@ export function CartProvider({
               return current;
             }
 
+            // Mismo snapshot local: aplicar hidratación (precios/stock).
             return result.items;
           });
         }
@@ -307,6 +352,7 @@ export function CartProvider({
       variant: CatalogVariantOption,
       modifiers: import("@/lib/catalog/cart-types").CartModifierSelection[] = [],
     ) => {
+      bumpCartRevision();
       setItems((current) => {
         const key = cartItemKey(product.product_id, variant.id, modifiers);
         const existing = current.find(
@@ -348,13 +394,14 @@ export function CartProvider({
           return current;
         }
 
+        // Append inmutable: nunca reemplazar el carrito completo.
         return [
           ...current,
           buildCartItem(product, variant, 1, modifiers, wholesaleEnabled),
         ];
       });
     },
-    [wholesaleEnabled],
+    [bumpCartRevision, wholesaleEnabled],
   );
 
   const removeItem = useCallback(
@@ -363,6 +410,7 @@ export function CartProvider({
       variantId: string,
       modifiers?: import("@/lib/catalog/cart-types").CartModifierSelection[],
     ) => {
+      bumpCartRevision();
       const key = cartItemKey(productId, variantId, modifiers);
       setItems((current) =>
         current.filter(
@@ -375,7 +423,7 @@ export function CartProvider({
         ),
       );
     },
-    [],
+    [bumpCartRevision],
   );
 
   const updateQuantity = useCallback(
@@ -385,6 +433,7 @@ export function CartProvider({
       quantity: number,
       modifiers?: import("@/lib/catalog/cart-types").CartModifierSelection[],
     ) => {
+      bumpCartRevision();
       const key = cartItemKey(productId, variantId, modifiers);
       setItems((current) =>
         current
@@ -433,17 +482,18 @@ export function CartProvider({
           .filter((item) => item.quantity > 0),
       );
     },
-    [wholesaleEnabled],
+    [bumpCartRevision, wholesaleEnabled],
   );
 
   const clearCart = useCallback(() => {
+    bumpCartRevision();
     setItems([]);
     clearStoredCart(storeSlug);
 
     if (persistModeRef.current === "customer") {
       void clearCustomerCart(storeSlug);
     }
-  }, [storeSlug]);
+  }, [bumpCartRevision, storeSlug]);
 
   const value = useMemo<CartContextValue>(() => {
     const itemCount = items.reduce((sum, item) => sum + item.quantity, 0);
