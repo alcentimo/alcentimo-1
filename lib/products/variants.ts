@@ -37,24 +37,53 @@ function parseAttributes(raw: unknown): Record<string, string> | undefined {
   return Object.fromEntries(entries);
 }
 
+/**
+ * ID estable cuando falta `id` en JSON. Nunca usar randomUUID aquí: se reparsea
+ * en cada render y rompería las claves del carrito (líneas duplicadas).
+ */
+function stableVariantFallbackId(
+  name: string,
+  index: number,
+  attributes?: Record<string, string>,
+): string {
+  const attrPart = attributes
+    ? Object.entries(attributes)
+        .sort(([a], [b]) => a.localeCompare(b))
+        .map(([key, value]) => `${key}=${value}`)
+        .join("&")
+    : "";
+  const raw = `${index}:${name}:${attrPart}`
+    .toLowerCase()
+    .replace(/[^a-z0-9:=&_-]+/g, "-")
+    .replace(/-+/g, "-")
+    .replace(/^-|-$/g, "")
+    .slice(0, 120);
+  return `auto-${raw || String(index)}`;
+}
+
 export function parseVariantsJson(raw: unknown): ProductVariantJson[] {
   if (!Array.isArray(raw)) return [];
 
   return raw
     .filter((item): item is Record<string, unknown> => typeof item === "object" && item !== null)
-    .map((item) => ({
-      id: typeof item.id === "string" ? item.id : crypto.randomUUID(),
-      name: typeof item.name === "string" ? item.name.trim() : "",
-      price_extra_usd:
-        typeof item.price_extra_usd === "number" && Number.isFinite(item.price_extra_usd)
-          ? item.price_extra_usd
-          : parseFloat(String(item.price_extra_usd ?? 0)) || 0,
-      stock:
-        typeof item.stock === "number" && Number.isFinite(item.stock)
-          ? Math.max(0, Math.floor(item.stock))
-          : Math.max(0, parseInt(String(item.stock ?? 0), 10) || 0),
-      attributes: parseAttributes(item.attributes),
-    }))
+    .map((item, index) => {
+      const name = typeof item.name === "string" ? item.name.trim() : "";
+      const attributes = parseAttributes(item.attributes);
+      const rawId = typeof item.id === "string" ? item.id.trim() : "";
+      return {
+        id: rawId || stableVariantFallbackId(name, index, attributes),
+        name,
+        price_extra_usd:
+          typeof item.price_extra_usd === "number" && Number.isFinite(item.price_extra_usd)
+            ? item.price_extra_usd
+            : parseFloat(String(item.price_extra_usd ?? 0)) || 0,
+        stock:
+          typeof item.stock === "number" && Number.isFinite(item.stock)
+            ? Math.max(0, Math.floor(item.stock))
+            : Math.max(0, parseInt(String(item.stock ?? 0), 10) || 0),
+        attributes,
+      };
+    })
     .filter((v) => v.name.length > 0);
 }
 
