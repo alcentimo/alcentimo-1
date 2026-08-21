@@ -225,6 +225,16 @@ export async function syncCustomerCart(
       }));
 
     const items = await hydrateCartLines(storeSlug, sanitized);
+
+    // No vaciar el carrito remoto si la hidratación falló por completo
+    // (catálogo temporalmente vacío, IDs no resueltos, etc.).
+    if (sanitized.length > 0 && items.length === 0) {
+      return {
+        ok: false,
+        error: "No se pudieron validar los productos del carrito.",
+      };
+    }
+
     await persistCartLines(access.userId, access.storeId, toPersistLines(items));
     return { ok: true, items };
   } catch (error) {

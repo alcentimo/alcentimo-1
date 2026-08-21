@@ -123,3 +123,67 @@ export function mergeCartLines(
 
   return Array.from(map.values());
 }
+
+function cartItemLineKey(item: CartItem): string {
+  return cartItemKey(
+    item.product.product_id,
+    item.variantId,
+    item.modifiers,
+  );
+}
+
+/**
+ * Fusiona un carrito remoto con cambios locales concurrentes.
+ * Las líneas solo-locales se conservan; en colisión se toma la mayor cantidad.
+ */
+export function mergeCartItemsPreferLocal(
+  remote: CartItem[],
+  local: CartItem[],
+): CartItem[] {
+  const map = new Map<string, CartItem>();
+
+  for (const item of remote) {
+    if (item.quantity <= 0) continue;
+    map.set(cartItemLineKey(item), item);
+  }
+
+  for (const item of local) {
+    if (item.quantity <= 0) continue;
+    const key = cartItemLineKey(item);
+    const existing = map.get(key);
+    if (existing) {
+      map.set(key, {
+        ...item,
+        quantity: Math.max(existing.quantity, item.quantity),
+      });
+    } else {
+      map.set(key, item);
+    }
+  }
+
+  return Array.from(map.values());
+}
+
+/**
+ * Colapsa líneas con la misma clave product:variant:modifiers sumando cantidades.
+ * Evita subtotales inflados por filas duplicadas en el estado.
+ */
+export function dedupeCartItems(items: CartItem[]): CartItem[] {
+  const map = new Map<string, CartItem>();
+
+  for (const item of items) {
+    if (item.quantity <= 0) continue;
+    const key = cartItemLineKey(item);
+    const existing = map.get(key);
+    if (existing) {
+      map.set(key, {
+        ...existing,
+        quantity: existing.quantity + item.quantity,
+      });
+    } else {
+      map.set(key, item);
+    }
+  }
+
+  return Array.from(map.values());
+}

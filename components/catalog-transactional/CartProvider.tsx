@@ -16,7 +16,11 @@ import {
   cartItemKey,
   type CartItem,
 } from "@/lib/catalog/cart-types";
-import { cartItemsToLines } from "@/lib/catalog/cart-lines";
+import {
+  cartItemsToLines,
+  dedupeCartItems,
+  mergeCartItemsPreferLocal,
+} from "@/lib/catalog/cart-lines";
 import { getCatalogVariantOptions } from "@/lib/products/variants";
 import {
   clearStoredCart,
@@ -70,6 +74,14 @@ const CartContext = createContext<CartContextValue | null>(null);
 
 const SYNC_DEBOUNCE_MS = 400;
 
+function lineKeyOf(item: CartItem): string {
+  return cartItemKey(
+    item.product.product_id,
+    item.variantId,
+    item.modifiers,
+  );
+}
+
 function refreshCartItemPricing(
   item: CartItem,
   quantity: number,
@@ -79,15 +91,78 @@ function refreshCartItemPricing(
     (option) => option.id === item.variantId,
   );
   if (!variant) {
+    if (item.quantity === quantity) return item;
     return { ...item, quantity };
   }
-  return buildCartItem(
+  const next = buildCartItem(
     item.product,
     variant,
     quantity,
     item.modifiers ?? [],
     wholesaleEnabled,
   );
+  if (
+    next.quantity === item.quantity &&
+    next.unitPriceUsd === item.unitPriceUsd &&
+    next.unitPriceVes === item.unitPriceVes &&
+    next.wholesaleApplied === item.wholesaleApplied &&
+    next.variantId === item.variantId &&
+    next.variantName === item.variantName &&
+    next.availableStock === item.availableStock
+  ) {
+    return item;
+  }
+  return next;
+}
+
+/**
+ * Tras sync remota: solo quitar líneas que el servidor no pudo hidratar (agotadas)
+ * o bajar cantidad si el stock la limitó. No reemplazar el carrito entero (evita
+ * bucles setItems → useEffect → sync → setItems).
+ */
+function reconcileSyncedCart(
+  current: CartItem[],
+  synced: CartItem[],
+  wholesaleEnabled: boolean,
+): CartItem[] {
+  if (synced.length === 0) {
+    // Fallo de hidratación parcial ya se rechaza en syncCustomerCart; no vaciar aquí.
+    return current;
+  }
+
+  const syncedByKey = new Map(synced.map((item) => [lineKeyOf(item), item]));
+  const hasOverlap = current.some((item) => syncedByKey.has(lineKeyOf(item)));
+  if (current.length > 0 && !hasOverlap) {
+    // La hidratación remapeó variantIds: conservar el carrito local intacto.
+    return current;
+  }
+
+  let changed = false;
+  const next: CartItem[] = [];
+
+  for (const item of current) {
+    const key = lineKeyOf(item);
+    const remote = syncedByKey.get(key);
+    if (!remote) {
+      changed = true;
+      continue;
+    }
+    if (remote.quantity < item.quantity) {
+      changed = true;
+      next.push(
+        refreshCartItemPricing(item, remote.quantity, wholesaleEnabled),
+      );
+      continue;
+    }
+    if (remote.availableStock !== item.availableStock) {
+      changed = true;
+      next.push({ ...item, availableStock: remote.availableStock });
+      continue;
+    }
+    next.push(item);
+  }
+
+  return changed ? dedupeCartItems(next) : current;
 }
 
 type PersistMode = "guest" | "customer";
@@ -110,10 +185,23 @@ export function CartProvider({
   const syncPausedRef = useRef(false);
   const persistModeRef = useRef<PersistMode>(persistMode);
   const syncTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const syncInFlightRef = useRef(false);
+  /** Sube en cada mutación local para invalidar syncs/bootstraps obsoletos. */
+  const cartRevisionRef = useRef(0);
+  const customerBootstrapDoneRef = useRef(false);
+  const wholesaleEnabledRef = useRef(wholesaleEnabled);
+
+  const bumpCartRevision = useCallback(() => {
+    cartRevisionRef.current += 1;
+  }, []);
 
   useEffect(() => {
     persistModeRef.current = persistMode;
   }, [persistMode]);
+
+  useEffect(() => {
+    wholesaleEnabledRef.current = wholesaleEnabled;
+  }, [wholesaleEnabled]);
 
   const loadCustomerCartState = useCallback(async () => {
     const guestItems = readStoredCart(storeSlug);
@@ -126,37 +214,61 @@ export function CartProvider({
     // aún no los modela de forma fiable) y no fusionar contra filas sin extras.
     if (guestHasModifiers && guestItems.length > 0) {
       clearStoredCart(storeSlug);
-      return { items: guestItems, isCustomer: true as const };
+      return { items: dedupeCartItems(guestItems), isCustomer: true as const };
     }
 
     if (guestLines.length > 0) {
       const merged = await mergeGuestCart(storeSlug, guestLines);
       if (merged.ok) {
         clearStoredCart(storeSlug);
-        return { items: merged.items, isCustomer: true as const };
+        return {
+          items: dedupeCartItems(merged.items),
+          isCustomer: true as const,
+        };
       }
     }
 
     const loaded = await getCustomerCart(storeSlug);
     if (loaded.ok) {
-      return { items: loaded.items, isCustomer: true as const };
+      return {
+        items: dedupeCartItems(loaded.items),
+        isCustomer: true as const,
+      };
     }
 
     return {
-      items: guestItems,
+      items: dedupeCartItems(guestItems),
       isCustomer: false as const,
     };
   }, [storeSlug]);
 
+  const applyBootstrappedItems = useCallback(
+    (nextItems: CartItem[], revisionAtStart: number) => {
+      const normalized = dedupeCartItems(nextItems);
+      setItems((current) => {
+        if (cartRevisionRef.current !== revisionAtStart) {
+          // El usuario agregó/quitó productos mientras cargábamos: no pisar.
+          return dedupeCartItems(
+            mergeCartItemsPreferLocal(normalized, current),
+          );
+        }
+        return normalized;
+      });
+    },
+    [],
+  );
+
   const bootstrapCustomerSession = useCallback(async () => {
     syncPausedRef.current = true;
     setIsSyncing(true);
+    const revisionAtStart = cartRevisionRef.current;
 
     try {
       const { items: nextItems, isCustomer: canPersist } =
         await loadCustomerCartState();
-      setItems(nextItems);
+      applyBootstrappedItems(nextItems, revisionAtStart);
       setPersistMode(canPersist ? "customer" : "guest");
+      customerBootstrapDoneRef.current = canPersist;
       if (!canPersist && nextItems.length > 0) {
         writeStoredCart(storeSlug, nextItems);
       }
@@ -164,26 +276,30 @@ export function CartProvider({
       syncPausedRef.current = false;
       setIsSyncing(false);
     }
-  }, [loadCustomerCartState, storeSlug]);
+  }, [applyBootstrappedItems, loadCustomerCartState, storeSlug]);
 
   useEffect(() => {
     let cancelled = false;
+    customerBootstrapDoneRef.current = false;
 
     async function bootstrap() {
       syncPausedRef.current = true;
       setIsSyncing(true);
+      const revisionAtStart = cartRevisionRef.current;
 
       try {
         if (isCustomer && userId && storeId) {
           const { items: nextItems, isCustomer: canPersist } =
             await loadCustomerCartState();
           if (!cancelled) {
-            setItems(nextItems);
+            applyBootstrappedItems(nextItems, revisionAtStart);
             setPersistMode(canPersist ? "customer" : "guest");
+            customerBootstrapDoneRef.current = canPersist;
           }
         } else if (!cancelled) {
-          setItems(readStoredCart(storeSlug));
+          applyBootstrappedItems(readStoredCart(storeSlug), revisionAtStart);
           setPersistMode("guest");
+          customerBootstrapDoneRef.current = false;
         }
       } finally {
         syncPausedRef.current = false;
@@ -200,7 +316,14 @@ export function CartProvider({
     return () => {
       cancelled = true;
     };
-  }, [storeSlug, storeId, userId, isCustomer, loadCustomerCartState]);
+  }, [
+    storeSlug,
+    storeId,
+    userId,
+    isCustomer,
+    loadCustomerCartState,
+    applyBootstrappedItems,
+  ]);
 
   useEffect(() => {
     const supabase = createClient();
@@ -209,13 +332,16 @@ export function CartProvider({
     } = supabase.auth.onAuthStateChange((event) => {
       if (event === "SIGNED_OUT") {
         syncPausedRef.current = true;
+        bumpCartRevision();
+        customerBootstrapDoneRef.current = false;
         setPersistMode("guest");
-        setItems(readStoredCart(storeSlug));
+        setItems(dedupeCartItems(readStoredCart(storeSlug)));
         syncPausedRef.current = false;
         return;
       }
 
-      if (event === "SIGNED_IN") {
+      // Evitar re-fusionar el carrito en cada SIGNED_IN/token (multiplicaría qty).
+      if (event === "SIGNED_IN" && !customerBootstrapDoneRef.current) {
         void bootstrapCustomerSession();
       }
     });
@@ -223,15 +349,23 @@ export function CartProvider({
     return () => {
       subscription.unsubscribe();
     };
-  }, [storeSlug, bootstrapCustomerSession]);
+  }, [storeSlug, bootstrapCustomerSession, bumpCartRevision]);
 
   useEffect(() => {
     if (!hydrated || syncPausedRef.current) return;
-    setItems((current) =>
-      current.map((item) =>
-        refreshCartItemPricing(item, item.quantity, wholesaleEnabled),
-      ),
-    );
+    setItems((current) => {
+      let changed = false;
+      const next = current.map((item) => {
+        const refreshed = refreshCartItemPricing(
+          item,
+          item.quantity,
+          wholesaleEnabled,
+        );
+        if (refreshed !== item) changed = true;
+        return refreshed;
+      });
+      return changed ? dedupeCartItems(next) : current;
+    });
   }, [wholesaleEnabled, hydrated]);
 
   useEffect(() => {
@@ -248,49 +382,44 @@ export function CartProvider({
       clearTimeout(syncTimerRef.current);
     }
 
+    // Snapshot de líneas a persistir. La sync es principalmente write-only:
+    // no reinyectar result.items completos (eso re-disparaba este efecto en bucle).
+    const linesToSync = cartItemsToLines(items);
+    const syncedLinesKey = JSON.stringify(linesToSync);
+    const revisionAtSchedule = cartRevisionRef.current;
+
     syncTimerRef.current = setTimeout(() => {
       void (async () => {
+        if (syncInFlightRef.current) return;
+        if (cartRevisionRef.current !== revisionAtSchedule) return;
+
+        syncInFlightRef.current = true;
         setIsSyncing(true);
-        const result = await syncCustomerCart(storeSlug, cartItemsToLines(items));
-        if (result.ok) {
+        try {
+          const result = await syncCustomerCart(storeSlug, linesToSync);
+          if (!result.ok) return;
+          if (cartRevisionRef.current !== revisionAtSchedule) return;
+
           setItems((current) => {
-            // La sync remota aún puede colapsar modificadores; no pisar el carrito local.
+            const currentLinesKey = JSON.stringify(cartItemsToLines(current));
+            if (currentLinesKey !== syncedLinesKey) {
+              return current;
+            }
             const hasModifiers = current.some(
               (item) => (item.modifiers?.length ?? 0) > 0,
             );
             if (hasModifiers) return current;
 
-            const currentKeys = new Set(
-              current.map((item) =>
-                cartItemKey(
-                  item.product.product_id,
-                  item.variantId,
-                  item.modifiers,
-                ),
-              ),
+            return reconcileSyncedCart(
+              current,
+              result.items,
+              wholesaleEnabledRef.current,
             );
-            const nextKeys = new Set(
-              result.items.map((item) =>
-                cartItemKey(
-                  item.product.product_id,
-                  item.variantId,
-                  item.modifiers,
-                ),
-              ),
-            );
-
-            if (
-              current.length === result.items.length &&
-              currentKeys.size === nextKeys.size &&
-              [...currentKeys].every((key) => nextKeys.has(key))
-            ) {
-              return current;
-            }
-
-            return result.items;
           });
+        } finally {
+          syncInFlightRef.current = false;
+          setIsSyncing(false);
         }
-        setIsSyncing(false);
       })();
     }, SYNC_DEBOUNCE_MS);
 
@@ -308,8 +437,9 @@ export function CartProvider({
       modifiers: import("@/lib/catalog/cart-types").CartModifierSelection[] = [],
     ) => {
       setItems((current) => {
+        const deduped = dedupeCartItems(current);
         const key = cartItemKey(product.product_id, variant.id, modifiers);
-        const existing = current.find(
+        const existing = deduped.find(
           (item) =>
             cartItemKey(
               item.product.product_id,
@@ -318,7 +448,7 @@ export function CartProvider({
             ) === key,
         );
 
-        const qtyForVariant = current
+        const qtyForVariant = deduped
           .filter(
             (item) =>
               item.product.product_id === product.product_id &&
@@ -333,7 +463,8 @@ export function CartProvider({
         if (existing) {
           if (remainingForVariant <= 0) return current;
           const nextQty = existing.quantity + 1;
-          return current.map((item) =>
+          bumpCartRevision();
+          return deduped.map((item) =>
             cartItemKey(
               item.product.product_id,
               item.variantId,
@@ -345,16 +476,18 @@ export function CartProvider({
         }
 
         if (remainingForVariant <= 0 || stockCap <= 0) {
-          return current;
+          return current === deduped ? current : deduped;
         }
 
+        bumpCartRevision();
+        // Append inmutable: +1 unidad en una sola línea por clave.
         return [
-          ...current,
+          ...deduped,
           buildCartItem(product, variant, 1, modifiers, wholesaleEnabled),
         ];
       });
     },
-    [wholesaleEnabled],
+    [bumpCartRevision, wholesaleEnabled],
   );
 
   const removeItem = useCallback(
@@ -363,9 +496,10 @@ export function CartProvider({
       variantId: string,
       modifiers?: import("@/lib/catalog/cart-types").CartModifierSelection[],
     ) => {
+      bumpCartRevision();
       const key = cartItemKey(productId, variantId, modifiers);
       setItems((current) =>
-        current.filter(
+        dedupeCartItems(current).filter(
           (item) =>
             cartItemKey(
               item.product.product_id,
@@ -375,7 +509,7 @@ export function CartProvider({
         ),
       );
     },
-    [],
+    [bumpCartRevision],
   );
 
   const updateQuantity = useCallback(
@@ -386,64 +520,74 @@ export function CartProvider({
       modifiers?: import("@/lib/catalog/cart-types").CartModifierSelection[],
     ) => {
       const key = cartItemKey(productId, variantId, modifiers);
-      setItems((current) =>
-        current
-          .map((item) => {
-            if (
+      setItems((current) => {
+        const deduped = dedupeCartItems(current);
+        const target = deduped.find(
+          (item) =>
+            cartItemKey(
+              item.product.product_id,
+              item.variantId,
+              item.modifiers,
+            ) === key,
+        );
+        if (!target) return current;
+
+        const otherQty = deduped
+          .filter(
+            (row) =>
+              row.product.product_id === productId &&
+              row.variantId === variantId &&
               cartItemKey(
-                item.product.product_id,
-                item.variantId,
-                item.modifiers,
-              ) !== key
-            ) {
-              return item;
-            }
+                row.product.product_id,
+                row.variantId,
+                row.modifiers,
+              ) !== key,
+          )
+          .reduce((sum, row) => sum + row.quantity, 0);
+        const stockCap = resolveCartStockCap(
+          Number(target.availableStock) || 0,
+        );
+        const maxForLine = Math.max(0, stockCap - otherQty);
 
-            const otherQty = current
-              .filter(
-                (row) =>
-                  row.product.product_id === productId &&
-                  row.variantId === variantId &&
-                  cartItemKey(
-                    row.product.product_id,
-                    row.variantId,
-                    row.modifiers,
-                  ) !== key,
-              )
-              .reduce((sum, row) => sum + row.quantity, 0);
-            const stockCap = resolveCartStockCap(
-              Number(item.availableStock) || 0,
-            );
-            const maxForLine = Math.max(0, stockCap - otherQty);
+        let nextQty: number;
+        if (quantity <= 0) {
+          nextQty = 0;
+        } else if (maxForLine > 0) {
+          nextQty = Math.min(quantity, maxForLine);
+        } else {
+          nextQty = Math.min(quantity, target.quantity);
+        }
 
-            // Cantidad 0 o menos → eliminar línea.
-            if (quantity <= 0) {
-              return refreshCartItemPricing(item, 0, wholesaleEnabled);
-            }
+        if (nextQty === target.quantity) {
+          return current === deduped ? current : deduped;
+        }
 
-            // No subir por encima del stock; si el stock llegó a 0, no borrar al
-            // intentar (+), solo impedir el aumento.
-            const nextQty =
-              maxForLine > 0
-                ? Math.min(quantity, maxForLine)
-                : Math.min(quantity, item.quantity);
-
-            return refreshCartItemPricing(item, nextQty, wholesaleEnabled);
-          })
-          .filter((item) => item.quantity > 0),
-      );
+        bumpCartRevision();
+        return deduped
+          .map((item) =>
+            cartItemKey(
+              item.product.product_id,
+              item.variantId,
+              item.modifiers,
+            ) === key
+              ? refreshCartItemPricing(item, nextQty, wholesaleEnabled)
+              : item,
+          )
+          .filter((item) => item.quantity > 0);
+      });
     },
-    [wholesaleEnabled],
+    [bumpCartRevision, wholesaleEnabled],
   );
 
   const clearCart = useCallback(() => {
+    bumpCartRevision();
     setItems([]);
     clearStoredCart(storeSlug);
 
     if (persistModeRef.current === "customer") {
       void clearCustomerCart(storeSlug);
     }
-  }, [storeSlug]);
+  }, [bumpCartRevision, storeSlug]);
 
   const value = useMemo<CartContextValue>(() => {
     const itemCount = items.reduce((sum, item) => sum + item.quantity, 0);
