@@ -4,10 +4,9 @@ import { createClient } from "@/lib/supabase/server";
 import { AdminDashboardTabs } from "@/components/admin/AdminDashboardTabs";
 import { resolveAdminDashboardTab } from "@/lib/admin/dashboard-nav";
 import { getAdminUsers } from "@/lib/admin/get-admin-users";
-import { getGrowthAuditLog } from "@/lib/admin/growth-audit";
+import { getAdminSuppliers } from "@/lib/admin/get-admin-suppliers";
 import { getSupportMessages } from "@/lib/support/get-support-messages";
 import { isSupportAdmin, resolveAuthEmail } from "@/lib/support/is-support-admin";
-import { listAdminStoreDomains } from "@/lib/admin/custom-domain-actions";
 import { getOpenAiApiKey } from "@/lib/env/server";
 import { listDropshipDailySettlements } from "@/lib/dropship/settlement-admin-actions";
 import { countAdminSupplierDraftProducts } from "@/lib/admin/supplier-catalog-actions";
@@ -22,28 +21,6 @@ function resolveInitialTab(raw: string | string[] | undefined) {
 function resolveLegacyTabParam(raw: string | string[] | undefined): string | null {
   const value = Array.isArray(raw) ? raw[0] : raw;
   return value ?? null;
-}
-
-function resolvePlanFilter(
-  raw: string | string[] | undefined,
-): "FREE" | "PRO" | "BUSINESS" | "ENTERPRISE" | "all" {
-  const value = Array.isArray(raw) ? raw[0] : raw;
-  if (
-    value === "FREE" ||
-    value === "PRO" ||
-    value === "BUSINESS" ||
-    value === "ENTERPRISE"
-  ) {
-    return value;
-  }
-  return "all";
-}
-
-function resolveMinProducts(raw: string | string[] | undefined): number | undefined {
-  const value = Array.isArray(raw) ? raw[0] : raw;
-  if (!value) return undefined;
-  const n = Number(value);
-  return Number.isFinite(n) && n >= 0 ? n : undefined;
 }
 
 async function safeLoad<T>(
@@ -66,8 +43,6 @@ export default async function AdminDashboardPage({
   searchParams: Promise<{
     tab?: string | string[];
     section?: string | string[];
-    plan?: string | string[];
-    minProducts?: string | string[];
   }>;
 }) {
   const supabase = await createClient();
@@ -86,13 +61,12 @@ export default async function AdminDashboardPage({
   const params = await searchParams;
   const legacyTabParam = resolveLegacyTabParam(params.tab);
   const initialTab = resolveInitialTab(params.tab);
-  const growthPlanFilter = resolvePlanFilter(params.plan);
-  const growthMinProducts = resolveMinProducts(params.minProducts);
+  const initialStoresSection = resolveLegacyTabParam(params.section);
 
   const [
     messagesResult,
-    growthResult,
-    storeDomainsResult,
+    dropshippersResult,
+    suppliersResult,
     dropshipSettlementsResult,
     supplierDraftsResult,
   ] = await Promise.all([
@@ -101,15 +75,12 @@ export default async function AdminDashboardPage({
       "No se pudieron cargar los mensajes de soporte.",
     ),
     safeLoad(
-      () =>
-        Promise.all([getAdminUsers({ limit: 500 }), getGrowthAuditLog(200)]).then(
-          ([users, auditLog]) => ({ users, auditLog }),
-        ),
-      "No se pudo cargar el módulo de tiendas.",
+      () => getAdminUsers({ limit: 500 }),
+      "No se pudo cargar el directorio de dropshippers.",
     ),
     safeLoad(
-      () => listAdminStoreDomains(),
-      "No se pudieron cargar los dominios personalizados.",
+      () => getAdminSuppliers(),
+      "No se pudo cargar el directorio de proveedores.",
     ),
     safeLoad(
       () =>
@@ -127,11 +98,10 @@ export default async function AdminDashboardPage({
 
   const messages = messagesResult.ok ? messagesResult.data : [];
   const messagesError = messagesResult.ok ? null : messagesResult.error;
-  const growthUsers = growthResult.ok ? growthResult.data.users : [];
-  const growthAuditLog = growthResult.ok ? growthResult.data.auditLog : [];
-  const growthError = growthResult.ok ? null : growthResult.error;
-  const storeDomains = storeDomainsResult.ok ? storeDomainsResult.data : [];
-  const storeDomainsError = storeDomainsResult.ok ? null : storeDomainsResult.error;
+  const dropshippers = dropshippersResult.ok ? dropshippersResult.data : [];
+  const dropshippersError = dropshippersResult.ok ? null : dropshippersResult.error;
+  const suppliers = suppliersResult.ok ? suppliersResult.data : [];
+  const suppliersError = suppliersResult.ok ? null : suppliersResult.error;
   const dropshipSettlements = dropshipSettlementsResult.ok
     ? dropshipSettlementsResult.data
     : [];
@@ -148,10 +118,11 @@ export default async function AdminDashboardPage({
     (item) => item.status === "reported",
   ).length;
   const totalStores = new Set(
-    growthUsers
+    dropshippers
       .map((row) => row.storeId)
       .filter((storeId): storeId is string => Boolean(storeId)),
   ).size;
+  const totalDropshippers = new Set(dropshippers.map((row) => row.id)).size;
 
   return (
     <div className="admin-dashboard-page">
@@ -160,7 +131,7 @@ export default async function AdminDashboardPage({
           <p className="section-label">Administración centralizada</p>
           <h1 className="page-header-title">Panel Admin</h1>
           <p className="page-header-desc">
-            Gestión de mayorista, liquidaciones dropship, tiendas y soporte.
+            Gestión de mayorista, liquidaciones dropship, usuarios y soporte.
           </p>
         </div>
         <div className="admin-dashboard-quick-stats">
@@ -177,8 +148,12 @@ export default async function AdminDashboardPage({
             <strong>{pendingSupplierDrafts}</strong>
           </div>
           <div className="admin-dashboard-quick-stat">
-            <span className="admin-dashboard-quick-stat-label">Usuarios</span>
-            <strong>{growthUsers.length}</strong>
+            <span className="admin-dashboard-quick-stat-label">Dropshippers</span>
+            <strong>{totalDropshippers}</strong>
+          </div>
+          <div className="admin-dashboard-quick-stat">
+            <span className="admin-dashboard-quick-stat-label">Proveedores</span>
+            <strong>{suppliers.length}</strong>
           </div>
           <div className="admin-dashboard-quick-stat">
             <span className="admin-dashboard-quick-stat-label">Tiendas</span>
@@ -196,20 +171,18 @@ export default async function AdminDashboardPage({
       >
         <AdminDashboardTabs
           messages={messages}
-          growthUsers={growthUsers}
-          growthAuditLog={growthAuditLog}
-          growthPlanFilter={growthPlanFilter}
-          growthMinProducts={growthMinProducts}
+          dropshippers={dropshippers}
+          suppliers={suppliers}
           messagesError={messagesError}
-          growthError={growthError}
-          storeDomains={storeDomains}
-          storeDomainsError={storeDomainsError}
+          dropshippersError={dropshippersError}
+          suppliersError={suppliersError}
           assistantEnabled={Boolean(getOpenAiApiKey())}
           dropshipSettlements={dropshipSettlements}
           dropshipSettlementsError={dropshipSettlementsError}
           pendingSupplierDrafts={pendingSupplierDrafts}
           initialTab={initialTab}
           legacyTabParam={legacyTabParam}
+          initialStoresSection={initialStoresSection}
         />
       </Suspense>
     </div>

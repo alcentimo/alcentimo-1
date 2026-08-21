@@ -131,10 +131,12 @@ export async function recordSupplierPriceChangeAndNotify(input: {
   }
 }
 
-async function getCurrentRetailUsd(
+const RETAIL_PRODUCT_IN_CHUNK = 100;
+
+async function resolveActiveVariantId(
   admin: SupabaseClient,
   productId: string,
-): Promise<number | null> {
+): Promise<string | null> {
   const { data: variant } = await admin
     .from("product_variants")
     .select("id")
@@ -143,21 +145,24 @@ async function getCurrentRetailUsd(
     .eq("is_default", true)
     .maybeSingle();
 
-  let variantId =
-    variant && typeof variant.id === "string" ? variant.id : null;
+  if (variant && typeof variant.id === "string") return variant.id;
 
-  if (!variantId) {
-    const { data: fallback } = await admin
-      .from("product_variants")
-      .select("id")
-      .eq("product_id", productId)
-      .eq("is_active", true)
-      .limit(1)
-      .maybeSingle();
-    variantId =
-      fallback && typeof fallback.id === "string" ? fallback.id : null;
-  }
+  const { data: fallback } = await admin
+    .from("product_variants")
+    .select("id")
+    .eq("product_id", productId)
+    .eq("is_active", true)
+    .limit(1)
+    .maybeSingle();
 
+  return fallback && typeof fallback.id === "string" ? fallback.id : null;
+}
+
+async function getCurrentRetailUsd(
+  admin: SupabaseClient,
+  productId: string,
+): Promise<number | null> {
+  const variantId = await resolveActiveVariantId(admin, productId);
   if (!variantId) return null;
 
   const { data: price } = await admin
@@ -171,45 +176,104 @@ async function getCurrentRetailUsd(
   return Number(price.amount_usd) || 0;
 }
 
+/** Precio de venta actual (`product_prices.amount_usd`) por producto de tienda. */
+export async function loadRetailUsdByProductIds(
+  admin: SupabaseClient,
+  productIds: string[],
+): Promise<{ prices: Map<string, number>; error?: string }> {
+  const prices = new Map<string, number>();
+  const unique = [
+    ...new Set(productIds.filter((id) => typeof id === "string" && id)),
+  ];
+  if (unique.length === 0) return { prices };
+
+  for (let index = 0; index < unique.length; index += RETAIL_PRODUCT_IN_CHUNK) {
+    const chunk = unique.slice(index, index + RETAIL_PRODUCT_IN_CHUNK);
+    const { data: variants, error: variantError } = await admin
+      .from("product_variants")
+      .select("id, product_id, is_default")
+      .in("product_id", chunk)
+      .eq("is_active", true);
+
+    if (variantError) return { prices, error: variantError.message };
+
+    const variantByProduct = new Map<string, string>();
+    for (const row of (variants as Array<{
+      id?: string;
+      product_id?: string;
+      is_default?: boolean;
+    }> | null) ?? []) {
+      const productId = typeof row.product_id === "string" ? row.product_id : "";
+      const variantId = typeof row.id === "string" ? row.id : "";
+      if (!productId || !variantId) continue;
+      if (!variantByProduct.has(productId) || row.is_default) {
+        variantByProduct.set(productId, variantId);
+      }
+    }
+
+    const variantIds = [...variantByProduct.values()];
+    if (variantIds.length === 0) continue;
+
+    const { data: priceRows, error: priceError } = await admin
+      .from("product_prices")
+      .select("variant_id, amount_usd")
+      .in("variant_id", variantIds)
+      .is("effective_until", null);
+
+    if (priceError) return { prices, error: priceError.message };
+
+    const amountByVariant = new Map<string, number>();
+    for (const row of (priceRows as Array<{
+      variant_id?: string;
+      amount_usd?: number | null;
+    }> | null) ?? []) {
+      const variantId = typeof row.variant_id === "string" ? row.variant_id : "";
+      if (!variantId) continue;
+      amountByVariant.set(
+        variantId,
+        Math.round((Number(row.amount_usd) || 0) * 100) / 100,
+      );
+    }
+
+    for (const [productId, variantId] of variantByProduct) {
+      const amount = amountByVariant.get(variantId);
+      if (amount != null) prices.set(productId, amount);
+    }
+  }
+
+  return { prices };
+}
+
 export async function applyRetailPriceToProduct(
   admin: SupabaseClient,
   productId: string,
   amountUsd: number,
 ): Promise<{ ok: boolean; error?: string }> {
   const retail = Math.round(Math.max(0, amountUsd) * 100) / 100;
-
-  const { data: variant } = await admin
-    .from("product_variants")
-    .select("id")
-    .eq("product_id", productId)
-    .eq("is_active", true)
-    .eq("is_default", true)
-    .maybeSingle();
-
-  let variantId =
-    variant && typeof variant.id === "string" ? variant.id : null;
-
-  if (!variantId) {
-    const { data: fallback } = await admin
-      .from("product_variants")
-      .select("id")
-      .eq("product_id", productId)
-      .eq("is_active", true)
-      .limit(1)
-      .maybeSingle();
-    variantId =
-      fallback && typeof fallback.id === "string" ? fallback.id : null;
-  }
+  const variantId = await resolveActiveVariantId(admin, productId);
 
   if (!variantId) {
     return { ok: false, error: "El producto no tiene variante de precio." };
   }
 
-  const { error } = await admin
+  const { data: existingPrice, error: lookupError } = await admin
     .from("product_prices")
-    .update({ amount_usd: retail })
+    .select("id")
     .eq("variant_id", variantId)
-    .is("effective_until", null);
+    .is("effective_until", null)
+    .maybeSingle();
+
+  if (lookupError) return { ok: false, error: lookupError.message };
+
+  const { error } = existingPrice
+    ? await admin
+        .from("product_prices")
+        .update({ amount_usd: retail })
+        .eq("id", existingPrice.id)
+    : await admin.from("product_prices").insert({
+        variant_id: variantId,
+        amount_usd: retail,
+      });
 
   if (error) return { ok: false, error: error.message };
   return { ok: true };

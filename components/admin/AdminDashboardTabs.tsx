@@ -7,9 +7,8 @@ import { AdminStoresPanel } from "@/components/admin/AdminStoresPanel";
 import { AdminAiAssistantPanel } from "@/components/admin/AdminAiAssistantPanel";
 import { SupportMessagesPanel } from "@/components/dashboard/SupportMessagesPanel";
 import type { AdminUserRow } from "@/lib/admin/get-admin-users";
-import type { GrowthAuditEntry } from "@/lib/admin/growth-audit";
+import type { AdminSupplierDirectoryRow } from "@/lib/admin/get-admin-suppliers";
 import type { SupportMessage } from "@/lib/database.types";
-import type { AdminStoreDomainRow } from "@/lib/admin/custom-domain-actions";
 import type { DropshipSettlementRecord } from "@/lib/dropship/settlement-types";
 import {
   resolveAdminDashboardTab,
@@ -19,28 +18,30 @@ import {
 
 export type { AdminDashboardTab };
 
-const AdminGrowthPanel = dynamic(
+const AdminDropshippersDirectoryPanel = dynamic(
   () =>
-    import("@/components/admin/AdminGrowthPanel").then((m) => ({
-      default: m.AdminGrowthPanel,
+    import("@/components/admin/AdminDropshippersDirectoryPanel").then((m) => ({
+      default: m.AdminDropshippersDirectoryPanel,
     })),
   {
     loading: () => (
       <p className="text-sm text-zinc-500 dark:text-zinc-400">
-        Cargando tiendas y usuarios…
+        Cargando dropshippers…
       </p>
     ),
   },
 );
 
-const AdminCustomDomainsPanel = dynamic(
+const AdminSuppliersDirectoryPanel = dynamic(
   () =>
-    import("@/components/admin/AdminCustomDomainsPanel").then((m) => ({
-      default: m.AdminCustomDomainsPanel,
+    import("@/components/admin/AdminSuppliersDirectoryPanel").then((m) => ({
+      default: m.AdminSuppliersDirectoryPanel,
     })),
   {
     loading: () => (
-      <p className="text-sm text-zinc-500 dark:text-zinc-400">Cargando dominios…</p>
+      <p className="text-sm text-zinc-500 dark:text-zinc-400">
+        Cargando proveedores…
+      </p>
     ),
   },
 );
@@ -55,18 +56,6 @@ const AdminSupplierCatalogPanel = dynamic(
       <p className="text-sm text-zinc-500 dark:text-zinc-400">
         Cargando catálogo mayorista…
       </p>
-    ),
-  },
-);
-
-const AdminStoreLocationsPanel = dynamic(
-  () =>
-    import("@/components/admin/AdminStoreLocationsPanel").then((m) => ({
-      default: m.AdminStoreLocationsPanel,
-    })),
-  {
-    loading: () => (
-      <p className="text-sm text-zinc-500 dark:text-zinc-400">Cargando sucursales…</p>
     ),
   },
 );
@@ -87,20 +76,18 @@ const DropshipSettlementsPanel = dynamic(
 
 interface AdminDashboardTabsProps {
   messages: SupportMessage[];
-  growthUsers: AdminUserRow[];
-  growthAuditLog: GrowthAuditEntry[];
-  growthPlanFilter?: "FREE" | "PRO" | "BUSINESS" | "ENTERPRISE" | "all";
-  growthMinProducts?: number;
+  dropshippers: AdminUserRow[];
+  suppliers: AdminSupplierDirectoryRow[];
   messagesError?: string | null;
-  growthError?: string | null;
-  storeDomains?: AdminStoreDomainRow[];
-  storeDomainsError?: string | null;
+  dropshippersError?: string | null;
+  suppliersError?: string | null;
   assistantEnabled?: boolean;
   dropshipSettlements?: DropshipSettlementRecord[];
   dropshipSettlementsError?: string | null;
   pendingSupplierDrafts?: number;
   initialTab?: AdminDashboardTab | string;
   legacyTabParam?: string | null;
+  initialStoresSection?: string | null;
 }
 
 function ErrorBanner({ message }: { message: string }) {
@@ -113,20 +100,18 @@ function ErrorBanner({ message }: { message: string }) {
 
 export function AdminDashboardTabs({
   messages,
-  growthUsers,
-  growthAuditLog,
-  growthPlanFilter = "all",
-  growthMinProducts,
+  dropshippers,
+  suppliers,
   messagesError = null,
-  growthError = null,
-  storeDomains = [],
-  storeDomainsError = null,
+  dropshippersError = null,
+  suppliersError = null,
   assistantEnabled = false,
   dropshipSettlements = [],
   dropshipSettlementsError = null,
   pendingSupplierDrafts = 0,
   initialTab = "tiendas",
   legacyTabParam = null,
+  initialStoresSection = null,
 }: AdminDashboardTabsProps) {
   const [activeTab, setActiveTab] = useState<AdminDashboardTab>(() =>
     resolveAdminDashboardTab(
@@ -161,7 +146,7 @@ export function AdminDashboardTabs({
     if (tab === "proveedor") setSupplierPanelMounted(true);
     const params = new URLSearchParams(window.location.search);
     params.set("tab", tab);
-    params.delete("section");
+    if (tab !== "tiendas") params.delete("section");
     const query = params.toString();
     const nextUrl = query
       ? `${window.location.pathname}?${query}`
@@ -169,7 +154,10 @@ export function AdminDashboardTabs({
     window.history.replaceState(null, "", nextUrl);
   }
 
-  const storesInitialSubTab = resolveAdminStoresSubTab(legacyTabParam);
+  const storesInitialSubTab = resolveAdminStoresSubTab(
+    legacyTabParam,
+    initialStoresSection,
+  );
 
   return (
     <AdminDashboardShell
@@ -192,29 +180,23 @@ export function AdminDashboardTabs({
       ) : null}
 
       {activeTab === "tiendas" ? (
-        growthError ? (
-          <ErrorBanner message={growthError} />
-        ) : (
-          <AdminStoresPanel
-            initialSubTab={storesInitialSubTab}
-            usuariosPanel={
-              <AdminGrowthPanel
-                initialUsers={growthUsers}
-                initialAuditLog={growthAuditLog}
-                initialPlanFilter={growthPlanFilter}
-                initialMinProducts={growthMinProducts}
-              />
-            }
-            dominiosPanel={
-              storeDomainsError ? (
-                <ErrorBanner message={storeDomainsError} />
-              ) : (
-                <AdminCustomDomainsPanel initialRows={storeDomains} />
-              )
-            }
-            sucursalesPanel={<AdminStoreLocationsPanel />}
-          />
-        )
+        <AdminStoresPanel
+          initialSubTab={storesInitialSubTab}
+          proveedoresPanel={
+            suppliersError ? (
+              <ErrorBanner message={suppliersError} />
+            ) : (
+              <AdminSuppliersDirectoryPanel initialSuppliers={suppliers} />
+            )
+          }
+          dropshippersPanel={
+            dropshippersError ? (
+              <ErrorBanner message={dropshippersError} />
+            ) : (
+              <AdminDropshippersDirectoryPanel initialUsers={dropshippers} />
+            )
+          }
+        />
       ) : null}
 
       {activeTab === "soporte" ? (

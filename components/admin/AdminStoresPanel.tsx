@@ -2,41 +2,59 @@
 
 import { useState } from "react";
 import { cn } from "@/lib/cn";
+import type { AdminStoresSubTab } from "@/lib/admin/dashboard-nav";
 
-export type AdminStoresSubTab = "usuarios" | "dominios" | "sucursales";
+export type { AdminStoresSubTab };
 
-const SUB_TABS: Array<{ id: AdminStoresSubTab; label: string }> = [
-  { id: "usuarios", label: "Usuarios y tiendas" },
-  { id: "dominios", label: "Dominios" },
-  { id: "sucursales", label: "Sucursales" },
+const TABS: Array<{ id: AdminStoresSubTab; label: string }> = [
+  { id: "proveedores", label: "Proveedores" },
+  { id: "dropshippers", label: "Dropshippers" },
 ];
 
 interface AdminStoresPanelProps {
-  usuariosPanel: React.ReactNode;
-  dominiosPanel: React.ReactNode;
-  sucursalesPanel: React.ReactNode;
+  proveedoresPanel: React.ReactNode;
+  dropshippersPanel: React.ReactNode;
   initialSubTab?: AdminStoresSubTab;
 }
 
 export function AdminStoresPanel({
-  usuariosPanel,
-  dominiosPanel,
-  sucursalesPanel,
-  initialSubTab = "usuarios",
+  proveedoresPanel,
+  dropshippersPanel,
+  initialSubTab = "proveedores",
 }: AdminStoresPanelProps) {
   const [subTab, setSubTab] = useState<AdminStoresSubTab>(initialSubTab);
 
+  function selectSubTab(next: AdminStoresSubTab) {
+    setSubTab(next);
+    const params = new URLSearchParams(window.location.search);
+    params.set("tab", "tiendas");
+    if (next === "proveedores") params.delete("section");
+    else params.set("section", next);
+    const query = params.toString();
+    window.history.replaceState(
+      null,
+      "",
+      query ? `${window.location.pathname}?${query}` : window.location.pathname,
+    );
+  }
+
   return (
     <div className="space-y-4">
-      <div className="admin-subnav">
-        {SUB_TABS.map((tab) => (
+      <div
+        className="admin-directory-tabs"
+        role="tablist"
+        aria-label="Gestión de usuarios"
+      >
+        {TABS.map((tab) => (
           <button
             key={tab.id}
             type="button"
-            onClick={() => setSubTab(tab.id)}
+            role="tab"
+            aria-selected={subTab === tab.id}
+            onClick={() => selectSubTab(tab.id)}
             className={cn(
-              "admin-subnav-item",
-              subTab === tab.id && "admin-subnav-item-active",
+              "admin-directory-tab",
+              subTab === tab.id && "admin-directory-tab-active",
             )}
           >
             {tab.label}
@@ -44,9 +62,8 @@ export function AdminStoresPanel({
         ))}
       </div>
 
-      {subTab === "usuarios" ? usuariosPanel : null}
-      {subTab === "dominios" ? dominiosPanel : null}
-      {subTab === "sucursales" ? sucursalesPanel : null}
+      {subTab === "proveedores" ? proveedoresPanel : null}
+      {subTab === "dropshippers" ? dropshippersPanel : null}
     </div>
   );
 }

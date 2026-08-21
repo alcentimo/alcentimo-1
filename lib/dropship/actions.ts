@@ -7,6 +7,7 @@ import { requireAuthStore } from "@/lib/auth/require-dashboard-auth";
 import { revalidatePublicCatalogCache } from "@/lib/catalog/public-catalog-cache";
 import {
   applyRetailPriceToProduct,
+  loadRetailUsdByProductIds,
 } from "@/lib/dropship/price-change";
 import {
   defaultDropshipPricingSettings,
@@ -47,6 +48,9 @@ import {
   DROPSHIP_SUPPLIER_PRODUCT_SELECT,
   applyDropshipVisibleProductFilter,
   isPublishedForDropship,
+  mayoristaFromMarginPercent,
+  parsePercentAmount,
+  parseUsdAmount,
   resolvePrecioMayoristaUsd,
 } from "@/lib/supplier/wholesale-price";
 
@@ -132,6 +136,40 @@ async function softDeleteImportedProduct(
     .from("products")
     .update({ is_deleted: true, is_active: false })
     .eq("id", productId);
+}
+
+function revalidateDropshipStoreCatalog(store: { id: string; slug: string }) {
+  revalidatePath("/dashboard/ajustes");
+  revalidatePath("/dashboard/catalogo");
+  revalidatePath("/dashboard/inventario");
+  revalidatePath("/dashboard");
+  revalidatePath(`/c/${store.slug}`);
+  revalidatePublicCatalogCache({
+    slug: store.slug,
+    storeId: store.id,
+  });
+}
+
+async function persistStoreDropshipMarginPercent(
+  admin: SupabaseClient,
+  storeId: string,
+  settings: Awaited<ReturnType<typeof getStoreSettingsConfig>>,
+  marginPercent: number,
+): Promise<string | undefined> {
+  const current = normalizeDropshipPricingSettings(settings.dropshipPricing);
+  const dropship = {
+    ...current,
+    enabled: true,
+    marginType: "percent" as const,
+    marginValue: marginPercent,
+  };
+  const merged = mergeStoreSettingsConfig(settings, {
+    dropshipPricing: dropship,
+  });
+  const { error } = await admin
+    .from("store_settings")
+    .upsert({ store_id: storeId, config: merged }, { onConflict: "store_id" });
+  return error?.message;
 }
 
 async function nextProductSortOrder(
@@ -228,6 +266,8 @@ export type MerchantSupplierCatalogProduct = {
   description: string;
   wholesalePriceUsd: number;
   suggestedRetailUsd: number | null;
+  /** Precio de venta en la tienda si ya está importado; si no, el sugerido. */
+  retailPriceUsd: number | null;
   stock: number;
   category: string;
   imageUrl: string | null;
@@ -295,6 +335,10 @@ export async function listActiveSupplierCatalogForMerchant(): Promise<
     catalogRows.map((row) => String(row.id)),
   );
 
+  const linkedProductIds = [...new Set(linkedBySupplier.values())];
+  const retailResult = await loadRetailUsdByProductIds(admin, linkedProductIds);
+  if (retailResult.error) return { error: retailResult.error };
+
   const products: MerchantSupplierCatalogProduct[] = [];
   for (const row of catalogRows) {
     const id = String(row.id);
@@ -310,16 +354,22 @@ export async function listActiveSupplierCatalogForMerchant(): Promise<
       galleryByProduct.get(id) ?? [],
       coverUrl,
     );
+    const suggestedRetailUsd = suggestRetailFromWholesaleCost(
+      cost,
+      pricingForSuggest,
+    );
+    const storedRetail =
+      linkedProductId != null
+        ? (retailResult.prices.get(linkedProductId) ?? null)
+        : null;
 
     products.push({
       id,
       title: String(row.title ?? ""),
       description: String(row.description ?? ""),
       wholesalePriceUsd: cost,
-      suggestedRetailUsd: suggestRetailFromWholesaleCost(
-        cost,
-        pricingForSuggest,
-      ),
+      suggestedRetailUsd,
+      retailPriceUsd: storedRetail ?? suggestedRetailUsd,
       stock: Number(row.stock) || 0,
       category: normalizeSupplierProductCategory(row.category),
       imageUrl: imageUrls[0] ?? null,
@@ -340,6 +390,7 @@ export async function listActiveSupplierCatalogForMerchant(): Promise<
  */
 export async function importSupplierProductToStoreCatalog(
   supplierProductId: string,
+  options?: { retailUsd?: number | string | null; skipRevalidate?: boolean },
 ): Promise<
   ActionResult<{
     ok: true;
@@ -417,7 +468,9 @@ export async function importSupplierProductToStoreCatalog(
     if (cost == null) {
       return { error: "Producto mayorista no disponible." };
     }
-    const retailUsd = suggestRetailFromWholesaleCost(cost, dropship);
+    const overrideRetail = parseUsdAmount(options?.retailUsd, { min: 0 });
+    const retailUsd =
+      overrideRetail ?? suggestRetailFromWholesaleCost(cost, dropship);
     if (retailUsd == null || retailUsd < 0) {
       return {
         error: "No se pudo calcular el precio de venta con tu regla de margen.",
@@ -645,15 +698,9 @@ export async function importSupplierProductToStoreCatalog(
 
     await mirrorSupplierStockToLinkedStores(admin, supplierId, stock);
 
-    revalidatePath("/dashboard/ajustes");
-    revalidatePath("/dashboard/catalogo");
-    revalidatePath("/dashboard/inventario");
-    revalidatePath("/dashboard");
-    revalidatePath(`/c/${auth.store.slug}`);
-    revalidatePublicCatalogCache({
-      slug: auth.store.slug,
-      storeId: auth.store.id,
-    });
+    if (!options?.skipRevalidate) {
+      revalidateDropshipStoreCatalog(auth.store);
+    }
 
     return {
       ok: true as const,
@@ -669,6 +716,239 @@ export async function importSupplierProductToStoreCatalog(
         : "No se pudo importar el producto mayorista.";
     return { error: message };
   }
+}
+
+/**
+ * Actualiza el precio de venta de un SKU ya importado.
+ * Ese monto es el que ven los clientes en la vitrina pública.
+ */
+export async function setDropshipCatalogRetailPrice(input: {
+  supplierProductId: string;
+  retailUsd: number | string;
+}): Promise<
+  ActionResult<{
+    ok: true;
+    supplierProductId: string;
+    retailUsd: number;
+    linkedProductId: string;
+  }>
+> {
+  const gate = await requireDropshipStore();
+  if ("error" in gate) return { error: gate.error };
+  const { auth } = gate;
+
+  const supplierProductId = input.supplierProductId.trim();
+  const retailUsd = parseUsdAmount(input.retailUsd, { min: 0 });
+  if (!supplierProductId) return { error: "Producto inválido." };
+  if (retailUsd == null) {
+    return { error: "Indica un precio de venta válido." };
+  }
+
+  const admin = createAdminClient();
+  const { data: link, error: linkError } = await admin
+    .from("store_dropship_links")
+    .select("id, product_id")
+    .eq("store_id", auth.store.id)
+    .eq("supplier_product_id", supplierProductId)
+    .maybeSingle();
+
+  if (linkError) return { error: linkError.message };
+  const linkedProductId =
+    link && typeof link.product_id === "string" ? link.product_id : null;
+  if (!linkedProductId) {
+    return { error: "Añade el producto a tu tienda para guardar el precio." };
+  }
+
+  const applied = await applyRetailPriceToProduct(
+    admin,
+    linkedProductId,
+    retailUsd,
+  );
+  if (!applied.ok) {
+    return { error: applied.error ?? "No se pudo guardar el precio de venta." };
+  }
+
+  revalidateDropshipStoreCatalog(auth.store);
+  return {
+    ok: true as const,
+    supplierProductId,
+    retailUsd,
+    linkedProductId,
+  };
+}
+
+/**
+ * Aplica un % de ganancia sobre el precio mayorista.
+ * Si hay IDs, actualiza esos SKU (y los añade a la tienda si faltan).
+ * Si no hay IDs, actualiza todos los que ya están en la tienda.
+ * El % queda como ganancia por defecto para productos nuevos.
+ */
+export async function applyDropshipCatalogMarginPercent(input: {
+  marginPercent: number | string;
+  supplierProductIds?: string[] | null;
+}): Promise<
+  ActionResult<{
+    ok: true;
+    updated: number;
+    imported: number;
+    skipped: number;
+    marginPercent: number;
+  }>
+> {
+  const gate = await requireDropshipStore();
+  if ("error" in gate) return { error: gate.error };
+  const { auth } = gate;
+
+  const marginPercent = parsePercentAmount(input.marginPercent, {
+    min: 0,
+    max: 1000,
+  });
+  if (marginPercent == null) {
+    return { error: "Indica un porcentaje de ganancia válido (0% a 1000%)." };
+  }
+
+  const admin = createAdminClient();
+  const settings = await getStoreSettingsConfig(auth.store.id);
+  const persistError = await persistStoreDropshipMarginPercent(
+    admin,
+    auth.store.id,
+    settings,
+    marginPercent,
+  );
+  if (persistError) return { error: persistError };
+
+  const requestedIds = [
+    ...new Set(
+      (input.supplierProductIds ?? [])
+        .map((id) => String(id ?? "").trim())
+        .filter(Boolean),
+    ),
+  ];
+
+  let targetIds = requestedIds;
+  if (targetIds.length === 0) {
+    const linksResult = await fetchAllPagedRows((from, to) =>
+      admin
+        .from("store_dropship_links")
+        .select("supplier_product_id")
+        .eq("store_id", auth.store.id)
+        .order("supplier_product_id", { ascending: true })
+        .range(from, to),
+    );
+    if (linksResult.error) return { error: linksResult.error };
+    targetIds = [
+      ...new Set(
+        linksResult.rows
+          .map((row) => String(row.supplier_product_id ?? "").trim())
+          .filter(Boolean),
+      ),
+    ];
+  }
+
+  if (targetIds.length === 0) {
+    return {
+      error:
+        "Añade productos a tu tienda o márcalos en el catálogo para aplicar el %.",
+    };
+  }
+
+  const supplierById = new Map<string, Record<string, unknown>>();
+  const IN_CHUNK = 100;
+  for (let index = 0; index < targetIds.length; index += IN_CHUNK) {
+    const chunk = targetIds.slice(index, index + IN_CHUNK);
+    const { data, error } = await applyDropshipVisibleProductFilter(
+      admin
+        .from("supplier_products")
+        .select(DROPSHIP_SUPPLIER_PRODUCT_SELECT)
+        .in("id", chunk),
+    );
+    if (error) return { error: error.message };
+    for (const row of (data as Record<string, unknown>[] | null) ?? []) {
+      const id = String(row.id ?? "");
+      if (id) supplierById.set(id, row);
+    }
+  }
+
+  const linkBySupplier = new Map<string, string>();
+  for (let index = 0; index < targetIds.length; index += IN_CHUNK) {
+    const chunk = targetIds.slice(index, index + IN_CHUNK);
+    const { data, error } = await admin
+      .from("store_dropship_links")
+      .select("supplier_product_id, product_id")
+      .eq("store_id", auth.store.id)
+      .in("supplier_product_id", chunk);
+    if (error) return { error: error.message };
+    for (const row of (data as Record<string, unknown>[] | null) ?? []) {
+      const supplierId = String(row.supplier_product_id ?? "");
+      const productId = String(row.product_id ?? "");
+      if (supplierId && productId) linkBySupplier.set(supplierId, productId);
+    }
+  }
+
+  let updated = 0;
+  let imported = 0;
+  let skipped = 0;
+  let lastError: string | null = null;
+
+  for (const supplierProductId of targetIds) {
+    const row = supplierById.get(supplierProductId);
+    if (!row || !isPublishedForDropship(row)) {
+      skipped += 1;
+      continue;
+    }
+    const mayorista = resolvePrecioMayoristaUsd(row);
+    if (mayorista == null) {
+      skipped += 1;
+      continue;
+    }
+    const retailUsd = mayoristaFromMarginPercent(mayorista, marginPercent);
+    const linkedProductId = linkBySupplier.get(supplierProductId) ?? null;
+
+    if (linkedProductId) {
+      const applied = await applyRetailPriceToProduct(
+        admin,
+        linkedProductId,
+        retailUsd,
+      );
+      if (!applied.ok) {
+        skipped += 1;
+        lastError = applied.error ?? lastError;
+        continue;
+      }
+      updated += 1;
+      continue;
+    }
+
+    const created = await importSupplierProductToStoreCatalog(
+      supplierProductId,
+      { retailUsd, skipRevalidate: true },
+    );
+    if (created.error || !created.ok) {
+      skipped += 1;
+      lastError = created.error ?? lastError;
+      continue;
+    }
+    updated += 1;
+    imported += 1;
+  }
+
+  revalidateDropshipStoreCatalog(auth.store);
+
+  if (updated === 0) {
+    return {
+      error:
+        lastError ??
+        "No se pudo aplicar el porcentaje a ningún producto de tu tienda.",
+    };
+  }
+
+  return {
+    ok: true as const,
+    updated,
+    imported,
+    skipped,
+    marginPercent,
+  };
 }
 
 export async function linkStoreDropshipProduct(input: {

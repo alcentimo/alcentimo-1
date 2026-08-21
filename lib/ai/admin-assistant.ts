@@ -45,7 +45,7 @@ function buildSystemPrompt(context: AdminAssistantContext): string {
     "Eres el asistente gerencial interno de Alcéntimo (panel admin SaaS).",
     "Responde en español, claro, directo y operativo. No inventes datos: usa solo el contexto JSON (consultado en tiempo real desde la base de datos).",
     "Tienes visibilidad de TODO el SaaS en este contexto:",
-    "- Tiendas y usuarios: storesSample, recentRegistrations, usersNearProductLimit (correo, plan Gratis/Profesional/Comercial/Corporativo, estado, productCount, accountRegisteredAt, storeCreatedAt).",
+    "- Gestión de usuarios: dropshippers (storesSample, recentRegistrations) y proveedores registrados.",
     "- Pagos de suscripción (datos internos, sin pestaña en el panel): pendingPaymentsSample, verifiedPaymentsSample, paymentStatusCounts.",
     "- Soporte: pendingSupportMessages, recentSupportMessages, supportStatusCounts (mensajes pendientes/atendidos).",
     "- Cupones, ofertas y precios (datos internos): activeCoupons, activeCampaigns, plans (precios, límites de productos/sedes).",
