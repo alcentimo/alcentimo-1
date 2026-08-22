@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, type FormEvent } from "react";
 import { Loader2, Plus, Trash2 } from "lucide-react";
 import type { CatalogListItem } from "@/lib/database.types";
 import { formatUsd } from "@/lib/format";
@@ -77,7 +77,7 @@ export function RegisterManualOrderModal({
   const [customerName, setCustomerName] = useState("");
   const [customerPhone, setCustomerPhone] = useState("");
   const [deliveryAddress, setDeliveryAddress] = useState("");
-  const [paymentMethod, setPaymentMethod] = useState(
+  const [paymentMethod, setPaymentMethod] = useState<string>(
     PAYMENT_METHODS[0]?.key ?? "pagoMovil",
   );
   const [shippingMethod, setShippingMethod] = useState("mrw");
@@ -183,7 +183,7 @@ export function RegisterManualOrderModal({
     setQuantity("1");
   }
 
-  async function handleSubmit(event: React.FormEvent) {
+  async function handleSubmit(event: FormEvent) {
     event.preventDefault();
     if (pending) return;
     setError(null);
