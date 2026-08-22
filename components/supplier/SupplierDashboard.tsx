@@ -109,7 +109,7 @@ export function SupplierDashboard({
         <div className="space-y-4">
           {productsError ? (
             <p className="supplier-hub-alert">
-              No se pudieron cargar los productos ({productsError}).
+              No se pudieron cargar los productos.
             </p>
           ) : null}
           <SupplierProductsPanel initialProducts={initialProducts} />
@@ -120,12 +120,7 @@ export function SupplierDashboard({
         <div className="space-y-4">
           {ordersError ? (
             <p className="supplier-hub-alert">
-              No se pudieron cargar los pedidos ({ordersError}). Si acabas de
-              desplegar, aplica la migración{" "}
-              <code className="rounded bg-white/70 px-1 dark:bg-zinc-900/50">
-                094_supplier_orders
-              </code>
-              .
+              No se pudieron cargar los pedidos.
             </p>
           ) : null}
           <SupplierOrdersPanel
@@ -139,22 +134,12 @@ export function SupplierDashboard({
         <div className="space-y-4">
           {paymentConfigError ? (
             <p className="supplier-hub-alert">
-              No se pudieron cargar los datos de pago ({paymentConfigError}).
-              Aplica la migración{" "}
-              <code className="rounded bg-white/70 px-1 dark:bg-zinc-900/50">
-                112_supplier_b2b_payments
-              </code>
-              .
+              No se pudieron cargar los datos de pago.
             </p>
           ) : null}
           {payoutsError ? (
             <p className="supplier-hub-alert">
-              No se pudieron cargar las liquidaciones ({payoutsError}). Aplica
-              la migración{" "}
-              <code className="rounded bg-white/70 px-1 dark:bg-zinc-900/50">
-                121_dropship_daily_settlements
-              </code>
-              .
+              No se pudieron cargar las liquidaciones.
             </p>
           ) : null}
           <SupplierPaymentsPanel
