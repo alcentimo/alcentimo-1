@@ -10,6 +10,7 @@ import {
 } from "react";
 import {
   Check,
+  ChevronDown,
   FolderPlus,
   Loader2,
   Package,
@@ -30,6 +31,7 @@ import { CatalogMoneyInput } from "@/components/dashboard/CatalogMoneyInput";
 import { SocialImageDownloadButton } from "@/components/dashboard/SocialImageDownloadButton";
 import { ProductImageGallery } from "@/components/catalog/ProductImageGallery";
 import { Button } from "@/components/ui/button";
+import { Select } from "@/components/ui/select";
 import { formatUsd } from "@/lib/format";
 import { urlsToCatalogGalleryImages } from "@/lib/products/product-gallery-types";
 import {
@@ -48,6 +50,7 @@ import {
 import { cn } from "@/lib/cn";
 
 type CategoryFilter = "all" | SupplierProductCategory;
+type SupplierFilter = "all" | string;
 type BulkMode = "all" | "category" | null;
 
 type PriceDraft = {
@@ -82,22 +85,62 @@ function isPriceDirty(
   return parseUsdAmount(draft.retail) !== product.retailPriceUsd;
 }
 
+function stockBadgeMeta(stock: number): {
+  label: string;
+  className: string;
+} {
+  if (stock <= 0) {
+    return {
+      label: "Sin stock",
+      className:
+        "bg-zinc-900/75 text-white ring-1 ring-white/10 backdrop-blur-sm",
+    };
+  }
+  if (stock <= 5) {
+    return {
+      label: `${stock} uds.`,
+      className:
+        "bg-amber-500/90 text-white ring-1 ring-white/20 backdrop-blur-sm",
+    };
+  }
+  return {
+    label: stock > 99 ? "99+ uds." : stock > 20 ? "En stock" : `${stock} uds.`,
+    className:
+      "bg-white/90 text-zinc-800 ring-1 ring-black/5 backdrop-blur-sm dark:bg-zinc-950/85 dark:text-zinc-100 dark:ring-white/10",
+  };
+}
+
 function SupplierCatalogCardMedia({
   product,
 }: {
   product: MerchantSupplierCatalogProduct;
 }) {
   const images = urlsToCatalogGalleryImages(catalogImageUrls(product));
+  const stockBadge = stockBadgeMeta(product.stock);
 
   return (
-    <div className="relative aspect-[4/3] overflow-hidden bg-zinc-50 dark:bg-zinc-900">
+    <div className="relative aspect-[4/3] overflow-hidden bg-gradient-to-br from-zinc-50 to-zinc-100/80 dark:from-zinc-900 dark:to-zinc-950">
       <ProductImageGallery
         product={{ product_name: product.title }}
         images={images.length > 0 ? images : undefined}
-        imageClassName="object-cover"
+        imageClassName="object-cover transition duration-500 group-hover:scale-[1.02]"
         fallbackClassName="absolute inset-0"
         sizes="(max-width: 640px) 100vw, 33vw"
       />
+      <span
+        className={cn(
+          "absolute left-3 top-3 z-10 rounded-full px-2.5 py-1 text-[11px] font-semibold tracking-wide shadow-sm",
+          stockBadge.className,
+        )}
+      >
+        {stockBadge.label}
+      </span>
+      {product.alreadyImported ? (
+        <span className="absolute right-3 top-3 z-10 inline-flex items-center gap-1 rounded-full bg-emerald-500/90 px-2.5 py-1 text-[11px] font-semibold text-white shadow-sm ring-1 ring-white/20 backdrop-blur-sm">
+          <Check className="h-3 w-3" aria-hidden="true" />
+          En tu tienda
+        </span>
+      ) : null}
     </div>
   );
 }
@@ -119,6 +162,7 @@ export function AvailableProductsPanel({
   const [headerPercent, setHeaderPercent] = useState("");
   const [query, setQuery] = useState("");
   const [categoryFilter, setCategoryFilter] = useState<CategoryFilter>("all");
+  const [supplierFilter, setSupplierFilter] = useState<SupplierFilter>("all");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
@@ -196,6 +240,22 @@ export function AvailableProductsPanel({
     }));
   }, [products]);
 
+  const supplierFacets = useMemo(() => {
+    const counts = new Map<string, { name: string; count: number }>();
+    for (const product of products) {
+      if (!product.supplierUserId) continue;
+      const current = counts.get(product.supplierUserId) ?? {
+        name: product.supplierName?.trim() || "Proveedor",
+        count: 0,
+      };
+      current.count += 1;
+      counts.set(product.supplierUserId, current);
+    }
+    return [...counts.entries()]
+      .map(([id, meta]) => ({ id, ...meta }))
+      .sort((a, b) => a.name.localeCompare(b.name, "es"));
+  }, [products]);
+
   const pendingAllCount = useMemo(
     () => products.filter((product) => !product.alreadyImported).length,
     [products],
@@ -215,15 +275,28 @@ export function AvailableProductsPanel({
       ) {
         return false;
       }
+      if (
+        supplierFilter !== "all" &&
+        product.supplierUserId !== supplierFilter
+      ) {
+        return false;
+      }
       if (!q) return true;
       const category = supplierCategoryLabel(product.category).toLowerCase();
+      const supplier = (product.supplierName ?? "").toLowerCase();
       return (
         product.title.toLowerCase().includes(q) ||
         product.description.toLowerCase().includes(q) ||
-        category.includes(q)
+        category.includes(q) ||
+        supplier.includes(q)
       );
     });
-  }, [products, query, categoryFilter]);
+  }, [products, query, categoryFilter, supplierFilter]);
+
+  const hasActiveFilters =
+    query.trim().length > 0 ||
+    categoryFilter !== "all" ||
+    supplierFilter !== "all";
 
   const selectedCount = useMemo(
     () => filtered.filter((product) => selectedIds[product.id]).length,
@@ -575,7 +648,7 @@ export function AvailableProductsPanel({
       </div>
 
       {products.length > 0 ? (
-        <div className="rounded-2xl border border-zinc-200/80 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-950">
+        <div className="rounded-2xl border border-zinc-200/80 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-950">
           <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
             <div className="max-w-xl">
               <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">
@@ -646,97 +719,136 @@ export function AvailableProductsPanel({
         </div>
       ) : null}
 
-      <div className="relative max-w-md">
-        <Search
-          className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400"
-          aria-hidden="true"
-        />
-        <input
-          type="search"
-          className="input-field !pl-9"
-          placeholder="Buscar en el catálogo mayorista…"
-          value={query}
-          onChange={(event) => setQuery(event.target.value)}
-          aria-label="Buscar productos mayoristas"
-        />
-      </div>
+      <div className="rounded-2xl border border-zinc-200/80 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-950">
+        <div className="flex flex-col gap-4">
+          <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
+            <div className="relative min-w-0 flex-1">
+              <Search
+                className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400"
+                aria-hidden="true"
+              />
+              <input
+                type="search"
+                className="input-field !h-11 !rounded-xl !pl-9 !shadow-sm"
+                placeholder="Buscar producto, proveedor o categoría…"
+                value={query}
+                onChange={(event) => setQuery(event.target.value)}
+                aria-label="Buscar en el catálogo mayorista"
+              />
+            </div>
 
-      {categoryFacets.length > 0 ? (
-        <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-          <div
-            className="flex flex-wrap gap-2"
-            role="group"
-            aria-label="Filtrar por categoría"
-          >
-            <button
-              type="button"
-              className={cn(
-                "rounded-full border px-3 py-1.5 text-xs font-medium transition",
-                categoryFilter === "all"
-                  ? "border-teal-600 bg-teal-50 text-teal-800 dark:border-teal-500 dark:bg-teal-950/40 dark:text-teal-200"
-                  : "border-zinc-200 text-zinc-600 hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-900",
-              )}
-              onClick={() => setCategoryFilter("all")}
-            >
-              Todas
-              <span className="ml-1 tabular-nums text-zinc-400">
-                {products.length}
-              </span>
-            </button>
-            {categoryFacets.map((item) => (
-              <button
-                key={item.value}
-                type="button"
-                className={cn(
-                  "rounded-full border px-3 py-1.5 text-xs font-medium transition",
-                  categoryFilter === item.value
-                    ? "border-teal-600 bg-teal-50 text-teal-800 dark:border-teal-500 dark:bg-teal-950/40 dark:text-teal-200"
-                    : "border-zinc-200 text-zinc-600 hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-900",
-                )}
-                onClick={() => setCategoryFilter(item.value)}
-              >
-                {item.label}
-                <span className="ml-1 tabular-nums text-zinc-400">
-                  {item.count}
-                </span>
-              </button>
-            ))}
+            {products.length > 0 ? (
+              <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:w-auto lg:min-w-[22rem]">
+                <label className="relative block">
+                  <span className="sr-only">Filtrar por proveedor</span>
+                  <Select
+                    value={supplierFilter}
+                    onChange={(event) => setSupplierFilter(event.target.value)}
+                    className="!h-11 !rounded-xl !pr-9"
+                    aria-label="Filtrar por proveedor"
+                  >
+                    <option value="all">Todos los proveedores</option>
+                    {supplierFacets.map((supplier) => (
+                      <option key={supplier.id} value={supplier.id}>
+                        {supplier.name} ({supplier.count})
+                      </option>
+                    ))}
+                  </Select>
+                  <ChevronDown
+                    className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400"
+                    aria-hidden="true"
+                  />
+                </label>
+
+                <label className="relative block">
+                  <span className="sr-only">Filtrar por categoría</span>
+                  <Select
+                    value={categoryFilter}
+                    onChange={(event) =>
+                      setCategoryFilter(event.target.value as CategoryFilter)
+                    }
+                    className="!h-11 !rounded-xl !pr-9"
+                    aria-label="Filtrar por categoría"
+                  >
+                    <option value="all">Todas las categorías</option>
+                    {categoryFacets.map((item) => (
+                      <option key={item.value} value={item.value}>
+                        {item.label} ({item.count})
+                      </option>
+                    ))}
+                  </Select>
+                  <ChevronDown
+                    className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400"
+                    aria-hidden="true"
+                  />
+                </label>
+              </div>
+            ) : null}
           </div>
-          <button
-            type="button"
-            className="btn-brand-outline inline-flex min-h-10 shrink-0 items-center justify-center gap-2 !text-sm"
-            onClick={() => handleBulk("category")}
-            disabled={
-              loading ||
-              bulkBusy ||
-              importingId != null ||
-              removingId != null ||
-              categoryFilter === "all" ||
-              (selectedCategoryMeta?.pending ?? 0) === 0
-            }
-            title={
-              categoryFilter === "all"
-                ? "Elige una categoría para cargarla completa"
-                : undefined
-            }
-          >
-            {bulkMode === "category" ? (
-              <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
-            ) : (
-              <FolderPlus className="h-4 w-4" aria-hidden="true" />
-            )}
-            {categoryFilter === "all"
-              ? "Cargar por categoría"
-              : bulkMode === "category"
-                ? `Cargando ${supplierCategoryLabel(categoryFilter)}…`
-                : `Cargar ${supplierCategoryLabel(categoryFilter)}${
-                    selectedCategoryMeta
-                      ? ` (${selectedCategoryMeta.pending})`
-                      : ""
-                  }`}
-          </button>
+
+          {products.length > 0 ? (
+            <div className="flex flex-wrap items-center justify-between gap-3 border-t border-zinc-100 pt-3 dark:border-zinc-800">
+              <p className="text-xs text-zinc-500">
+                <span className="font-semibold tabular-nums text-zinc-800 dark:text-zinc-200">
+                  {filtered.length}
+                </span>{" "}
+                de {products.length} producto
+                {products.length === 1 ? "" : "s"}
+                {hasActiveFilters ? " en esta selección" : ""}
+              </p>
+              <div className="flex flex-wrap items-center gap-2">
+                {hasActiveFilters ? (
+                  <button
+                    type="button"
+                    className="inline-flex min-h-9 items-center gap-1.5 rounded-full border border-zinc-200 px-3 text-xs font-medium text-zinc-600 transition hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-900"
+                    onClick={() => {
+                      setQuery("");
+                      setCategoryFilter("all");
+                      setSupplierFilter("all");
+                    }}
+                  >
+                    <X className="h-3.5 w-3.5" aria-hidden="true" />
+                    Limpiar filtros
+                  </button>
+                ) : null}
+                <button
+                  type="button"
+                  className="btn-brand-outline inline-flex min-h-9 shrink-0 items-center justify-center gap-2 !rounded-full !px-4 !text-xs"
+                  onClick={() => handleBulk("category")}
+                  disabled={
+                    loading ||
+                    bulkBusy ||
+                    importingId != null ||
+                    removingId != null ||
+                    categoryFilter === "all" ||
+                    (selectedCategoryMeta?.pending ?? 0) === 0
+                  }
+                  title={
+                    categoryFilter === "all"
+                      ? "Elige una categoría para cargarla completa"
+                      : undefined
+                  }
+                >
+                  {bulkMode === "category" ? (
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" />
+                  ) : (
+                    <FolderPlus className="h-3.5 w-3.5" aria-hidden="true" />
+                  )}
+                  {categoryFilter === "all"
+                    ? "Cargar por categoría"
+                    : bulkMode === "category"
+                      ? `Cargando ${supplierCategoryLabel(categoryFilter)}…`
+                      : `Cargar ${supplierCategoryLabel(categoryFilter)}${
+                          selectedCategoryMeta
+                            ? ` (${selectedCategoryMeta.pending})`
+                            : ""
+                        }`}
+                </button>
+              </div>
+            </div>
+          ) : null}
         </div>
-      ) : null}
+      </div>
 
       {error ? (
         <p className="text-sm text-red-600 dark:text-red-400" role="alert">
@@ -773,12 +885,12 @@ export function AvailableProductsPanel({
         </div>
       ) : filtered.length === 0 ? (
         <p className="py-10 text-center text-sm text-zinc-500">
-          {query.trim()
-            ? `No hay coincidencias para “${query.trim()}”.`
+          {query.trim() || hasActiveFilters
+            ? "No hay coincidencias con los filtros actuales."
             : "No hay productos en esta categoría."}
         </p>
       ) : (
-        <ul className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+        <ul className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
           {filtered.map((product) => {
             const isImporting = importingId === product.id;
             const isRemoving = removingId === product.id;
@@ -791,21 +903,26 @@ export function AvailableProductsPanel({
             const dirty = isPriceDirty(product, draft);
             const saving = Boolean(savingIds[product.id]);
             const selected = Boolean(selectedIds[product.id]);
+            const retailParsed = parseUsdAmount(draft.retail, { min: 0 });
+            const profitUsd =
+              retailParsed != null
+                ? retailParsed - product.wholesalePriceUsd
+                : null;
 
             return (
               <li
                 key={product.id}
                 className={cn(
-                  "flex flex-col overflow-hidden rounded-2xl border bg-white dark:bg-zinc-950",
+                  "group flex flex-col overflow-hidden rounded-2xl border bg-white shadow-sm transition duration-200 hover:-translate-y-0.5 hover:shadow-md dark:bg-zinc-950",
                   selected
-                    ? "border-teal-400 dark:border-teal-700"
+                    ? "border-teal-400 ring-2 ring-teal-400/20 dark:border-teal-600"
                     : "border-zinc-200/80 dark:border-zinc-800",
                 )}
               >
                 <SupplierCatalogCardMedia product={product} />
 
-                <div className="flex flex-1 flex-col gap-3 p-4">
-                  <div className="flex items-start gap-2">
+                <div className="flex flex-1 flex-col gap-4 p-4">
+                  <div className="flex items-start gap-2.5">
                     <input
                       type="checkbox"
                       className="mt-1 h-4 w-4 shrink-0 rounded border-zinc-300 text-teal-700 focus:ring-teal-600"
@@ -814,10 +931,15 @@ export function AvailableProductsPanel({
                       aria-label={`Seleccionar ${product.title}`}
                     />
                     <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-semibold text-zinc-900 dark:text-zinc-50">
+                      {product.supplierName ? (
+                        <p className="truncate text-[11px] font-medium uppercase tracking-wide text-zinc-400">
+                          {product.supplierName}
+                        </p>
+                      ) : null}
+                      <p className="truncate text-sm font-semibold leading-snug text-zinc-900 dark:text-zinc-50">
                         {product.title}
                       </p>
-                      <p className="mt-0.5 text-xs text-zinc-500">
+                      <p className="mt-1 inline-flex rounded-full bg-zinc-100 px-2 py-0.5 text-[11px] font-medium text-zinc-600 dark:bg-zinc-900 dark:text-zinc-300">
                         {supplierCategoryLabel(product.category)}
                       </p>
                       {product.description ? (
@@ -828,45 +950,57 @@ export function AvailableProductsPanel({
                     </div>
                   </div>
 
-                  <div className="mt-auto space-y-2">
-                    <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">
-                      {formatUsd(product.wholesalePriceUsd)}
-                      <span className="ml-1 text-xs font-normal text-zinc-500">
-                        precio mayorista
-                      </span>
-                    </p>
-                    <div className="grid grid-cols-2 gap-2">
-                      <label className="space-y-1">
-                        <span className="block text-[11px] font-medium text-zinc-500">
-                          Precio de venta
+                  <div className="mt-auto space-y-3">
+                    <div className="rounded-xl border border-zinc-100 bg-zinc-50/80 p-3 dark:border-zinc-800 dark:bg-zinc-900/50">
+                      <div className="flex items-baseline justify-between gap-3">
+                        <span className="text-[11px] font-medium uppercase tracking-wide text-zinc-400">
+                          Costo mayorista
                         </span>
-                        <CatalogMoneyInput
-                          prefix="$"
-                          value={draft.retail}
-                          disabled={saving || busy}
-                          aria-label={`Precio de venta de ${product.title}`}
-                          onChange={(value) => onRetailChange(product, value)}
-                          onBlur={() => void persistPrice(product.id)}
-                        />
-                      </label>
-                      <label className="space-y-1">
-                        <span className="block text-[11px] font-medium text-zinc-500">
-                          Ganancia %
+                        <span className="text-sm font-medium tabular-nums text-zinc-600 dark:text-zinc-300">
+                          {formatUsd(product.wholesalePriceUsd)}
                         </span>
-                        <CatalogMoneyInput
-                          suffix="%"
-                          value={draft.marginPercent}
-                          disabled={
-                            saving || busy || product.wholesalePriceUsd <= 0
-                          }
-                          aria-label={`Ganancia de ${product.title}`}
-                          onChange={(value) =>
-                            onMarginPercentChange(product, value)
-                          }
-                          onBlur={() => void persistPrice(product.id)}
-                        />
-                      </label>
+                      </div>
+
+                      <div className="mt-3 grid grid-cols-2 gap-2 border-t border-zinc-200/80 pt-3 dark:border-zinc-700/80">
+                        <label className="space-y-1.5">
+                          <span className="block text-[11px] font-semibold text-zinc-700 dark:text-zinc-200">
+                            Precio de venta
+                          </span>
+                          <CatalogMoneyInput
+                            prefix="$"
+                            value={draft.retail}
+                            disabled={saving || busy}
+                            aria-label={`Precio de venta de ${product.title}`}
+                            onChange={(value) => onRetailChange(product, value)}
+                            onBlur={() => void persistPrice(product.id)}
+                          />
+                        </label>
+                        <label className="space-y-1.5">
+                          <span className="block text-[11px] font-semibold text-zinc-700 dark:text-zinc-200">
+                            Ganancia %
+                          </span>
+                          <CatalogMoneyInput
+                            suffix="%"
+                            value={draft.marginPercent}
+                            disabled={
+                              saving || busy || product.wholesalePriceUsd <= 0
+                            }
+                            aria-label={`Ganancia de ${product.title}`}
+                            onChange={(value) =>
+                              onMarginPercentChange(product, value)
+                            }
+                            onBlur={() => void persistPrice(product.id)}
+                          />
+                        </label>
+                      </div>
+
+                      {profitUsd != null && profitUsd > 0 ? (
+                        <p className="mt-2.5 inline-flex rounded-full bg-emerald-50 px-2.5 py-1 text-[11px] font-semibold text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300">
+                          +{formatUsd(profitUsd)} de ganancia por unidad
+                        </p>
+                      ) : null}
                     </div>
+
                     <div className="flex min-h-5 items-center gap-2">
                       {product.alreadyImported ? (
                         saving ? (
@@ -902,10 +1036,6 @@ export function AvailableProductsPanel({
 
                   {product.alreadyImported ? (
                     <div className="flex flex-col gap-2">
-                      <span className="inline-flex min-h-10 items-center justify-center gap-1.5 rounded-xl border border-emerald-200 bg-emerald-50 px-3 text-sm font-medium text-emerald-800 dark:border-emerald-900/50 dark:bg-emerald-950/40 dark:text-emerald-200">
-                        <Check className="h-4 w-4" aria-hidden="true" />
-                        En el catálogo de tu tienda
-                      </span>
                       {product.imageUrl ? (
                         <SocialImageDownloadButton
                           imageUrl={product.imageUrl}
