@@ -1,6 +1,13 @@
 import { unstable_noStore as noStore } from "next/cache";
-import type { CatalogListItem } from "@/lib/database.types";
-import { getCatalogProducts } from "@/lib/catalog";
+import {
+  extractAssistantSearchQuery,
+  getMegabodegaAssistantSnapshot,
+} from "@/lib/ai/megabodega-context";
+import type {
+  StorefrontAssistantContext,
+  StorefrontAssistantMessage,
+  StorefrontAssistantProduct,
+} from "@/lib/ai/storefront-assistant-types";
 import {
   defaultStoreSettingsConfig,
   normalizeStoreSettingsConfig,
@@ -10,63 +17,9 @@ import { getStoreOpenStatus } from "@/lib/store-settings/store-hours";
 import type { DaySchedule, WeekdayKey } from "@/lib/store-settings/types";
 import { WEEKDAY_KEYS } from "@/lib/store-settings/types";
 import { getPublicServerClient } from "@/lib/supabase/public-server";
-import {
-  getPublicStoreLocations,
-  getVariantLocationStocksForStore,
-} from "@/lib/locations/get-store-locations";
-import type {
-  StorefrontAssistantContext,
-  StorefrontAssistantMessage,
-  StorefrontAssistantProduct,
-  StorefrontAssistantProductVariant,
-} from "@/lib/ai/storefront-assistant-types";
+import { getPublicStoreLocations } from "@/lib/locations/get-store-locations";
 import { getPublicStoreBySlug } from "@/lib/stores";
 import { fetchPublicPlatformSettings } from "@/lib/platform/get-platform-settings";
-
-const MAX_PRODUCTS = 25;
-const MAX_SEARCH_PRODUCTS = 15;
-
-function extractSearchQueryFromMessages(
-  messages: StorefrontAssistantMessage[] | undefined,
-): string | null {
-  if (!messages?.length) return null;
-  const lastUser = [...messages].reverse().find((m) => m.role === "user");
-  if (!lastUser) return null;
-  const query = lastUser.content.trim();
-  if (query.length < 3 || query.length > 120) return null;
-  return query;
-}
-
-async function fetchAssistantCatalogProducts(
-  storeSlug: string,
-  searchQuery: string | null,
-): Promise<CatalogListItem[]> {
-  const base = await getCatalogProducts({
-    storeSlug,
-    limit: MAX_PRODUCTS,
-    offset: 0,
-  });
-
-  if (!searchQuery) {
-    return base.products;
-  }
-
-  const searched = await getCatalogProducts({
-    storeSlug,
-    limit: MAX_SEARCH_PRODUCTS,
-    offset: 0,
-    search: searchQuery,
-  });
-
-  const byId = new Map(base.products.map((product) => [product.product_id, product]));
-  for (const product of searched.products) {
-    if (!byId.has(product.product_id)) {
-      byId.set(product.product_id, product);
-    }
-  }
-
-  return Array.from(byId.values());
-}
 
 const WEEKDAY_LABELS: Record<WeekdayKey, string> = {
   mon: "Lunes",
@@ -93,82 +46,17 @@ function formatLocationHoursSummary(
   return [locationLine, daysLabel].filter(Boolean).join(" · ");
 }
 
-function buildLocationStockIndex(
-  locationStocks: Awaited<ReturnType<typeof getVariantLocationStocksForStore>>,
-  locations: Awaited<ReturnType<typeof getPublicStoreLocations>>,
-): Map<string, Map<string, number>> {
-  const locationNames = new Map(locations.map((loc) => [loc.id, loc.name]));
-  const index = new Map<string, Map<string, number>>();
-
-  for (const row of locationStocks) {
-    const locationName = locationNames.get(row.location_id);
-    if (!locationName) continue;
-
-    let variantMap = index.get(row.variant_id);
-    if (!variantMap) {
-      variantMap = new Map<string, number>();
-      index.set(row.variant_id, variantMap);
-    }
-    variantMap.set(locationName, row.available_stock);
-  }
-
-  return index;
-}
-
-function mapProductToAssistantContext(
-  product: CatalogListItem,
-  locationStockIndex: Map<string, Map<string, number>>,
-  selectedLocationId: string | null,
-  locations: Awaited<ReturnType<typeof getPublicStoreLocations>>,
-): StorefrontAssistantProduct {
-  const selectedLocation = selectedLocationId
-    ? locations.find((loc) => loc.id === selectedLocationId)
-    : null;
-
-  const variants: StorefrontAssistantProductVariant[] =
-    product.product_variants?.map((variant) => {
-      const perLocation = locationStockIndex.get(variant.id);
-      const locationStock = perLocation
-        ? Array.from(perLocation.entries()).map(([location, stock]) => ({
-            location,
-            stock,
-          }))
-        : undefined;
-
-      let stock = variant.stock;
-      if (selectedLocation && perLocation) {
-        stock = perLocation.get(selectedLocation.name) ?? 0;
-      }
-
-      return {
-        name: variant.name,
-        stock,
-        attributes:
-          "attributes" in variant &&
-          variant.attributes &&
-          typeof variant.attributes === "object"
-            ? (variant.attributes as Record<string, string>)
-            : undefined,
-        locationStock,
-      };
-    }) ?? [];
-
-  let availableStock = product.available_stock;
-  if (selectedLocation && product.default_variant_id) {
-    const perLocation = locationStockIndex.get(product.default_variant_id);
-    if (perLocation) {
-      availableStock = perLocation.get(selectedLocation.name) ?? 0;
-    }
-  }
-
-  return {
-    name: product.product_name,
-    category: product.category_name,
-    priceUsd: product.price_usd,
-    availableStock,
-    shortDescription: product.short_description?.slice(0, 80) ?? null,
-    variants: variants.slice(0, 5),
-  };
+function mapMegabodegaToStorefrontProducts(
+  snapshot: Awaited<ReturnType<typeof getMegabodegaAssistantSnapshot>>,
+): StorefrontAssistantProduct[] {
+  return snapshot.items.map((item) => ({
+    name: item.name,
+    category: item.category,
+    priceUsd: item.suggestedRetailUsd,
+    availableStock: item.stock,
+    shortDescription: null,
+    variants: [],
+  }));
 }
 
 async function fetchStoreSettingsConfig(storeId: string) {
@@ -202,13 +90,15 @@ export async function getStorefrontAssistantContext(
   const selectedLocationId = options?.locationId?.trim() || null;
   const searchQuery = options?.searchQuery?.trim() || null;
 
-  const [settingsConfig, platformSettings, locations, locationStocks, catalogProducts] =
+  const [settingsConfig, platformSettings, locations, megabodega] =
     await Promise.all([
       fetchStoreSettingsConfig(store.id),
       fetchPublicPlatformSettings(),
       getPublicStoreLocations(store.id),
-      getVariantLocationStocksForStore(store.id),
-      fetchAssistantCatalogProducts(store.slug, searchQuery),
+      getMegabodegaAssistantSnapshot({
+        audience: "customer",
+        searchQuery,
+      }),
     ]);
 
   const purchaseInfo = buildPublicPurchaseInfo(
@@ -216,20 +106,9 @@ export async function getStorefrontAssistantContext(
     platformSettings.dropshipShipping,
   );
   const openStatus = getStoreOpenStatus(purchaseInfo.locationHours);
-  const locationStockIndex = buildLocationStockIndex(locationStocks, locations);
-
   const selectedLocation = selectedLocationId
     ? locations.find((loc) => loc.id === selectedLocationId)
     : null;
-
-  const products = catalogProducts.map((product) =>
-    mapProductToAssistantContext(
-      product,
-      locationStockIndex,
-      selectedLocationId,
-      locations,
-    ),
-  );
 
   return {
     storeName: store.name,
@@ -256,10 +135,11 @@ export async function getStorefrontAssistantContext(
       details: option.details,
     })),
     paymentMethods: purchaseInfo.payments.map((payment) => payment.label),
-    products,
+    products: mapMegabodegaToStorefrontProducts(megabodega),
     selectedLocationName: selectedLocation?.name ?? null,
     liveSearchQuery: searchQuery,
+    megabodega,
   };
 }
 
-export { extractSearchQueryFromMessages };
+export { extractAssistantSearchQuery as extractSearchQueryFromMessages };

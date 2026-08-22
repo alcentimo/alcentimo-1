@@ -23,9 +23,9 @@ interface CatalogChatWidgetProps {
 }
 
 const QUICK_PROMPTS = [
-  "¿Qué métodos de entrega tienen?",
-  "¿Cuál es la dirección de retiro?",
-  "¿Tienen este producto disponible?",
+  "¿Qué productos hay disponibles ahora?",
+  "¿Cuál es el precio de este producto?",
+  "¿Tienen stock real de Alcentimo?",
 ];
 
 function createMessage(
@@ -37,7 +37,7 @@ function createMessage(
 
 function buildWelcomeMessage(storeName: string): string {
   const name = storeName.trim() || "la tienda";
-  return `¡Hola! Bienvenido al soporte de ${name}. Puedo ayudarte con productos, stock, envíos y pagos. Si prefieres hablar con una persona, usa el botón de WhatsApp abajo.`;
+  return `¡Hola! Bienvenido a ${name}. Puedo decirte el stock real y el precio de los productos Alcentimo, y ayudarte a comprar más rápido. Si prefieres una persona, usa WhatsApp abajo.`;
 }
 
 function isPlatformBrandName(value: string | null | undefined): boolean {
@@ -155,7 +155,7 @@ export function CatalogChatWidget({
       try {
         if (demoMode) {
           await new Promise((resolve) => window.setTimeout(resolve, 650));
-          const demoReply = `En ${storeName} puedes explorar productos con precios en USD y conversión a Bs. Agrega al carrito y envía el pedido por WhatsApp para confirmarlo con la tienda.`;
+          const demoReply = `En ${storeName} puedes consultar el inventario real de productos Alcentimo (stock y precio). Elige lo que esté disponible, agrégalo al carrito y confirma el pedido.`;
           setMessages((current) => [
             ...current,
             createMessage("assistant", demoReply),
@@ -357,7 +357,7 @@ export function CatalogChatWidget({
             rows={1}
             maxLength={500}
             disabled={loading}
-            placeholder="Pregunta por productos, stock o envíos…"
+            placeholder="Pregunta por stock, precio o disponibilidad…"
             className="catalog-chat-input"
             aria-label={`Mensaje para ${supportTitle}`}
           />

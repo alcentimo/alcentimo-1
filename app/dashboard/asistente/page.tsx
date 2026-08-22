@@ -29,7 +29,7 @@ export default async function AsistentePage() {
     <PageContainer as="div" className="space-y-6 py-6 sm:py-8">
       <DashboardPageHeader
         title="Asistente IA"
-        description={`Consultor de negocios con datos en tiempo real: inventario, ventas, clientes, promociones y mensajes de WhatsApp.`}
+        description="Consultor de ventas conectado a Megabodega: stock real, precios sugeridos y apoyo para publicar productos de Alcentimo."
       />
 
       <CatalogAssistantEnabledPanel

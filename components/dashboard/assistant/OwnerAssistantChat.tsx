@@ -12,12 +12,12 @@ interface OwnerAssistantChatProps {
 }
 
 const QUICK_PROMPTS = [
-  "¿Qué productos tienen stock bajo?",
-  "¿Qué productos se mueven lento?",
-  "¿Quiénes son mis clientes frecuentes?",
-  "¿Hay cuentas o pagos pendientes?",
-  "Redacta un mensaje de WhatsApp para confirmar un pedido",
-  "Sugiere una promoción para productos con exceso de stock",
+  "¿Qué productos de Alcentimo tienen stock ahora?",
+  "¿Cuáles tienen mejor precio sugerido para vender?",
+  "¿Qué SKUs están agotados en Megabodega?",
+  "¿Qué puedo publicar en mi catálogo hoy?",
+  "Redacta un WhatsApp para ofrecer un producto con stock",
+  "Sugiere un combo con productos de Megabodega",
 ];
 
 function createMessage(
@@ -35,7 +35,7 @@ export function OwnerAssistantChat({
   const [messages, setMessages] = useState<OwnerAssistantMessage[]>(() => [
     createMessage(
       "assistant",
-      `Hola. Soy tu consultor de negocios para ${storeName}. Puedo ayudarte con inventario, ventas, clientes, promociones y redactar mensajes de WhatsApp listos para enviar.`,
+      `Hola. Soy tu consultor de ventas para ${storeName}. Consulto el inventario real de Megabodega (proveedores Alcentimo): stock, PVP sugerido y precio mayorista para que vendas más rápido.`,
     ),
   ]);
   const [loading, setLoading] = useState(false);
@@ -115,7 +115,7 @@ export function OwnerAssistantChat({
         <div>
           <h2 className="owner-assistant-title">Asistente IA</h2>
           <p className="owner-assistant-subtitle">
-            Consultas en tiempo real sobre {storeName}
+            Consultas a Megabodega y operaciones de {storeName}
           </p>
         </div>
         <div className="owner-assistant-badge">
@@ -194,7 +194,7 @@ export function OwnerAssistantChat({
           rows={2}
           maxLength={800}
           disabled={loading || !assistantEnabled}
-          placeholder="Pregunta sobre inventario, ventas u operaciones…"
+          placeholder="Pregunta por stock, PVP sugerido o qué publicar…"
           className="owner-assistant-input"
           aria-label="Mensaje para el asistente"
         />

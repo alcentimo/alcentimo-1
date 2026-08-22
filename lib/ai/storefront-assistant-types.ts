@@ -1,3 +1,5 @@
+import type { MegabodegaAssistantSnapshot } from "@/lib/ai/megabodega-context";
+
 export type StorefrontAssistantRole = "user" | "assistant";
 
 export interface StorefrontAssistantMessage {
@@ -62,4 +64,6 @@ export interface StorefrontAssistantContext {
   selectedLocationName: string | null;
   /** Consulta usada para enriquecer el catálogo en tiempo real (si aplica). */
   liveSearchQuery?: string | null;
+  /** Inventario centralizado Megabodega (stock y PVP reales). */
+  megabodega: MegabodegaAssistantSnapshot;
 }

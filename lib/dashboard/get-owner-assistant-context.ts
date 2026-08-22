@@ -1,23 +1,13 @@
 import { unstable_noStore as noStore } from "next/cache";
-import type { SupabaseClient } from "@supabase/supabase-js";
-import { getStoreAnalyticsPanel } from "@/lib/analytics/get-store-analytics";
-import { getCurrentExchangeRate } from "@/lib/catalog";
 import type {
   OwnerAssistantContext,
+  OwnerAssistantInventoryItem,
   OwnerAssistantPendingAccount,
-  OwnerAssistantSlowMovingItem,
 } from "@/lib/ai/owner-assistant-types";
+import { getMegabodegaAssistantSnapshot } from "@/lib/ai/megabodega-context";
+import { getStoreAnalyticsPanel } from "@/lib/analytics/get-store-analytics";
+import { getCurrentExchangeRate } from "@/lib/catalog";
 import { getStoreCustomers } from "@/lib/customers/get-store-customers";
-import { getStoreInventory } from "@/lib/inventory";
-import {
-  countCriticalStockProducts,
-  countLowStock,
-  countOutOfStock,
-  getInventoryAlerts,
-  getLowStockThreshold,
-  isLowStock,
-  isOutOfStock,
-} from "@/lib/inventory/stock-status";
 import type { CatalogOrder } from "@/lib/orders/types";
 import { getStoreOrders } from "@/lib/orders/get-store-orders";
 import { isPriorityOrderEstado } from "@/lib/orders/order-status";
@@ -27,108 +17,17 @@ import { createClient } from "@/lib/supabase/server";
 const MAX_ALERT_ITEMS = 8;
 const MAX_RECENT_ITEMS = 5;
 const MAX_CUSTOMERS = 5;
-const ANALYTICS_FETCH_LIMIT = 2000;
-const SLOW_MOVING_MIN_STOCK = 3;
-const EXCESS_STOCK_MIN = 10;
-const EXCESS_STOCK_MAX_MONTHLY_UNITS = 2;
+const MEGABODEGA_LOW_STOCK = 3;
 
-interface VentaRow {
-  producto_id: string;
-  cantidad: number;
-  created_at: string;
-}
-
-function isCurrentMonth(iso: string): boolean {
-  const date = new Date(iso);
-  const now = new Date();
-  return (
-    date.getFullYear() === now.getFullYear() &&
-    date.getMonth() === now.getMonth()
-  );
-}
-
-function mapInventoryItem(
-  product: Awaited<
-    ReturnType<typeof getStoreInventory>
-  >["products"][number],
-): OwnerAssistantContext["inventory"]["lowStock"][number] {
+function mapMegabodegaItem(
+  item: OwnerAssistantContext["megabodega"]["items"][number],
+): OwnerAssistantInventoryItem {
   return {
-    name: product.product_name,
-    category: product.category_name,
-    availableStock: product.available_stock,
-    threshold: getLowStockThreshold(product),
-    priceUsd: product.price_usd,
-  };
-}
-
-function buildMonthlyUnitsSoldMap(
-  ventas: VentaRow[],
-  orders: CatalogOrder[],
-): Map<string, number> {
-  const map = new Map<string, number>();
-
-  for (const venta of ventas) {
-    if (!isCurrentMonth(venta.created_at)) continue;
-    const units = Number(venta.cantidad) || 0;
-    map.set(
-      venta.producto_id,
-      (map.get(venta.producto_id) ?? 0) + units,
-    );
-  }
-
-  for (const order of orders) {
-    if (!isCurrentMonth(order.created_at)) continue;
-    for (const item of order.items) {
-      map.set(
-        item.product_id,
-        (map.get(item.product_id) ?? 0) + item.quantity,
-      );
-    }
-  }
-
-  return map;
-}
-
-function computeSlowMovingAndExcess(
-  products: Awaited<ReturnType<typeof getStoreInventory>>["products"],
-  unitsSoldMap: Map<string, number>,
-): {
-  slowMoving: OwnerAssistantSlowMovingItem[];
-  excessStock: OwnerAssistantSlowMovingItem[];
-} {
-  const slowMoving: OwnerAssistantSlowMovingItem[] = [];
-  const excessStock: OwnerAssistantSlowMovingItem[] = [];
-
-  for (const product of products) {
-    if (product.available_stock <= 0) continue;
-
-    const unitsSoldThisMonth = unitsSoldMap.get(product.product_id) ?? 0;
-    const item: OwnerAssistantSlowMovingItem = {
-      ...mapInventoryItem(product),
-      unitsSoldThisMonth,
-    };
-
-    if (
-      product.available_stock >= SLOW_MOVING_MIN_STOCK &&
-      unitsSoldThisMonth === 0
-    ) {
-      slowMoving.push(item);
-    }
-
-    if (
-      product.available_stock >= EXCESS_STOCK_MIN &&
-      unitsSoldThisMonth <= EXCESS_STOCK_MAX_MONTHLY_UNITS
-    ) {
-      excessStock.push(item);
-    }
-  }
-
-  const byStockDesc = (a: OwnerAssistantSlowMovingItem, b: OwnerAssistantSlowMovingItem) =>
-    b.availableStock - a.availableStock;
-
-  return {
-    slowMoving: slowMoving.sort(byStockDesc).slice(0, MAX_ALERT_ITEMS),
-    excessStock: excessStock.sort(byStockDesc).slice(0, MAX_ALERT_ITEMS),
+    name: item.name,
+    category: item.category,
+    availableStock: item.stock,
+    threshold: MEGABODEGA_LOW_STOCK,
+    priceUsd: item.suggestedRetailUsd,
   };
 }
 
@@ -168,64 +67,44 @@ function buildPendingAccounts(orders: CatalogOrder[]): OwnerAssistantPendingAcco
     .slice(0, MAX_ALERT_ITEMS);
 }
 
-async function fetchMonthlyVentas(
-  supabase: SupabaseClient,
-  storeId: string,
-): Promise<VentaRow[]> {
-  const { data, error } = await supabase
-    .from("ventas")
-    .select("producto_id, cantidad, created_at")
-    .eq("store_id", storeId)
-    .order("created_at", { ascending: false })
-    .limit(ANALYTICS_FETCH_LIMIT);
-
-  if (error) throw new Error(error.message);
-  return (data ?? []) as VentaRow[];
-}
-
 export async function getOwnerAssistantContext(input: {
   storeId: string;
   storeSlug: string;
   storeName: string;
   storeRubro: string | null;
+  searchQuery?: string | null;
 }): Promise<OwnerAssistantContext> {
   noStore();
 
   const supabase = await createClient();
 
   const [
-    inventory,
     ordersResult,
     sales,
     exchangeRate,
     analyticsPanel,
     customers,
-    ventas,
+    megabodega,
   ] = await Promise.all([
-    getStoreInventory(input.storeSlug, { limit: 500 }),
     getStoreOrders(input.storeId, { limit: 100 }),
     getStoreSales(input.storeId, 50),
     getCurrentExchangeRate(),
     getStoreAnalyticsPanel(supabase, input.storeId, input.storeSlug),
     getStoreCustomers(input.storeId),
-    fetchMonthlyVentas(supabase, input.storeId),
+    getMegabodegaAssistantSnapshot({
+      audience: "dropshipper",
+      searchQuery: input.searchQuery,
+    }),
   ]);
 
-  const alerts = getInventoryAlerts(inventory.products);
-  const outOfStock = inventory.products
-    .filter(isOutOfStock)
+  const outOfStock = megabodega.items
+    .filter((item) => item.stock <= 0)
     .slice(0, MAX_ALERT_ITEMS)
-    .map(mapInventoryItem);
-  const lowStock = alerts
-    .filter(isLowStock)
+    .map(mapMegabodegaItem);
+  const lowStock = megabodega.items
+    .filter((item) => item.stock > 0 && item.stock <= MEGABODEGA_LOW_STOCK)
     .slice(0, MAX_ALERT_ITEMS)
-    .map(mapInventoryItem);
-
-  const unitsSoldMap = buildMonthlyUnitsSoldMap(ventas, ordersResult.orders);
-  const { slowMoving, excessStock } = computeSlowMovingAndExcess(
-    inventory.products,
-    unitsSoldMap,
-  );
+    .map(mapMegabodegaItem);
 
   const pendingOrders = ordersResult.orders.filter((order) =>
     isPriorityOrderEstado(order.estado),
@@ -245,7 +124,12 @@ export async function getOwnerAssistantContext(input: {
     }));
 
   const comboCategories = [
-    ...new Set(slowMoving.map((item) => item.category).filter(Boolean)),
+    ...new Set(
+      megabodega.items
+        .filter((item) => item.stock > 0)
+        .map((item) => item.category)
+        .filter(Boolean),
+    ),
   ].slice(0, 6);
 
   return {
@@ -258,14 +142,14 @@ export async function getOwnerAssistantContext(input: {
       effectiveDate: exchangeRate?.effective_date ?? null,
     },
     inventory: {
-      totalProducts: inventory.totalCount || inventory.products.length,
-      outOfStockCount: countOutOfStock(inventory.products),
-      lowStockCount: countLowStock(inventory.products),
-      criticalStockCount: countCriticalStockProducts(inventory.products),
+      totalProducts: megabodega.totalProducts,
+      outOfStockCount: megabodega.outOfStockCount,
+      lowStockCount: lowStock.length,
+      criticalStockCount: outOfStock.length,
       outOfStock,
       lowStock,
-      slowMoving,
-      excessStock,
+      slowMoving: [],
+      excessStock: [],
     },
     sales: {
       todayUsd: analyticsPanel.financialKpis.todaySalesUsd,
@@ -305,9 +189,10 @@ export async function getOwnerAssistantContext(input: {
       ordersAwaitingPayment,
     },
     marketing: {
-      slowMovingCount: slowMoving.length,
-      excessStockCount: excessStock.length,
+      slowMovingCount: 0,
+      excessStockCount: 0,
       comboOpportunityCategories: comboCategories,
     },
+    megabodega,
   };
 }

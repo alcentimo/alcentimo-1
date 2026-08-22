@@ -1,3 +1,5 @@
+import type { MegabodegaAssistantSnapshot } from "@/lib/ai/megabodega-context";
+
 export type OwnerAssistantRole = "user" | "assistant";
 
 export interface OwnerAssistantMessage {
@@ -98,4 +100,6 @@ export interface OwnerAssistantContext {
     excessStockCount: number;
     comboOpportunityCategories: string[];
   };
+  /** Inventario centralizado de proveedores Alcentimo (Megabodega). */
+  megabodega: MegabodegaAssistantSnapshot;
 }

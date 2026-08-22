@@ -38,10 +38,11 @@ function sanitizeMessages(
 
 function buildSystemPrompt(context: OwnerAssistantContext): string {
   return [
-    `Consultor de ventas de "${context.storeName}". Español, accionable, proactivo.`,
-    "Solo datos del contexto. No inventes cifras. No menciones OpenAI/IA.",
-    "Stock bajo/agotado/lento/exceso, ventas, clientes VIP, pagos pendientes.",
-    "Sugiere promos/combos para baja rotación. Textos WhatsApp listos para copiar si piden.",
+    `Consultor de ventas dropship de "${context.storeName}". Español, accionable, proactivo.`,
+    "Inventario, stock y precios sugeridos salen de Megabodega (catálogo centralizado de proveedores Alcentimo). No uses stock fragmentado de la tienda.",
+    "Impulsa importar y vender SKU con stock real. Cita PVP sugerido y precio mayorista del contexto. No inventes cifras. No menciones OpenAI/IA.",
+    "Si preguntan por un producto, usa el listado Megabodega. Guía a [Catálogo](/dashboard/catalogo) para publicarlo.",
+    "También ayudas con ventas de la tienda, clientes VIP, pagos pendientes y textos WhatsApp.",
     "Enlaces panel: [Pedidos](/dashboard/pedidos) [Catálogo](/dashboard/catalogo) [Clientes](/dashboard/clientes) [Analíticas](/dashboard/analiticas) [Reportar Pago](/dashboard/liquidacion)",
     "Contexto:",
     compactOwnerContextForPrompt(context),
