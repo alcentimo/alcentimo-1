@@ -96,43 +96,6 @@ function canEnableDropshipperVisibility(
   return mayorista != null && mayorista > 0 && suggested != null && suggested > 0;
 }
 
-function visibilityBlockMessage(
-  product: AdminSupplierCatalogProduct,
-  draft: PriceDraft,
-  priceDirty: boolean,
-  suggestedDirty: boolean,
-): string | null {
-  const mayorista = effectiveWholesaleUsd(product, draft, priceDirty);
-  if (mayorista == null || mayorista <= 0) {
-    return "Asigna un precio mayorista mayor a cero.";
-  }
-  const suggested = effectiveSuggestedRetailUsd(
-    product,
-    draft,
-    suggestedDirty,
-  );
-  if (suggested == null || suggested <= 0) {
-    return "Asigna un precio de venta sugerido mayor a cero.";
-  }
-  return null;
-}
-
-function visibilityStatusLabel(
-  product: AdminSupplierCatalogProduct,
-  draft: PriceDraft,
-  priceDirty: boolean,
-  suggestedDirty: boolean,
-  canEnable: boolean,
-): string {
-  if (product.isVisible) return "Visible";
-  if (!canEnable) {
-    const mayorista = effectiveWholesaleUsd(product, draft, priceDirty);
-    if (mayorista == null || mayorista <= 0) return "Sin precio mayor.";
-    return "Sin p. sugerido";
-  }
-  return "Oculto";
-}
-
 function MoneyInput({
   prefix,
   suffix,
@@ -192,7 +155,6 @@ export function AdminSupplierCatalogPanel() {
   const productsRef = useRef(products);
   const draftsRef = useRef(priceDrafts);
   const saveTimers = useRef<Record<string, number>>({});
-  const suggestedSaveTimers = useRef<Record<string, number>>({});
 
   useEffect(() => {
     productsRef.current = products;
@@ -287,12 +249,8 @@ export function AdminSupplierCatalogPanel() {
 
   useEffect(() => {
     const timers = saveTimers.current;
-    const suggestedTimers = suggestedSaveTimers.current;
     return () => {
       for (const timer of Object.values(timers)) {
-        window.clearTimeout(timer);
-      }
-      for (const timer of Object.values(suggestedTimers)) {
         window.clearTimeout(timer);
       }
     };
@@ -378,22 +336,33 @@ export function AdminSupplierCatalogPanel() {
     const draft = draftsRef.current[productId];
     if (!product || !draft || !isSuggestedRetailDirty(product, draft)) return;
 
+    const trimmed = draft.suggestedRetail.trim();
+    const parsed =
+      trimmed === "" ? null : parseUsdAmount(trimmed, { min: 0 });
+    if (trimmed !== "" && (parsed == null || parsed <= 0)) {
+      patchDraft(product, {
+        suggestedRetail: formatSupplierAmountInput(product.suggestedRetailUsd),
+      });
+      return;
+    }
+
     setSavingIds((current) => ({ ...current, [productId]: true }));
-    setError(null);
     try {
       const result = await setAdminSupplierSuggestedRetailPrice({
         productId,
-        suggestedRetailUsd: draft.suggestedRetail.trim() || null,
+        suggestedRetailUsd: trimmed || null,
       });
       if (result.error || !result.product) {
-        setError(result.error ?? "No se pudo guardar el precio sugerido.");
+        patchDraft(product, {
+          suggestedRetail: formatSupplierAmountInput(product.suggestedRetailUsd),
+        });
         return;
       }
       const latest = draftsRef.current[productId];
       const latestParsed = latest
         ? parseUsdAmount(latest.suggestedRetail)
         : null;
-      const savedParsed = parseUsdAmount(draft.suggestedRetail);
+      const savedParsed = parsed;
       if (latestParsed !== savedParsed) {
         setProducts((current) =>
           current.map((item) =>
@@ -413,19 +382,11 @@ export function AdminSupplierCatalogPanel() {
     }
   }
 
-  function queueSuggestedAutosave(productId: string) {
-    window.clearTimeout(suggestedSaveTimers.current[productId]);
-    suggestedSaveTimers.current[productId] = window.setTimeout(() => {
-      void persistSuggestedRetail(productId);
-    }, 650);
-  }
-
   function onSuggestedRetailChange(
     product: AdminSupplierCatalogProduct,
     raw: string,
   ) {
     patchDraft(product, { suggestedRetail: raw });
-    queueSuggestedAutosave(product.id);
   }
 
   function onMayoristaChange(product: AdminSupplierCatalogProduct, raw: string) {
@@ -459,14 +420,10 @@ export function AdminSupplierCatalogPanel() {
     const draft = priceDrafts[product.id] ?? draftsFromProduct(product);
     const priceDirty = isPriceDirty(product, draft);
     const suggestedDirty = isSuggestedRetailDirty(product, draft);
-    const blockMessage = visibilityBlockMessage(
-      product,
-      draft,
-      priceDirty,
-      suggestedDirty,
-    );
-    if (visible && blockMessage) {
-      setError(blockMessage);
+    if (
+      visible &&
+      !canEnableDropshipperVisibility(product, draft, priceDirty, suggestedDirty)
+    ) {
       return;
     }
 
@@ -614,7 +571,7 @@ export function AdminSupplierCatalogPanel() {
         hydrate(result.products, result.suppliers);
       }
       setMessage(
-        `Margen de ${percent}% aplicado a ${result.updated ?? 0} producto(s).`,
+        `Margen de ${percent}% aplicado a ${result.updated ?? 0} producto(s) (mayorista y venta sugerido).`,
       );
     } finally {
       setBusySupplierId(null);
@@ -799,12 +756,8 @@ export function AdminSupplierCatalogPanel() {
                         dirty,
                         suggestedDirty,
                       );
-                      const blockMessage = visibilityBlockMessage(
-                        product,
-                        draft,
-                        dirty,
-                        suggestedDirty,
-                      );
+                      const visibilityDisabled =
+                        !product.isVisible && !canEnableVisibility;
                       return (
                         <tr
                           key={product.id}
@@ -887,68 +840,39 @@ export function AdminSupplierCatalogPanel() {
                             />
                           </td>
                           <td className="admin-stores-td !max-w-none min-w-[8.5rem]">
-                            <div className="flex items-center gap-1.5">
-                              <MoneyInput
-                                prefix="$"
-                                value={draft.suggestedRetail}
-                                disabled={saving || busy}
-                                onChange={(value) =>
-                                  onSuggestedRetailChange(product, value)
-                                }
-                                onBlur={() => void persistSuggestedRetail(product.id)}
-                              />
-                              {saving ? (
-                                <Loader2 className="h-3.5 w-3.5 shrink-0 animate-spin text-zinc-400" />
-                              ) : suggestedDirty ? (
-                                <span className="text-[11px] text-amber-600">
-                                  …
-                                </span>
-                              ) : draft.suggestedRetail ? (
-                                <Check className="h-3.5 w-3.5 shrink-0 text-emerald-500" />
-                              ) : null}
-                            </div>
+                            <MoneyInput
+                              prefix="$"
+                              value={draft.suggestedRetail}
+                              disabled={saving || busy}
+                              onChange={(value) =>
+                                onSuggestedRetailChange(product, value)
+                              }
+                              onBlur={() => void persistSuggestedRetail(product.id)}
+                            />
                           </td>
                           <td className="admin-stores-td !max-w-none w-28">
-                            <div className="flex flex-col items-start gap-1 sm:flex-row sm:items-center sm:gap-2">
-                              <span title={blockMessage ?? undefined}>
-                                <SettingsSwitch
-                                  id={`product-visible-${product.id}`}
-                                  size="sm"
-                                  checked={product.isVisible}
-                                  disabled={
-                                    saving ||
-                                    busy ||
-                                    (!product.isVisible && !canEnableVisibility)
-                                  }
-                                  label={
-                                    product.isVisible
-                                      ? `Ocultar ${product.title}`
-                                      : `Mostrar ${product.title}`
-                                  }
-                                  onChange={(checked) =>
-                                    void handleProductVisibility(product, checked)
-                                  }
-                                />
-                              </span>
-                              <span
-                                className={cn(
-                                  "text-[11px] font-medium leading-tight",
+                            <span
+                              title={
+                                visibilityDisabled
+                                  ? "Completa precio mayorista y venta sugerido para activar"
+                                  : undefined
+                              }
+                            >
+                              <SettingsSwitch
+                                id={`product-visible-${product.id}`}
+                                size="sm"
+                                checked={product.isVisible}
+                                disabled={saving || busy || visibilityDisabled}
+                                label={
                                   product.isVisible
-                                    ? "text-emerald-700 dark:text-emerald-300"
-                                    : canEnableVisibility
-                                      ? "text-zinc-400"
-                                      : "text-amber-700 dark:text-amber-400",
-                                )}
-                              >
-                                {visibilityStatusLabel(
-                                  product,
-                                  draft,
-                                  dirty,
-                                  suggestedDirty,
-                                  canEnableVisibility,
-                                )}
-                              </span>
-                            </div>
+                                    ? `Ocultar ${product.title}`
+                                    : `Mostrar ${product.title}`
+                                }
+                                onChange={(checked) =>
+                                  void handleProductVisibility(product, checked)
+                                }
+                              />
+                            </span>
                           </td>
                         </tr>
                       );
