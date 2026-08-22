@@ -8,7 +8,7 @@ import { revalidatePublicCatalogCache } from "@/lib/catalog/public-catalog-cache
 import {
   defaultDropshipPricingSettings,
   normalizeDropshipPricingSettings,
-  suggestRetailFromWholesaleCost,
+  resolveDropshipImportRetailUsd,
   type DropshipPricingSettings,
 } from "@/lib/dropship/margin";
 import { getStoreSettingsConfig } from "@/lib/store-settings/get-store-settings";
@@ -48,7 +48,9 @@ import {
   DROPSHIP_SUPPLIER_PRODUCT_SELECT,
   applyDropshipVisibleProductFilter,
   isPublishedForDropship,
+  parseUsdAmount,
   resolvePrecioMayoristaUsd,
+  resolveSuggestedRetailUsd,
 } from "@/lib/supplier/wholesale-price";
 
 const DEFAULT_LOW_STOCK_THRESHOLD = 5;
@@ -74,6 +76,7 @@ type SupplierCatalogRow = {
   title: string;
   description: string | null;
   wholesalePriceUsd: number;
+  platformSuggestedRetailUsd: number | null;
   stock: number;
   category: SupplierProductCategory;
   imageUrl: string | null;
@@ -174,6 +177,7 @@ async function fetchAllActiveSupplierProducts(
             ? row.description.trim().slice(0, 2000) || null
             : null,
         wholesalePriceUsd,
+        platformSuggestedRetailUsd: resolveSuggestedRetailUsd(row),
         stock: Math.max(0, Math.floor(Number(row.stock) || 0)),
         category: normalizeSupplierProductCategory(row.category),
         imageUrl,
@@ -288,6 +292,8 @@ async function softDeleteProducts(
  */
 export async function importSupplierProductsBulkToStore(input?: {
   category?: string | null;
+  /** Precio de venta fijado en la UI por producto (opcional). */
+  retailBySupplierId?: Record<string, number | string | null> | null;
 }): Promise<ActionResult<BulkImportSupplierProductsResult>> {
   try {
     const gate = await requireDropshipStore();
@@ -425,6 +431,8 @@ export async function importSupplierProductsBulkToStore(input?: {
     let failed = 0;
     let lastError: string | null = null;
 
+    const retailOverrides = input?.retailBySupplierId ?? {};
+
     for (let offset = 0; offset < toImport.length; offset += INSERT_CHUNK_SIZE) {
       const chunk = toImport.slice(offset, offset + INSERT_CHUNK_SIZE);
       const prepared: Array<{
@@ -438,11 +446,17 @@ export async function importSupplierProductsBulkToStore(input?: {
       }> = [];
 
       for (const supplier of chunk) {
-        const retailUsd = suggestRetailFromWholesaleCost(
+        const overrideRaw = retailOverrides[supplier.id];
+        const overrideParsed = parseUsdAmount(overrideRaw, { min: 0 });
+        const individualRetail =
+          overrideParsed != null && overrideParsed > 0 ? overrideParsed : null;
+        const retailUsd = resolveDropshipImportRetailUsd(
           supplier.wholesalePriceUsd,
           dropship,
+          individualRetail,
+          supplier.platformSuggestedRetailUsd,
         );
-        if (retailUsd == null || retailUsd < 0) {
+        if (retailUsd == null || retailUsd <= 0) {
           failed += 1;
           continue;
         }

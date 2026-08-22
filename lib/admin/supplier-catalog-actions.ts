@@ -20,6 +20,7 @@ import {
   parseUsdAmount,
   resolveCostoProveedorUsd,
   resolvePrecioMayoristaUsd,
+  resolveSuggestedRetailUsd,
   type SupplierPublicationStatus,
 } from "@/lib/supplier/wholesale-price";
 
@@ -35,6 +36,7 @@ export type AdminSupplierCatalogProduct = {
   stock: number;
   costoProveedorUsd: number;
   precioMayoristaUsd: number | null;
+  suggestedRetailUsd: number | null;
   marginUsd: number | null;
   marginPercent: number | null;
   publicationStatus: SupplierPublicationStatus;
@@ -57,7 +59,7 @@ export type AdminSupplierMarginOption = {
 };
 
 const PRODUCT_SELECT =
-  "id, title, description, category, stock, base_price_usd, precio_mayorista, publication_status, catalog_visible, is_visible, image_url, created_by, created_at, updated_at, is_active";
+  "id, title, description, category, stock, base_price_usd, precio_mayorista, suggested_retail_usd, publication_status, catalog_visible, is_visible, image_url, created_by, created_at, updated_at, is_active";
 
 async function requireSupportAdmin() {
   const supabase = await createClient();
@@ -93,6 +95,7 @@ function mapAdminProduct(
     stock: Number(row.stock) || 0,
     costoProveedorUsd: costo,
     precioMayoristaUsd: mayorista,
+    suggestedRetailUsd: resolveSuggestedRetailUsd(row),
     marginUsd: mayorista == null ? null : marginUsdFromPrices(costo, mayorista),
     marginPercent:
       mayorista == null ? null : marginPercentFromPrices(costo, mayorista),
@@ -330,6 +333,53 @@ export async function setAdminSupplierWholesalePrice(input: {
   return { product: persisted.product };
 }
 
+export async function setAdminSupplierSuggestedRetailPrice(input: {
+  productId: string;
+  suggestedRetailUsd: number | string | null;
+}): Promise<ActionResult<{ product: AdminSupplierCatalogProduct }>> {
+  const auth = await requireSupportAdmin();
+  if (!auth.ok) return { error: auth.error };
+
+  const productId = input.productId.trim();
+  if (!productId) return { error: "Producto inválido." };
+
+  const raw = input.suggestedRetailUsd;
+  const parsed =
+    raw == null || raw === ""
+      ? null
+      : parseUsdAmount(raw, { min: 0 });
+  if (raw != null && raw !== "" && parsed == null) {
+    return { error: "Indica un precio sugerido válido en USD." };
+  }
+  if (parsed != null && parsed <= 0) {
+    return {
+      error: "El precio de venta sugerido debe ser mayor a cero.",
+    };
+  }
+
+  const admin = createAdminClient();
+  const { data, error } = await admin
+    .from("supplier_products")
+    .update({
+      suggested_retail_usd: parsed,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", productId)
+    .eq("is_active", true)
+    .select(PRODUCT_SELECT)
+    .maybeSingle();
+
+  if (error) return { error: mapCatalogDbError(error.message) };
+  if (!data) return { error: "Producto no encontrado." };
+
+  const updated = data as Record<string, unknown>;
+  const names = await loadSupplierNames(admin, [
+    String(updated.created_by ?? ""),
+  ]);
+  bustPublishedCatalogCaches();
+  return { product: mapAdminProduct(updated, names) };
+}
+
 export async function saveAdminSupplierWholesalePrices(
   items: Array<{ productId: string; precioMayoristaUsd: number | string }>,
 ): Promise<
@@ -547,6 +597,29 @@ export async function setAdminSupplierProductVisibility(input: {
   if (!productId) return { error: "Producto inválido." };
 
   const admin = createAdminClient();
+
+  if (input.visible) {
+    const { data: current, error: loadError } = await admin
+      .from("supplier_products")
+      .select(PRODUCT_SELECT)
+      .eq("id", productId)
+      .eq("is_active", true)
+      .maybeSingle();
+
+    if (loadError) return { error: mapCatalogDbError(loadError.message) };
+    if (!current) return { error: "Producto no encontrado." };
+
+    const mayorista = resolvePrecioMayoristaUsd(
+      current as Record<string, unknown>,
+    );
+    if (mayorista == null || mayorista <= 0) {
+      return {
+        error:
+          "Asigna un precio mayorista mayor a cero antes de hacer visible este producto.",
+      };
+    }
+  }
+
   const { data, error } = await admin
     .from("supplier_products")
     .update({
@@ -612,9 +685,10 @@ export async function setSupplierCatalogPublication(input: {
   if (error) return { error: mapCatalogDbError(error.message) };
 
   const rows = (data as Record<string, unknown>[] | null) ?? [];
-  const pricedCount = rows.filter(
-    (row) => resolvePrecioMayoristaUsd(row) != null,
-  ).length;
+  const pricedCount = rows.filter((row) => {
+    const price = resolvePrecioMayoristaUsd(row);
+    return price != null && price > 0;
+  }).length;
 
   if (input.published && pricedCount === 0) {
     return {
@@ -643,7 +717,7 @@ export async function setSupplierCatalogPublication(input: {
     .eq("created_by", supplierUserId)
     .eq("is_active", true);
   if (input.published) {
-    query = query.not("precio_mayorista", "is", null);
+    query = query.not("precio_mayorista", "is", null).gt("precio_mayorista", 0);
   }
   const { error: updateError } = await query;
   if (updateError) return { error: mapCatalogDbError(updateError.message) };
