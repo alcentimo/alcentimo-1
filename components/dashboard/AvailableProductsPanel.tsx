@@ -50,7 +50,6 @@ import {
 import { cn } from "@/lib/cn";
 
 type CategoryFilter = "all" | SupplierProductCategory;
-type SupplierFilter = "all" | string;
 type BulkMode = "all" | "category" | null;
 
 type PriceDraft = {
@@ -162,7 +161,6 @@ export function AvailableProductsPanel({
   const [headerPercent, setHeaderPercent] = useState("");
   const [query, setQuery] = useState("");
   const [categoryFilter, setCategoryFilter] = useState<CategoryFilter>("all");
-  const [supplierFilter, setSupplierFilter] = useState<SupplierFilter>("all");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
@@ -240,22 +238,6 @@ export function AvailableProductsPanel({
     }));
   }, [products]);
 
-  const supplierFacets = useMemo(() => {
-    const counts = new Map<string, { name: string; count: number }>();
-    for (const product of products) {
-      if (!product.supplierUserId) continue;
-      const current = counts.get(product.supplierUserId) ?? {
-        name: product.supplierName?.trim() || "Proveedor",
-        count: 0,
-      };
-      current.count += 1;
-      counts.set(product.supplierUserId, current);
-    }
-    return [...counts.entries()]
-      .map(([id, meta]) => ({ id, ...meta }))
-      .sort((a, b) => a.name.localeCompare(b.name, "es"));
-  }, [products]);
-
   const pendingAllCount = useMemo(
     () => products.filter((product) => !product.alreadyImported).length,
     [products],
@@ -275,28 +257,18 @@ export function AvailableProductsPanel({
       ) {
         return false;
       }
-      if (
-        supplierFilter !== "all" &&
-        product.supplierUserId !== supplierFilter
-      ) {
-        return false;
-      }
       if (!q) return true;
       const category = supplierCategoryLabel(product.category).toLowerCase();
-      const supplier = (product.supplierName ?? "").toLowerCase();
       return (
         product.title.toLowerCase().includes(q) ||
         product.description.toLowerCase().includes(q) ||
-        category.includes(q) ||
-        supplier.includes(q)
+        category.includes(q)
       );
     });
-  }, [products, query, categoryFilter, supplierFilter]);
+  }, [products, query, categoryFilter]);
 
   const hasActiveFilters =
-    query.trim().length > 0 ||
-    categoryFilter !== "all" ||
-    supplierFilter !== "all";
+    query.trim().length > 0 || categoryFilter !== "all";
 
   const selectedCount = useMemo(
     () => filtered.filter((product) => selectedIds[product.id]).length,
@@ -620,10 +592,10 @@ export function AvailableProductsPanel({
             Catálogo mayorista
           </h2>
           <p className="mt-1 text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">
-            Selecciona productos del hub de proveedores. Solo lo que añadas aquí
-            aparece en la vitrina pública de tu tienda — sin inventario manual.
-            El precio de venta que fijes en cada tarjeta es el que verán tus
-            clientes.
+            Explora el catálogo mayorista y añade productos a tu tienda. Solo lo
+            que selecciones aquí aparece en tu vitrina pública — sin inventario
+            manual. El precio de venta que fijes en cada tarjeta es el que
+            verán tus clientes.
           </p>
         </div>
         {products.length > 0 ? (
@@ -730,59 +702,36 @@ export function AvailableProductsPanel({
               <input
                 type="search"
                 className="input-field !h-11 !rounded-xl !pl-9 !shadow-sm"
-                placeholder="Buscar producto, proveedor o categoría…"
+                placeholder="Buscar producto o categoría…"
                 value={query}
                 onChange={(event) => setQuery(event.target.value)}
                 aria-label="Buscar en el catálogo mayorista"
               />
             </div>
 
-            {products.length > 0 ? (
-              <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:w-auto lg:min-w-[22rem]">
-                <label className="relative block">
-                  <span className="sr-only">Filtrar por proveedor</span>
-                  <Select
-                    value={supplierFilter}
-                    onChange={(event) => setSupplierFilter(event.target.value)}
-                    className="!h-11 !rounded-xl !pr-9"
-                    aria-label="Filtrar por proveedor"
-                  >
-                    <option value="all">Todos los proveedores</option>
-                    {supplierFacets.map((supplier) => (
-                      <option key={supplier.id} value={supplier.id}>
-                        {supplier.name} ({supplier.count})
-                      </option>
-                    ))}
-                  </Select>
-                  <ChevronDown
-                    className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400"
-                    aria-hidden="true"
-                  />
-                </label>
-
-                <label className="relative block">
-                  <span className="sr-only">Filtrar por categoría</span>
-                  <Select
-                    value={categoryFilter}
-                    onChange={(event) =>
-                      setCategoryFilter(event.target.value as CategoryFilter)
-                    }
-                    className="!h-11 !rounded-xl !pr-9"
-                    aria-label="Filtrar por categoría"
-                  >
-                    <option value="all">Todas las categorías</option>
-                    {categoryFacets.map((item) => (
-                      <option key={item.value} value={item.value}>
-                        {item.label} ({item.count})
-                      </option>
-                    ))}
-                  </Select>
-                  <ChevronDown
-                    className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400"
-                    aria-hidden="true"
-                  />
-                </label>
-              </div>
+            {products.length > 0 && categoryFacets.length > 0 ? (
+              <label className="relative block lg:w-56">
+                <span className="sr-only">Filtrar por categoría</span>
+                <Select
+                  value={categoryFilter}
+                  onChange={(event) =>
+                    setCategoryFilter(event.target.value as CategoryFilter)
+                  }
+                  className="!h-11 !rounded-xl !pr-9"
+                  aria-label="Filtrar por categoría"
+                >
+                  <option value="all">Todas las categorías</option>
+                  {categoryFacets.map((item) => (
+                    <option key={item.value} value={item.value}>
+                      {item.label} ({item.count})
+                    </option>
+                  ))}
+                </Select>
+                <ChevronDown
+                  className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400"
+                  aria-hidden="true"
+                />
+              </label>
             ) : null}
           </div>
 
@@ -804,7 +753,6 @@ export function AvailableProductsPanel({
                     onClick={() => {
                       setQuery("");
                       setCategoryFilter("all");
-                      setSupplierFilter("all");
                     }}
                   >
                     <X className="h-3.5 w-3.5" aria-hidden="true" />
@@ -876,11 +824,11 @@ export function AvailableProductsPanel({
             aria-hidden="true"
           />
           <p className="mt-3 text-sm font-medium text-zinc-700 dark:text-zinc-300">
-            Aún no hay productos publicados por proveedores
+            Aún no hay productos disponibles
           </p>
           <p className="mt-1 text-sm text-zinc-500">
-            Cuando publiquen en el hub, aparecerán aquí para añadirlos a tu
-            tienda.
+            Cuando se publiquen nuevos productos, aparecerán aquí para añadirlos
+            a tu tienda.
           </p>
         </div>
       ) : filtered.length === 0 ? (
@@ -931,11 +879,6 @@ export function AvailableProductsPanel({
                       aria-label={`Seleccionar ${product.title}`}
                     />
                     <div className="min-w-0 flex-1">
-                      {product.supplierName ? (
-                        <p className="truncate text-[11px] font-medium uppercase tracking-wide text-zinc-400">
-                          {product.supplierName}
-                        </p>
-                      ) : null}
                       <p className="truncate text-sm font-semibold leading-snug text-zinc-900 dark:text-zinc-50">
                         {product.title}
                       </p>
