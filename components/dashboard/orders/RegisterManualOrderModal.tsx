@@ -6,7 +6,11 @@ import type { CatalogListItem } from "@/lib/database.types";
 import { formatUsd } from "@/lib/format";
 import { createManualExternalOrder } from "@/lib/orders/create-manual-order";
 import type { CatalogOrder } from "@/lib/orders/types";
-import { PAYMENT_METHODS } from "@/src/config/payment-methods";
+import type { PaymentMethodKey } from "@/lib/store-settings/types";
+import {
+  PAYMENT_METHODS,
+  PAYMENT_METHOD_BY_KEY,
+} from "@/src/config/payment-methods";
 import { SHIPPING_METHODS } from "@/src/config/shipping-methods";
 import {
   Dialog,
@@ -51,6 +55,10 @@ function variantName(product: CatalogListItem, variantId: string): string {
   );
 }
 
+function isPaymentMethodKey(value: string): value is PaymentMethodKey {
+  return Object.prototype.hasOwnProperty.call(PAYMENT_METHOD_BY_KEY, value);
+}
+
 function unitPrice(product: CatalogListItem, variantId: string): number {
   const extra =
     product.product_variants?.find((item) => item.id === variantId)?.price_extra_usd ??
@@ -77,7 +85,7 @@ export function RegisterManualOrderModal({
   const [customerName, setCustomerName] = useState("");
   const [customerPhone, setCustomerPhone] = useState("");
   const [deliveryAddress, setDeliveryAddress] = useState("");
-  const [paymentMethod, setPaymentMethod] = useState<string>(
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethodKey>(
     PAYMENT_METHODS[0]?.key ?? "pagoMovil",
   );
   const [shippingMethod, setShippingMethod] = useState("mrw");
@@ -403,7 +411,12 @@ export function RegisterManualOrderModal({
               <select
                 id="manual-order-payment"
                 value={paymentMethod}
-                onChange={(event) => setPaymentMethod(event.target.value)}
+                onChange={(event) => {
+                  const next = event.target.value;
+                  if (isPaymentMethodKey(next)) {
+                    setPaymentMethod(next);
+                  }
+                }}
                 className="input-field mt-1.5"
               >
                 {PAYMENT_METHODS.map((method) => (
