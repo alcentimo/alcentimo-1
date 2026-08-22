@@ -51,7 +51,7 @@ function buildDispatchHtml(details: DispatchOrderDetails): string {
   const dashboardLink = details.dashboardUrl?.trim()
     ? `<p style="margin:20px 0 0;">
         <a href="${escapeHtml(details.dashboardUrl.trim())}" style="display:inline-block;background:#0d9488;color:#ffffff;text-decoration:none;padding:12px 20px;border-radius:8px;font-weight:600;">
-          Abrir pedidos
+          Abrir órdenes de compra
         </a>
       </p>`
     : "";
@@ -59,18 +59,18 @@ function buildDispatchHtml(details: DispatchOrderDetails): string {
   return `
     <div style="font-family:Arial,sans-serif;line-height:1.5;color:#18181b;max-width:560px;margin:0 auto;padding:24px;">
       <p style="margin:0 0 12px;font-size:14px;color:#52525b;">Alcéntimo · Centro de acopio</p>
-      <h1 style="margin:0 0 12px;font-size:22px;">Apartar stock #${escapeHtml(details.orderCode)}</h1>
+      <h1 style="margin:0 0 12px;font-size:22px;">Orden de compra #${escapeHtml(details.orderCode)}</h1>
       <p style="margin:0 0 16px;">
-        El dropshipper ya liquidó a Alcéntimo. Aparta estos productos y etiqueta
-        el paquete con el destino del comprador.
+        Alcéntimo te compra estos productos. Apártalos; el personal de
+        logística de Alcéntimo pasará a retirarlos.
       </p>
       <h2 style="margin:20px 0 8px;font-size:16px;">Productos a apartar</h2>
       <ul style="margin:0;padding-left:18px;">${productRows || "<li>—</li>"}</ul>
-      <h2 style="margin:20px 0 8px;font-size:16px;">Destino del paquete</h2>
+      <h2 style="margin:20px 0 8px;font-size:16px;">Referencia para retiro Alcéntimo</h2>
       <ul style="margin:0;padding-left:18px;">${destinationRows || "<li>Sin destino registrado</li>"}</ul>
       <p style="margin:16px 0 0;font-size:13px;color:#52525b;">
-        No incluye datos de pago del cliente final. No despaches tú el paquete:
-        Alcéntimo lo recogerá en el centro de acopio.
+        No despaches ni cobres al cliente ni al dropshipper. Alcéntimo retira
+        el stock y te paga la liquidación.
       </p>
       ${dashboardLink}
     </div>
@@ -177,7 +177,7 @@ export async function notifySuppliersOfDispatchOrders(
     if (email) {
       const sent = await sendEmail({
         to: email,
-        subject: `Apartar stock #${details.orderCode} · Centro de acopio Alcéntimo`,
+        subject: `Orden de compra #${details.orderCode} · Alcéntimo te retira el stock`,
         html: buildDispatchHtml(details),
         text,
       });

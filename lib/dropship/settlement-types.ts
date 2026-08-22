@@ -192,3 +192,7 @@ export interface SupplierPayoutObligationView {
 
 export const DROPSHIP_CENTRAL_PAYMENT_NOTICE =
   "Liquida a Alcéntimo el consolidado del día con un solo pago. El proveedor aparta el stock y espera la recolección; no ve el pago del cliente final.";
+
+/** Texto del panel del proveedor: Alcéntimo paga; el proveedor no cobra a nadie. */
+export const SUPPLIER_ALCENTIMO_PAYOUT_NOTICE =
+  "Tú no cobras al cliente ni al dropshipper. Alcéntimo te compra los productos y te paga las liquidaciones en la cuenta que indiques aquí.";

@@ -12,8 +12,8 @@ export function LandingCta() {
             Elige cómo quieres empezar
           </h2>
           <p className="mx-auto mt-4 max-w-lg text-base leading-relaxed text-zinc-600 dark:text-zinc-400">
-            Tienda propia con catálogo listo, o panel de proveedores para subir
-            productos al marketplace.
+            Tienda propia con catálogo listo, o hub de proveedores para surtir
+            las órdenes de compra de Alcéntimo.
           </p>
 
           <div className="mt-10 flex flex-col items-stretch justify-center gap-3 sm:flex-row sm:items-center">

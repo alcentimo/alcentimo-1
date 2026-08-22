@@ -4,7 +4,6 @@ import { useEffect, useMemo, useState, useTransition } from "react";
 import {
   Download,
   Loader2,
-  PackagePlus,
   Search,
   Truck,
 } from "lucide-react";
@@ -13,13 +12,11 @@ import { cn } from "@/lib/cn";
 import { formatBusinessDateEs } from "@/lib/dropship/settlement-date";
 import type { SupplierProduct } from "@/lib/supplier/actions";
 import {
-  createSupplierOrder,
   updateSupplierOrderDispatch,
 } from "@/lib/supplier/order-actions";
 import {
   SUPPLIER_ORDER_STATUSES,
   SUPPLIER_ORDER_STATUS_LABELS,
-  SUPPLIER_SHIPPING_CARRIER_OPTIONS,
   supplierCarrierLabel,
   type SupplierOrder,
   type SupplierOrderStatus,
@@ -129,9 +126,7 @@ function buildOrdersCsv(orders: SupplierOrder[]): string {
       [
         formatOrderCode(order.id),
         order.id,
-        isHubCollectionSupplierOrder(order)
-          ? "Acopio Alcéntimo"
-          : "Pedido propio",
+        "Orden de compra Alcéntimo",
         summarizeProducts(order),
         order.buyerName,
         order.buyerDocumentId ?? "",
@@ -158,7 +153,6 @@ function buildOrdersCsv(orders: SupplierOrder[]): string {
 
 export function SupplierOrdersPanel({
   initialOrders,
-  products,
 }: SupplierOrdersPanelProps) {
   const [orders, setOrders] = useState(initialOrders);
   const [selectedId, setSelectedId] = useState<string | null>(
@@ -170,20 +164,6 @@ export function SupplierOrdersPanel({
   const [statusFilter, setStatusFilter] =
     useState<SupplierOrderFilterId>("all");
   const [searchQuery, setSearchQuery] = useState("");
-
-  const [showCreate, setShowCreate] = useState(false);
-  const [buyerName, setBuyerName] = useState("");
-  const [buyerPhone, setBuyerPhone] = useState("");
-  const [buyerAddress, setBuyerAddress] = useState("");
-  const [shippingCarrier, setShippingCarrier] = useState("mrw");
-  const [shippingBranchName, setShippingBranchName] = useState("");
-  const [shippingBranchAddress, setShippingBranchAddress] = useState("");
-  const [notes, setNotes] = useState("");
-  const [lineProductId, setLineProductId] = useState(products[0]?.id ?? "");
-  const [lineQty, setLineQty] = useState("1");
-  const [draftLines, setDraftLines] = useState<
-    Array<{ productId: string; quantity: number }>
-  >([]);
 
   const [editStatus, setEditStatus] = useState<SupplierOrderStatus>("pendiente");
   const [editTracking, setEditTracking] = useState("");
@@ -231,12 +211,6 @@ export function SupplierOrdersPanel({
     setEditTracking(selected.trackingNumber ?? "");
   }, [selected]);
 
-  const productTitleById = useMemo(() => {
-    const map = new Map<string, string>();
-    for (const product of products) map.set(product.id, product.title);
-    return map;
-  }, [products]);
-
   function selectOrder(order: SupplierOrder) {
     setSelectedId(order.id);
     setEditStatus(order.status);
@@ -247,7 +221,7 @@ export function SupplierOrdersPanel({
 
   function handleExportCsv() {
     if (filteredOrders.length === 0) {
-      setError("No hay pedidos para exportar con el filtro actual.");
+      setError("No hay órdenes para exportar con el filtro actual.");
       setMessage(null);
       return;
     }
@@ -258,70 +232,15 @@ export function SupplierOrdersPanel({
     const stamp = new Date().toISOString().slice(0, 10);
     const link = document.createElement("a");
     link.href = url;
-    link.download = `pedidos-proveedor-${stamp}.csv`;
+    link.download = `ordenes-compra-alcentimo-${stamp}.csv`;
     document.body.appendChild(link);
     link.click();
     link.remove();
     URL.revokeObjectURL(url);
     setError(null);
     setMessage(
-      `Exportados ${filteredOrders.length} pedido${filteredOrders.length === 1 ? "" : "s"} en CSV.`,
+      `Exportadas ${filteredOrders.length} orden${filteredOrders.length === 1 ? "" : "es"} en CSV.`,
     );
-  }
-
-  function addDraftLine() {
-    const qty = Math.floor(Number(lineQty));
-    if (!lineProductId || !Number.isFinite(qty) || qty <= 0) {
-      setError("Selecciona producto y una cantidad válida.");
-      return;
-    }
-    setDraftLines((current) => {
-      const existing = current.find((line) => line.productId === lineProductId);
-      if (existing) {
-        return current.map((line) =>
-          line.productId === lineProductId
-            ? { ...line, quantity: line.quantity + qty }
-            : line,
-        );
-      }
-      return [...current, { productId: lineProductId, quantity: qty }];
-    });
-    setLineQty("1");
-    setError(null);
-  }
-
-  function handleCreateOrder() {
-    setError(null);
-    setMessage(null);
-    startTransition(async () => {
-      const result = await createSupplierOrder({
-        buyerName,
-        buyerPhone,
-        buyerAddress,
-        shippingCarrier,
-        shippingBranchName,
-        shippingBranchAddress,
-        notes,
-        items: draftLines,
-      });
-
-      if (result.error || !result.order) {
-        setError(result.error ?? "No se pudo registrar el pedido.");
-        return;
-      }
-
-      setOrders((current) => [result.order!, ...current]);
-      selectOrder(result.order);
-      setShowCreate(false);
-      setBuyerName("");
-      setBuyerPhone("");
-      setBuyerAddress("");
-      setShippingBranchName("");
-      setShippingBranchAddress("");
-      setNotes("");
-      setDraftLines([]);
-      setMessage("Pedido registrado.");
-    });
   }
 
   function handleSaveDispatch() {
@@ -336,7 +255,7 @@ export function SupplierOrdersPanel({
       });
 
       if (result.error || !result.order) {
-        setError(result.error ?? "No se pudo actualizar el despacho.");
+        setError(result.error ?? "No se pudo actualizar el estatus.");
         return;
       }
 
@@ -345,7 +264,7 @@ export function SupplierOrdersPanel({
           order.id === result.order!.id ? result.order! : order,
         ),
       );
-      setMessage("Estatus actualizado.");
+      setMessage("Estatus de recolección actualizado.");
     });
   }
 
@@ -353,12 +272,12 @@ export function SupplierOrdersPanel({
     <div className="space-y-6">
       <div className="supplier-hub-card-header">
         <div>
-          <p className="supplier-hub-section-label">Operaciones</p>
-          <h1 className="supplier-hub-heading">Stock a apartar</h1>
+          <p className="supplier-hub-section-label">Órdenes de compra</p>
+          <h1 className="supplier-hub-heading">Pedidos de Alcéntimo</h1>
           <p className="supplier-hub-subheading">
-            Solo ves los productos vendidos que te corresponden. Apártalos y
-            espera la recolección y el pago de Alcéntimo. No incluye datos de
-            pago del cliente final.
+            Alcéntimo te compra estos productos. Tu función es apartar el stock
+            para que el personal de logística de Alcéntimo pase a retirarlo. No
+            despaches ni cobres al cliente ni al dropshipper.
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
@@ -367,229 +286,13 @@ export function SupplierOrdersPanel({
             className="btn-brand-outline !min-h-9 !px-3.5 !text-xs"
             onClick={handleExportCsv}
             disabled={orders.length === 0}
-            title="Descargar pedidos filtrados en CSV"
+            title="Descargar órdenes filtradas en CSV"
           >
             <Download className="mr-1.5 h-4 w-4" aria-hidden="true" />
             Exportar CSV
           </button>
-          <button
-            type="button"
-            className={cn(
-              showCreate ? "btn-brand-outline" : "btn-brand",
-              "!min-h-9 !px-3.5 !text-xs",
-            )}
-            onClick={() => setShowCreate((value) => !value)}
-          >
-            <PackagePlus className="mr-1.5 h-4 w-4" aria-hidden="true" />
-            {showCreate ? "Cerrar formulario" : "Registrar pedido"}
-          </button>
         </div>
       </div>
-
-      {showCreate ? (
-        <section className="supplier-hub-card">
-          <h2 className="supplier-hub-heading text-base">Nuevo pedido</h2>
-          <p className="supplier-hub-subheading">
-            Úsalo para registrar pedidos recibidos por WhatsApp o del marketplace
-            de mayoristas. Descuenta stock automáticamente.
-          </p>
-
-          <div className="mt-4 grid gap-3 sm:grid-cols-2">
-            <div>
-              <label className="label-field" htmlFor="so-buyer-name">
-                Nombre del comprador
-              </label>
-              <input
-                id="so-buyer-name"
-                className="input-field"
-                value={buyerName}
-                onChange={(event) => setBuyerName(event.target.value)}
-                disabled={pending}
-              />
-            </div>
-            <div>
-              <label className="label-field" htmlFor="so-buyer-phone">
-                Teléfono
-              </label>
-              <input
-                id="so-buyer-phone"
-                className="input-field"
-                value={buyerPhone}
-                onChange={(event) => setBuyerPhone(event.target.value)}
-                disabled={pending}
-              />
-            </div>
-            <div className="sm:col-span-2">
-              <label className="label-field" htmlFor="so-buyer-address">
-                Dirección de destino
-              </label>
-              <textarea
-                id="so-buyer-address"
-                rows={2}
-                className="input-field resize-none"
-                value={buyerAddress}
-                onChange={(event) => setBuyerAddress(event.target.value)}
-                disabled={pending}
-              />
-            </div>
-            <div>
-              <label className="label-field" htmlFor="so-carrier">
-                Agencia de envío
-              </label>
-              <select
-                id="so-carrier"
-                className="input-field"
-                value={shippingCarrier}
-                onChange={(event) => setShippingCarrier(event.target.value)}
-                disabled={pending}
-              >
-                {SUPPLIER_SHIPPING_CARRIER_OPTIONS.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label className="label-field" htmlFor="so-branch">
-                Sucursal / oficina
-              </label>
-              <input
-                id="so-branch"
-                className="input-field"
-                value={shippingBranchName}
-                onChange={(event) => setShippingBranchName(event.target.value)}
-                placeholder="Ej: MRW Valencia Norte"
-                disabled={pending}
-              />
-            </div>
-            <div className="sm:col-span-2">
-              <label className="label-field" htmlFor="so-branch-address">
-                Dirección de la agencia
-              </label>
-              <input
-                id="so-branch-address"
-                className="input-field"
-                value={shippingBranchAddress}
-                onChange={(event) =>
-                  setShippingBranchAddress(event.target.value)
-                }
-                disabled={pending}
-              />
-            </div>
-          </div>
-
-          <div className="supplier-hub-soft-panel mt-4">
-            <p className="supplier-hub-section-label">Productos</p>
-            {products.length === 0 ? (
-              <p className="mt-2 text-sm text-zinc-500">
-                Primero carga productos en la pestaña Productos.
-              </p>
-            ) : (
-              <div className="mt-2 flex flex-wrap items-end gap-2">
-                <div className="min-w-[12rem] flex-1">
-                  <label className="label-field" htmlFor="so-product">
-                    Producto
-                  </label>
-                  <select
-                    id="so-product"
-                    className="input-field"
-                    value={lineProductId}
-                    onChange={(event) => setLineProductId(event.target.value)}
-                    disabled={pending}
-                  >
-                    {products.map((product) => (
-                      <option key={product.id} value={product.id}>
-                        {product.title} · stock {product.stock}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div className="w-24">
-                  <label className="label-field" htmlFor="so-qty">
-                    Cant.
-                  </label>
-                  <input
-                    id="so-qty"
-                    type="number"
-                    min={1}
-                    step={1}
-                    className="input-field"
-                    value={lineQty}
-                    onChange={(event) => setLineQty(event.target.value)}
-                    disabled={pending}
-                  />
-                </div>
-                <button
-                  type="button"
-                  className="btn-brand-outline !min-h-10 !px-3 !text-xs"
-                  onClick={addDraftLine}
-                  disabled={pending}
-                >
-                  Añadir
-                </button>
-              </div>
-            )}
-
-            {draftLines.length > 0 ? (
-              <ul className="mt-3 space-y-1.5 text-sm">
-                {draftLines.map((line) => (
-                  <li
-                    key={line.productId}
-                    className="flex items-center justify-between gap-2"
-                  >
-                    <span className="truncate text-zinc-700 dark:text-zinc-200">
-                      {line.quantity}×{" "}
-                      {productTitleById.get(line.productId) ?? "Producto"}
-                    </span>
-                    <button
-                      type="button"
-                      className="text-xs font-medium text-red-600 hover:underline"
-                      onClick={() =>
-                        setDraftLines((current) =>
-                          current.filter(
-                            (entry) => entry.productId !== line.productId,
-                          ),
-                        )
-                      }
-                    >
-                      Quitar
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            ) : null}
-          </div>
-
-          <div className="mt-3">
-            <label className="label-field" htmlFor="so-notes">
-              Notas internas
-            </label>
-            <textarea
-              id="so-notes"
-              rows={2}
-              className="input-field resize-none"
-              value={notes}
-              onChange={(event) => setNotes(event.target.value)}
-              disabled={pending}
-            />
-          </div>
-
-          <div className="mt-4">
-            <button
-              type="button"
-              className="btn-brand"
-              onClick={handleCreateOrder}
-              disabled={pending || draftLines.length === 0}
-            >
-              {pending ? (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />
-              ) : null}
-              Guardar pedido
-            </button>
-          </div>
-        </section>
-      ) : null}
 
       {error ? (
         <p className="text-sm text-red-600" role="alert">
@@ -600,8 +303,8 @@ export function SupplierOrdersPanel({
 
       {orders.length === 0 ? (
         <p className="supplier-hub-empty">
-          Aún no hay productos por apartar. Cuando un dropshipper apruebe el
-          pago de su cliente, te avisaremos para que reserves el stock.
+          Aún no hay órdenes de compra. Cuando Alcéntimo te asigne productos
+          para surtir, aparecerán aquí para que apartes el stock.
         </p>
       ) : (
         <>
@@ -609,7 +312,7 @@ export function SupplierOrdersPanel({
             <div
               className="supplier-hub-orders-filters"
               role="tablist"
-              aria-label="Filtrar pedidos por estado"
+              aria-label="Filtrar órdenes de compra por estado"
             >
               {FILTER_TABS.map((tab) => {
                 const isActive = statusFilter === tab.id;
@@ -644,7 +347,7 @@ export function SupplierOrdersPanel({
                 value={searchQuery}
                 onChange={(event) => setSearchQuery(event.target.value)}
                 placeholder="Buscar producto o código…"
-                aria-label="Buscar pedidos por producto o código"
+                aria-label="Buscar órdenes por producto o código"
                 className="supplier-hub-orders-search-input"
               />
             </label>
@@ -652,7 +355,7 @@ export function SupplierOrdersPanel({
 
           {filteredOrders.length === 0 ? (
             <p className="supplier-hub-empty">
-              No hay pedidos con este filtro
+              No hay órdenes con este filtro
               {searchQuery.trim() ? " o búsqueda" : ""}.
             </p>
           ) : (
@@ -671,11 +374,7 @@ export function SupplierOrdersPanel({
                     >
                       <span className="flex min-w-0 items-center justify-between gap-2">
                         <span className="truncate text-sm font-medium text-zinc-900 dark:text-zinc-50">
-                          {isHubCollectionSupplierOrder(order)
-                            ? hubOrderHasPackingDestination(order)
-                              ? order.buyerName
-                              : summarizeProducts(order)
-                            : order.buyerName}
+                          {summarizeProducts(order)}
                         </span>
                         <span className="shrink-0 font-mono text-[10px] uppercase tracking-wide text-zinc-400">
                           #{formatOrderCode(order.id)}
@@ -684,9 +383,6 @@ export function SupplierOrdersPanel({
                       <span className="text-[11px] text-zinc-500">
                         {formatOrderDate(order.createdAt)} ·{" "}
                         {formatUsd(order.totalUsd)}
-                        {order.senderName
-                          ? ` · ${order.senderName}`
-                          : ""}
                       </span>
                       <span className="mt-1 flex flex-wrap gap-1">
                         <span
@@ -723,14 +419,10 @@ export function SupplierOrdersPanel({
                   <div className="supplier-hub-card-header">
                     <div>
                       <h2 className="supplier-hub-heading text-base">
-                        {isHubCollectionSupplierOrder(selected)
-                          ? hubOrderHasPackingDestination(selected)
-                            ? selected.buyerName
-                            : "Apartar stock"
-                          : selected.buyerName}
+                        Orden de compra Alcéntimo
                       </h2>
                       <p className="mt-1 text-xs text-zinc-500">
-                        Pedido #{formatOrderCode(selected.id)} ·{" "}
+                        #{formatOrderCode(selected.id)} ·{" "}
                         {formatOrderDate(selected.createdAt)}
                       </p>
                     </div>
@@ -748,19 +440,19 @@ export function SupplierOrdersPanel({
                     <>
                       <div className="supplier-hub-soft-panel mt-5">
                         <p className="text-sm font-medium text-zinc-900 dark:text-zinc-50">
-                          Aparta estos productos y etiqueta el paquete.
+                          Alcéntimo te compra estos productos.
                         </p>
                         <p className="mt-1 text-xs leading-relaxed text-zinc-500">
-                          No despaches al cliente final ni revises su
-                          comprobante de pago. Alcéntimo recogerá el paquete en
-                          el centro de acopio y te pagará según la liquidación.
+                          Apártalos en tu almacén. El personal de logística de
+                          Alcéntimo pasará a retirarlos. No despaches, no cobres
+                          al cliente ni al dropshipper: Alcéntimo te liquida.
                         </p>
                       </div>
                       {hubOrderHasPackingDestination(selected) ? (
                         <div className="mt-4 grid gap-4 sm:grid-cols-2">
                           <div className="supplier-hub-soft-panel">
                             <p className="supplier-hub-section-label">
-                              Destino del comprador
+                              Referencia para logística Alcéntimo
                             </p>
                             <p className="mt-1.5 text-sm font-medium text-zinc-900 dark:text-zinc-50">
                               {selected.buyerName}
@@ -776,7 +468,7 @@ export function SupplierOrdersPanel({
                           </div>
                           <div className="supplier-hub-soft-panel">
                             <p className="supplier-hub-section-label">
-                              Dirección / agencia
+                              Recolección
                             </p>
                             <p className="mt-1.5 inline-flex items-center gap-1.5 text-sm font-medium text-zinc-900 dark:text-zinc-50">
                               <Truck
@@ -788,7 +480,7 @@ export function SupplierOrdersPanel({
                             <p className="mt-1 text-sm leading-relaxed text-zinc-600 dark:text-zinc-300">
                               {selected.buyerAddress ??
                                 selected.shippingBranchName ??
-                                "Sin destino registrado"}
+                                "El equipo de Alcéntimo coordinará el retiro."}
                             </p>
                             {selected.shippingBranchName &&
                             selected.buyerAddress &&
@@ -808,42 +500,21 @@ export function SupplierOrdersPanel({
                         </div>
                       ) : (
                         <p className="mt-4 text-xs text-zinc-500">
-                          El nombre, cédula, teléfono y destino del comprador
-                          aparecerán aquí cuando Alcéntimo apruebe la
-                          liquidación del dropshipper.
+                          Cuando Alcéntimo programe la recolección, verás aquí
+                          la referencia para el equipo de logística.
                         </p>
                       )}
                     </>
                   ) : (
-                    <div className="mt-5 grid gap-4 sm:grid-cols-2">
-                      <div className="supplier-hub-soft-panel">
-                        <p className="supplier-hub-section-label">Comprador</p>
-                        <p className="mt-1.5 text-sm font-medium text-zinc-900 dark:text-zinc-50">
-                          {selected.buyerName}
-                        </p>
-                        <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-300">
-                          {selected.buyerPhone ?? "Sin teléfono"}
-                        </p>
-                        <p className="mt-1 text-sm leading-relaxed text-zinc-600 dark:text-zinc-300">
-                          {selected.buyerAddress ?? "Sin dirección"}
-                        </p>
-                      </div>
-                      <div className="supplier-hub-soft-panel">
-                        <p className="supplier-hub-section-label">Envío</p>
-                        <p className="mt-1.5 inline-flex items-center gap-1.5 text-sm font-medium text-zinc-900 dark:text-zinc-50">
-                          <Truck
-                            className="h-3.5 w-3.5 text-emerald-600"
-                            aria-hidden="true"
-                          />
-                          {supplierCarrierLabel(selected.shippingCarrier)}
-                        </p>
-                        <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-300">
-                          {selected.shippingBranchName ?? "Sin sucursal indicada"}
-                        </p>
-                        <p className="mt-1 text-sm leading-relaxed text-zinc-600 dark:text-zinc-300">
-                          {selected.shippingBranchAddress ?? "—"}
-                        </p>
-                      </div>
+                    <div className="supplier-hub-soft-panel mt-5">
+                      <p className="text-sm font-medium text-zinc-900 dark:text-zinc-50">
+                        Orden asignada por Alcéntimo
+                      </p>
+                      <p className="mt-1 text-xs leading-relaxed text-zinc-500">
+                        Aparta el stock. Logística de Alcéntimo retira. No
+                        operes como tienda independiente ni cobres por tu
+                        cuenta.
+                      </p>
                     </div>
                   )}
 
@@ -879,7 +550,7 @@ export function SupplierOrdersPanel({
 
                   <div className="supplier-hub-soft-panel mt-4">
                     <p className="supplier-hub-section-label">
-                      Pago de Alcéntimo
+                      Liquidación de Alcéntimo
                     </p>
                     <p className="mt-1.5 text-sm font-medium text-zinc-900 dark:text-zinc-50">
                       {
@@ -896,14 +567,14 @@ export function SupplierOrdersPanel({
                     ) : null}
                     <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-300">
                       {selected.settlementId
-                        ? "El dropshipper liquidó a Alcéntimo. El pago a ti sale del centro de acopio."
+                        ? "Alcéntimo ya programó tu liquidación por esta compra. El dropshipper no te paga."
                         : selected.paymentMethod
-                          ? `Método: ${
+                          ? `Alcéntimo te pagará por ${
                               getPaymentMethod(
                                 selected.paymentMethod as never,
                               )?.label ?? selected.paymentMethod
                             }`
-                          : "Espera el pago de Alcéntimo al recoger."}
+                          : "Alcéntimo te pagará al recoger. Tú no cobras al cliente ni al dropshipper."}
                     </p>
                     {selected.paymentReference ? (
                       <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-300">
@@ -926,18 +597,9 @@ export function SupplierOrdersPanel({
 
                   <div className="mt-6 border-t border-emerald-100 pt-5 dark:border-emerald-900/40">
                     <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">
-                      {isHubCollectionSupplierOrder(selected)
-                        ? "Estatus de acopio"
-                        : "Estatus de despacho"}
+                      Estatus de recolección
                     </p>
-                    <div
-                      className={cn(
-                        "mt-3 grid gap-3",
-                        isHubCollectionSupplierOrder(selected)
-                          ? "sm:grid-cols-1"
-                          : "sm:grid-cols-2",
-                      )}
-                    >
+                    <div className="mt-3 grid gap-3 sm:grid-cols-1">
                       <div>
                         <label className="label-field" htmlFor="so-status">
                           Estatus
@@ -960,23 +622,6 @@ export function SupplierOrdersPanel({
                           ))}
                         </select>
                       </div>
-                      {isHubCollectionSupplierOrder(selected) ? null : (
-                        <div>
-                          <label className="label-field" htmlFor="so-tracking">
-                            Número de guía
-                          </label>
-                          <input
-                            id="so-tracking"
-                            className="input-field"
-                            value={editTracking}
-                            onChange={(event) =>
-                              setEditTracking(event.target.value)
-                            }
-                            placeholder="Ej: MRW-123456789"
-                            disabled={pending}
-                          />
-                        </div>
-                      )}
                     </div>
                     <button
                       type="button"
@@ -992,9 +637,7 @@ export function SupplierOrdersPanel({
                       ) : (
                         <Truck className="mr-2 h-4 w-4" aria-hidden="true" />
                       )}
-                      {isHubCollectionSupplierOrder(selected)
-                        ? "Guardar estatus"
-                        : "Guardar despacho"}
+                      Guardar estatus de retiro
                     </button>
                   </div>
                 </section>

@@ -19,8 +19,7 @@ export type DispatchOrderDetails = {
 };
 
 /**
- * Aviso al proveedor: productos a apartar y etiqueta de destino.
- * Sin comprobante de pago del cliente final.
+ * Aviso al proveedor: Alcéntimo compra y retira; el proveedor solo aparta stock.
  */
 export function buildDispatchOrderText(details: DispatchOrderDetails): string {
   const productLines =
@@ -40,18 +39,17 @@ export function buildDispatchOrderText(details: DispatchOrderDetails): string {
 
   const lines = [
     `Alcéntimo · Apartar stock #${details.orderCode}`,
-    "El dropshipper ya liquidó a Alcéntimo. Aparta estos productos y etiqueta el paquete con el destino del comprador.",
+    "Alcéntimo te compra estos productos. Apártalos; el personal de logística de Alcéntimo pasará a retirarlos.",
     "",
     "📦 Productos a apartar:",
     ...productLines,
     "",
-    "🏷️ Destino del paquete:",
+    "🏷️ Referencia para retiro Alcéntimo:",
     destinationBits.length > 0
       ? destinationBits.map((bit) => `• ${bit}`).join("\n")
       : "• Sin destino registrado",
     "",
-    "No revises el comprobante de pago del cliente final.",
-    "Alcéntimo recogerá el paquete en el centro de acopio.",
+    "No despaches ni cobres. Alcéntimo retira y te liquida.",
   ];
 
   if (details.dashboardUrl?.trim()) {

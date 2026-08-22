@@ -4,7 +4,7 @@ import { SupplierRegisterPanel } from "@/components/supplier/SupplierRegisterPan
 export const metadata = {
   title: "Registro de proveedores | Alcéntimo",
   description:
-    "Regístrate como proveedor o mayorista y sube tu catálogo al marketplace de dropshipping.",
+    "Regístrate como proveedor de Alcéntimo y surte las órdenes de compra del inventario corporativo.",
   robots: {
     index: true,
     follow: true,
@@ -15,8 +15,8 @@ export default function ProveedorRegistroPage() {
   return (
     <AuthPageShell
       sectionLabel="Proveedores"
-      title="Regístrate como mayorista"
-      description="Sube tu catálogo una vez y llega a tiendas listas para vender tus productos."
+      title="Regístrate como proveedor de Alcéntimo"
+      description="Carga tu inventario para que Alcéntimo te compre y recoja el stock. Tú no vendes al cliente final."
     >
       <SupplierRegisterPanel />
     </AuthPageShell>

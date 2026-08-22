@@ -1,6 +1,6 @@
 import type { PaymentMethodKey } from "@/lib/store-settings/types";
 
-/** Métodos B2B soportados para pago directo al proveedor. */
+/** Métodos para que Alcéntimo liquide al proveedor (no cobro a clientes ni dropshippers). */
 export const SUPPLIER_B2B_PAYMENT_METHOD_KEYS = [
   "pagoMovil",
   "transferencia",
@@ -19,7 +19,7 @@ export interface SupplierPaymentConfig {
   methods: Record<SupplierB2bPaymentMethodKey, SupplierPaymentMethodConfig>;
   /** Instrucciones libres (cuenta, horarios, notas). */
   instructions: string;
-  /** WhatsApp del proveedor para notificar pagos B2B. */
+  /** WhatsApp del proveedor para avisos de liquidación de Alcéntimo. */
   whatsappPhone: string;
 }
 
@@ -36,9 +36,9 @@ export const SUPPLIER_ORDER_PAYMENT_STATUS_LABELS: Record<
   SupplierOrderPaymentStatus,
   string
 > = {
-  pendiente: "Pago pendiente",
-  reportado: "Pago reportado",
-  confirmado: "Pago confirmado",
+  pendiente: "Liquidación pendiente",
+  reportado: "Liquidación en proceso",
+  confirmado: "Pagado por Alcéntimo",
 };
 
 export function isSupplierOrderPaymentStatus(

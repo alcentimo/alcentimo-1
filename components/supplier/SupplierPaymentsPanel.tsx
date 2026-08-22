@@ -7,7 +7,7 @@ import { PaymentMethodCard } from "@/components/payments/PaymentMethodCard";
 import { SettingsSwitch } from "@/components/ui/SettingsSwitch";
 import { saveSupplierPaymentConfig } from "@/lib/supplier/payment-actions";
 import {
-  DROPSHIP_CENTRAL_PAYMENT_NOTICE,
+  SUPPLIER_ALCENTIMO_PAYOUT_NOTICE,
   SUPPLIER_PAYOUT_STATUS_LABELS,
   type SupplierPayoutObligationView,
 } from "@/lib/dropship/settlement-types";
@@ -50,7 +50,7 @@ export function SupplierPaymentsPanel({
         return;
       }
       setConfig(result.config);
-      setMessage("Datos de pago guardados.");
+      setMessage("Cuenta de liquidación guardada.");
     });
   }
 
@@ -97,12 +97,12 @@ export function SupplierPaymentsPanel({
     <div className="space-y-6">
       <div className="supplier-hub-card-header">
         <div>
-          <p className="supplier-hub-section-label">Cobros B2B</p>
-          <h1 className="supplier-hub-heading">Liquidaciones y datos de cobro</h1>
+          <p className="supplier-hub-section-label">Liquidaciones de Alcéntimo</p>
+          <h1 className="supplier-hub-heading">Cómo te paga Alcéntimo</h1>
           <p className="supplier-hub-subheading">
-            Alcéntimo te liquida el costo mayorista cuando aprueba el cierre
-            diario del dropshipper. Publica aquí tus datos para recibir esas
-            transferencias.
+            Alcéntimo te compra el inventario que apartas. Aquí ves las
+            liquidaciones y la cuenta donde Alcéntimo te deposita. No cobras al
+            cliente final ni al dropshipper.
           </p>
         </div>
       </div>
@@ -113,7 +113,7 @@ export function SupplierPaymentsPanel({
           aria-hidden="true"
         />
         <p className="text-xs leading-relaxed text-zinc-600 dark:text-zinc-300">
-          {DROPSHIP_CENTRAL_PAYMENT_NOTICE}
+          {SUPPLIER_ALCENTIMO_PAYOUT_NOTICE}
         </p>
       </div>
 
@@ -132,13 +132,13 @@ export function SupplierPaymentsPanel({
               {formatUsd(creditedBalanceUsd)}
             </h2>
             <p className="mt-1 text-xs text-zinc-500">
-              Costo de producto registrado en tu saldo cuando Alcéntimo aprueba
-              el pago único del dropshipper.
+              Importe que Alcéntimo te debe por los productos que te compró.
+              Se acredita cuando Alcéntimo cierra la orden de compra.
             </p>
           </div>
           {payouts.length > 0 ? (
             <>
-              <p className="supplier-hub-section-label">Obligaciones de Alcéntimo</p>
+              <p className="supplier-hub-section-label">Liquidaciones por pagar</p>
               <ul className="space-y-2">
                 {payouts.map((payout) => (
                   <li
@@ -168,15 +168,15 @@ export function SupplierPaymentsPanel({
         </section>
       ) : (
         <p className="text-sm text-zinc-500">
-          Aún no hay obligaciones de pago. Aparecerán aquí cuando Alcéntimo
-          apruebe el cierre diario de un dropshipper que vendió tus productos.
+          Aún no hay liquidaciones. Aparecerán cuando Alcéntimo te compre
+          productos de tu inventario y programe el pago.
         </p>
       )}
 
       <section className="supplier-hub-card space-y-5">
         <div>
           <label className="label-field" htmlFor="supplier-wa-phone">
-            WhatsApp para notificaciones de pago
+            WhatsApp para avisos de Alcéntimo
           </label>
           <input
             id="supplier-wa-phone"
@@ -192,8 +192,8 @@ export function SupplierPaymentsPanel({
             disabled={pending}
           />
           <p className="mt-1 text-xs text-zinc-500">
-            Los comerciantes usarán este número si Alcéntimo o el equipo de
-            liquidación necesitan coordinar el pago.
+            Alcéntimo usará este número para avisarte de liquidaciones y de la
+            recolección de stock. El dropshipper y el cliente no te pagan aquí.
           </p>
         </div>
 
@@ -212,7 +212,7 @@ export function SupplierPaymentsPanel({
                 instructions: event.target.value,
               }))
             }
-            placeholder="Ej: Enviar captura por WhatsApp con el número de pedido."
+            placeholder="Ej: Enviar captura a Alcéntimo con el número de liquidación."
             disabled={pending}
           />
         </div>
@@ -312,7 +312,7 @@ export function SupplierPaymentsPanel({
           {pending && savingKey === "form" ? (
             <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />
           ) : null}
-          Guardar datos de pago
+          Guardar cuenta para liquidaciones
         </button>
       </section>
     </div>
