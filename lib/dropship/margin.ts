@@ -53,11 +53,37 @@ export function suggestRetailFromWholesaleCost(
 ): number | null {
   if (!settings.enabled) return null;
   const cost = Math.max(0, Number(costUsd) || 0);
+  if (cost <= 0) return null;
   if (settings.marginType === "fixed") {
-    return Math.round((cost + settings.marginValue) * 100) / 100;
+    const retail = cost + settings.marginValue;
+    return retail > 0 ? Math.round(retail * 100) / 100 : null;
   }
   const multiplier = 1 + settings.marginValue / 100;
-  return Math.round(cost * multiplier * 100) / 100;
+  const retail = cost * multiplier;
+  return retail > 0 ? Math.round(retail * 100) / 100 : null;
+}
+
+/**
+ * Precio de venta al importar al catálogo del dropshipper:
+ * usa el precio individual si es válido (> 0); si no, el margen por defecto de la tienda.
+ */
+export function resolveDropshipImportRetailUsd(
+  wholesalePriceUsd: number,
+  settings: DropshipPricingSettings,
+  individualRetailUsd?: number | null,
+): number | null {
+  const wholesale = Math.max(0, Number(wholesalePriceUsd) || 0);
+  if (wholesale <= 0) return null;
+
+  if (
+    individualRetailUsd != null &&
+    Number.isFinite(individualRetailUsd) &&
+    individualRetailUsd > 0
+  ) {
+    return Math.round(individualRetailUsd * 100) / 100;
+  }
+
+  return suggestRetailFromWholesaleCost(wholesale, settings);
 }
 
 export function formatDropshipMarginLabel(

@@ -8,7 +8,7 @@ import { revalidatePublicCatalogCache } from "@/lib/catalog/public-catalog-cache
 import {
   defaultDropshipPricingSettings,
   normalizeDropshipPricingSettings,
-  suggestRetailFromWholesaleCost,
+  resolveDropshipImportRetailUsd,
   type DropshipPricingSettings,
 } from "@/lib/dropship/margin";
 import { getStoreSettingsConfig } from "@/lib/store-settings/get-store-settings";
@@ -288,6 +288,8 @@ async function softDeleteProducts(
  */
 export async function importSupplierProductsBulkToStore(input?: {
   category?: string | null;
+  /** Precio de venta fijado en la UI por producto (opcional). */
+  retailBySupplierId?: Record<string, number | string | null> | null;
 }): Promise<ActionResult<BulkImportSupplierProductsResult>> {
   try {
     const gate = await requireDropshipStore();
@@ -425,6 +427,8 @@ export async function importSupplierProductsBulkToStore(input?: {
     let failed = 0;
     let lastError: string | null = null;
 
+    const retailOverrides = input?.retailBySupplierId ?? {};
+
     for (let offset = 0; offset < toImport.length; offset += INSERT_CHUNK_SIZE) {
       const chunk = toImport.slice(offset, offset + INSERT_CHUNK_SIZE);
       const prepared: Array<{
@@ -438,11 +442,25 @@ export async function importSupplierProductsBulkToStore(input?: {
       }> = [];
 
       for (const supplier of chunk) {
-        const retailUsd = suggestRetailFromWholesaleCost(
+        const overrideRaw = retailOverrides[supplier.id];
+        const overrideParsed =
+          overrideRaw == null || overrideRaw === ""
+            ? null
+            : Number(
+                typeof overrideRaw === "number"
+                  ? overrideRaw
+                  : String(overrideRaw).trim().replace(",", "."),
+              );
+        const individualRetail =
+          Number.isFinite(overrideParsed) && overrideParsed > 0
+            ? overrideParsed
+            : null;
+        const retailUsd = resolveDropshipImportRetailUsd(
           supplier.wholesalePriceUsd,
           dropship,
+          individualRetail,
         );
-        if (retailUsd == null || retailUsd < 0) {
+        if (retailUsd == null || retailUsd <= 0) {
           failed += 1;
           continue;
         }

@@ -49,6 +49,26 @@ function isPriceDirty(product: AdminSupplierCatalogProduct, draft: PriceDraft): 
   return parseUsdAmount(draft.mayorista) !== product.precioMayoristaUsd;
 }
 
+function effectiveWholesaleUsd(
+  product: AdminSupplierCatalogProduct,
+  draft: PriceDraft,
+  dirty: boolean,
+): number | null {
+  if (dirty) {
+    return parseUsdAmount(draft.mayorista);
+  }
+  return product.precioMayoristaUsd;
+}
+
+function canEnableDropshipperVisibility(
+  product: AdminSupplierCatalogProduct,
+  draft: PriceDraft,
+  dirty: boolean,
+): boolean {
+  const price = effectiveWholesaleUsd(product, draft, dirty);
+  return price != null && price > 0;
+}
+
 function MoneyInput({
   prefix,
   suffix,
@@ -310,6 +330,15 @@ export function AdminSupplierCatalogPanel() {
     product: AdminSupplierCatalogProduct,
     visible: boolean,
   ) {
+    const draft = priceDrafts[product.id] ?? draftsFromProduct(product);
+    const dirty = isPriceDirty(product, draft);
+    if (visible && !canEnableDropshipperVisibility(product, draft, dirty)) {
+      setError(
+        "Asigna un precio mayorista mayor a cero antes de hacer visible este producto.",
+      );
+      return;
+    }
+
     setSavingIds((current) => ({ ...current, [product.id]: true }));
     setError(null);
     setMessage(null);
@@ -608,6 +637,11 @@ export function AdminSupplierCatalogPanel() {
                         priceDrafts[product.id] ?? draftsFromProduct(product);
                       const dirty = isPriceDirty(product, draft);
                       const saving = Boolean(savingIds[product.id]);
+                      const canEnableVisibility = canEnableDropshipperVisibility(
+                        product,
+                        draft,
+                        dirty,
+                      );
                       return (
                         <tr
                           key={product.id}
@@ -691,29 +725,47 @@ export function AdminSupplierCatalogPanel() {
                           </td>
                           <td className="admin-stores-td">
                             <div className="flex items-center gap-2">
-                              <SettingsSwitch
-                                id={`product-visible-${product.id}`}
-                                size="sm"
-                                checked={product.isVisible}
-                                disabled={saving || busy}
-                                label={
-                                  product.isVisible
-                                    ? `Ocultar ${product.title}`
-                                    : `Mostrar ${product.title}`
+                              <span
+                                title={
+                                  !product.isVisible && !canEnableVisibility
+                                    ? "Asigna un precio mayorista mayor a cero para hacerlo visible"
+                                    : undefined
                                 }
-                                onChange={(checked) =>
-                                  void handleProductVisibility(product, checked)
-                                }
-                              />
+                              >
+                                <SettingsSwitch
+                                  id={`product-visible-${product.id}`}
+                                  size="sm"
+                                  checked={product.isVisible}
+                                  disabled={
+                                    saving ||
+                                    busy ||
+                                    (!product.isVisible && !canEnableVisibility)
+                                  }
+                                  label={
+                                    product.isVisible
+                                      ? `Ocultar ${product.title}`
+                                      : `Mostrar ${product.title}`
+                                  }
+                                  onChange={(checked) =>
+                                    void handleProductVisibility(product, checked)
+                                  }
+                                />
+                              </span>
                               <span
                                 className={cn(
                                   "text-[11px] font-medium",
                                   product.isVisible
                                     ? "text-emerald-700 dark:text-emerald-300"
-                                    : "text-zinc-400",
+                                    : canEnableVisibility
+                                      ? "text-zinc-400"
+                                      : "text-amber-700 dark:text-amber-400",
                                 )}
                               >
-                                {product.isVisible ? "Visible" : "Oculto"}
+                                {product.isVisible
+                                  ? "Visible"
+                                  : canEnableVisibility
+                                    ? "Oculto"
+                                    : "Sin precio"}
                               </span>
                             </div>
                           </td>

@@ -12,6 +12,7 @@ import {
 import {
   defaultDropshipPricingSettings,
   normalizeDropshipPricingSettings,
+  resolveDropshipImportRetailUsd,
   suggestRetailFromWholesaleCost,
 } from "@/lib/dropship/margin";
 import { getStoreSettingsConfig } from "@/lib/store-settings/get-store-settings";
@@ -469,11 +470,15 @@ export async function importSupplierProductToStoreCatalog(
       return { error: "Producto mayorista no disponible." };
     }
     const overrideRetail = parseUsdAmount(options?.retailUsd, { min: 0 });
-    const retailUsd =
-      overrideRetail ?? suggestRetailFromWholesaleCost(cost, dropship);
-    if (retailUsd == null || retailUsd < 0) {
+    const retailUsd = resolveDropshipImportRetailUsd(
+      cost,
+      dropship,
+      overrideRetail != null && overrideRetail > 0 ? overrideRetail : null,
+    );
+    if (retailUsd == null || retailUsd <= 0) {
       return {
-        error: "No se pudo calcular el precio de venta con tu regla de margen.",
+        error:
+          "No se pudo calcular un precio de venta válido. Revisa tu margen por defecto en Ajustes.",
       };
     }
 

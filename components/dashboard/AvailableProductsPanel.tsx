@@ -440,15 +440,28 @@ export function AvailableProductsPanel({
     setSelectedIds({});
   }
 
+  function buildBulkRetailOverrides(): Record<string, number> {
+    const overrides: Record<string, number> = {};
+    for (const product of productsRef.current) {
+      const draft = draftsRef.current[product.id];
+      const retail = parseUsdAmount(draft?.retail, { min: 0 });
+      if (retail != null && retail > 0) {
+        overrides[product.id] = retail;
+      }
+    }
+    return overrides;
+  }
+
   function handleBulk(mode: Exclude<BulkMode, null>) {
     if (mode === "category" && categoryFilter === "all") return;
     setBulkMode(mode);
     setError(null);
     setMessage(null);
     startTransition(async () => {
-      const result = await importSupplierProductsBulkToStore(
-        mode === "category" ? { category: categoryFilter } : {},
-      );
+      const result = await importSupplierProductsBulkToStore({
+        ...(mode === "category" ? { category: categoryFilter } : {}),
+        retailBySupplierId: buildBulkRetailOverrides(),
+      });
       setBulkMode(null);
       if (result.error) {
         setError(result.error);
@@ -475,7 +488,7 @@ export function AvailableProductsPanel({
     startTransition(async () => {
       const result = await importSupplierProductToStoreCatalog(
         productId,
-        retailUsd != null ? { retailUsd } : undefined,
+        retailUsd != null && retailUsd > 0 ? { retailUsd } : undefined,
       );
       setImportingId(null);
       if (result.error) {

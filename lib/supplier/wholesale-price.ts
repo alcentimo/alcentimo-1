@@ -124,7 +124,8 @@ export function isPublishedForDropship(row: {
   if (normalizePublicationStatus(row.publication_status) !== "published") {
     return false;
   }
-  return resolvePrecioMayoristaUsd(row) != null;
+  const price = resolvePrecioMayoristaUsd(row);
+  return price != null && price > 0;
 }
 
 /**

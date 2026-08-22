@@ -547,6 +547,29 @@ export async function setAdminSupplierProductVisibility(input: {
   if (!productId) return { error: "Producto inválido." };
 
   const admin = createAdminClient();
+
+  if (input.visible) {
+    const { data: current, error: loadError } = await admin
+      .from("supplier_products")
+      .select(PRODUCT_SELECT)
+      .eq("id", productId)
+      .eq("is_active", true)
+      .maybeSingle();
+
+    if (loadError) return { error: mapCatalogDbError(loadError.message) };
+    if (!current) return { error: "Producto no encontrado." };
+
+    const mayorista = resolvePrecioMayoristaUsd(
+      current as Record<string, unknown>,
+    );
+    if (mayorista == null || mayorista <= 0) {
+      return {
+        error:
+          "Asigna un precio mayorista mayor a cero antes de hacer visible este producto.",
+      };
+    }
+  }
+
   const { data, error } = await admin
     .from("supplier_products")
     .update({
@@ -612,9 +635,10 @@ export async function setSupplierCatalogPublication(input: {
   if (error) return { error: mapCatalogDbError(error.message) };
 
   const rows = (data as Record<string, unknown>[] | null) ?? [];
-  const pricedCount = rows.filter(
-    (row) => resolvePrecioMayoristaUsd(row) != null,
-  ).length;
+  const pricedCount = rows.filter((row) => {
+    const price = resolvePrecioMayoristaUsd(row);
+    return price != null && price > 0;
+  }).length;
 
   if (input.published && pricedCount === 0) {
     return {
@@ -643,7 +667,7 @@ export async function setSupplierCatalogPublication(input: {
     .eq("created_by", supplierUserId)
     .eq("is_active", true);
   if (input.published) {
-    query = query.not("precio_mayorista", "is", null);
+    query = query.not("precio_mayorista", "is", null).gt("precio_mayorista", 0);
   }
   const { error: updateError } = await query;
   if (updateError) return { error: mapCatalogDbError(updateError.message) };
