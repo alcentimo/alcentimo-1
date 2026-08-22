@@ -1,13 +1,12 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { Loader2, ShieldCheck } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { PaymentConfigField } from "@/components/payments/PaymentConfigField";
 import { PaymentMethodCard } from "@/components/payments/PaymentMethodCard";
 import { SettingsSwitch } from "@/components/ui/SettingsSwitch";
 import { saveSupplierPaymentConfig } from "@/lib/supplier/payment-actions";
 import {
-  SUPPLIER_ALCENTIMO_PAYOUT_NOTICE,
   SUPPLIER_PAYOUT_STATUS_LABELS,
   type SupplierPayoutObligationView,
 } from "@/lib/dropship/settlement-types";
@@ -50,7 +49,7 @@ export function SupplierPaymentsPanel({
         return;
       }
       setConfig(result.config);
-      setMessage("Cuenta de liquidación guardada.");
+      setMessage("Guardado.");
     });
   }
 
@@ -89,32 +88,10 @@ export function SupplierPaymentsPanel({
     }));
   }
 
-  function saveForm() {
-    persist(config, "form");
-  }
-
   return (
     <div className="space-y-6">
-      <div className="supplier-hub-card-header">
-        <div>
-          <p className="supplier-hub-section-label">Liquidaciones de Alcéntimo</p>
-          <h1 className="supplier-hub-heading">Cómo te paga Alcéntimo</h1>
-          <p className="supplier-hub-subheading">
-            Alcéntimo te compra el inventario que apartas. Aquí ves las
-            liquidaciones y la cuenta donde Alcéntimo te deposita. No cobras al
-            cliente final ni al dropshipper.
-          </p>
-        </div>
-      </div>
-
-      <div className="supplier-hub-soft-panel flex items-start gap-3">
-        <ShieldCheck
-          className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600"
-          aria-hidden="true"
-        />
-        <p className="text-xs leading-relaxed text-zinc-600 dark:text-zinc-300">
-          {SUPPLIER_ALCENTIMO_PAYOUT_NOTICE}
-        </p>
+      <div>
+        <h1 className="supplier-hub-heading">Pagos</h1>
       </div>
 
       {error ? (
@@ -124,59 +101,49 @@ export function SupplierPaymentsPanel({
       ) : null}
       {message ? <p className="supplier-hub-success">{message}</p> : null}
 
-      {payouts.length > 0 || creditedBalanceUsd > 0 ? (
-        <section className="supplier-hub-card space-y-3">
-          <div>
-            <p className="supplier-hub-section-label">Saldo acreditado</p>
-            <h2 className="supplier-hub-heading text-base">
-              {formatUsd(creditedBalanceUsd)}
-            </h2>
-            <p className="mt-1 text-xs text-zinc-500">
-              Importe que Alcéntimo te debe por los productos que te compró.
-              Se acredita cuando Alcéntimo cierra la orden de compra.
-            </p>
-          </div>
-          {payouts.length > 0 ? (
-            <>
-              <p className="supplier-hub-section-label">Liquidaciones por pagar</p>
-              <ul className="space-y-2">
-                {payouts.map((payout) => (
-                  <li
-                    key={payout.id}
-                    className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-zinc-200 px-3 py-2.5 text-sm dark:border-zinc-800"
-                  >
-                    <div>
-                      <p className="font-medium tabular-nums text-zinc-900 dark:text-zinc-50">
-                        {formatUsd(payout.amountUsd)}
-                      </p>
-                      <p className="text-xs text-zinc-500">
-                        {payout.orderCount} pedido{payout.orderCount === 1 ? "" : "s"}{" "}
-                        · {payout.lineCount} línea
-                        {payout.lineCount === 1 ? "" : "s"} · venta{" "}
-                        {formatBusinessDateEs(payout.businessDate)} · despacho{" "}
-                        {formatBusinessDateEs(payout.shipOn)}
-                      </p>
-                    </div>
-                    <span className="rounded-full bg-teal-50 px-2 py-0.5 text-[10px] font-semibold text-teal-800 dark:bg-teal-950/40 dark:text-teal-200">
-                      {SUPPLIER_PAYOUT_STATUS_LABELS[payout.status]}
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            </>
-          ) : null}
-        </section>
-      ) : (
-        <p className="text-sm text-zinc-500">
-          Aún no hay liquidaciones. Aparecerán cuando Alcéntimo te compre
-          productos de tu inventario y programe el pago.
-        </p>
-      )}
+      <section className="supplier-hub-card space-y-3">
+        <div className="flex flex-wrap items-baseline justify-between gap-2">
+          <h2 className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">
+            Liquidaciones
+          </h2>
+          <p className="tabular-nums text-sm font-medium text-zinc-900 dark:text-zinc-50">
+            {formatUsd(creditedBalanceUsd)}
+          </p>
+        </div>
+        {payouts.length === 0 ? (
+          <p className="text-sm text-zinc-500">Sin movimientos.</p>
+        ) : (
+          <ul className="divide-y divide-zinc-100 dark:divide-zinc-800">
+            {payouts.map((payout) => (
+              <li
+                key={payout.id}
+                className="flex flex-wrap items-center justify-between gap-2 py-2.5 text-sm"
+              >
+                <div>
+                  <p className="font-medium tabular-nums text-zinc-900 dark:text-zinc-50">
+                    {formatUsd(payout.amountUsd)}
+                  </p>
+                  <p className="text-xs text-zinc-500">
+                    {formatBusinessDateEs(payout.businessDate)}
+                  </p>
+                </div>
+                <span className="rounded-full bg-zinc-100 px-2 py-0.5 text-[10px] font-semibold text-zinc-700 dark:bg-zinc-800 dark:text-zinc-200">
+                  {SUPPLIER_PAYOUT_STATUS_LABELS[payout.status]}
+                </span>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
 
       <section className="supplier-hub-card space-y-5">
+        <h2 className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">
+          Cuenta para liquidaciones
+        </h2>
+
         <div>
           <label className="label-field" htmlFor="supplier-wa-phone">
-            WhatsApp para avisos de Alcéntimo
+            WhatsApp
           </label>
           <input
             id="supplier-wa-phone"
@@ -188,31 +155,7 @@ export function SupplierPaymentsPanel({
                 whatsappPhone: event.target.value,
               }))
             }
-            placeholder="Ej: 0414-1234567"
-            disabled={pending}
-          />
-          <p className="mt-1 text-xs text-zinc-500">
-            Alcéntimo usará este número para avisarte de liquidaciones y de la
-            recolección de stock. El dropshipper y el cliente no te pagan aquí.
-          </p>
-        </div>
-
-        <div>
-          <label className="label-field" htmlFor="supplier-pay-instructions">
-            Instrucciones adicionales
-          </label>
-          <textarea
-            id="supplier-pay-instructions"
-            rows={3}
-            className="input-field resize-none"
-            value={config.instructions}
-            onChange={(event) =>
-              setConfig((current) => ({
-                ...current,
-                instructions: event.target.value,
-              }))
-            }
-            placeholder="Ej: Enviar captura a Alcéntimo con el número de liquidación."
+            placeholder="0414-1234567"
             disabled={pending}
           />
         </div>
@@ -228,10 +171,10 @@ export function SupplierPaymentsPanel({
               <div
                 key={key}
                 className={cn(
-                  "rounded-2xl border border-emerald-100/90 p-4 dark:border-emerald-900/40",
+                  "rounded-2xl border p-4",
                   method.enabled
-                    ? "bg-white dark:bg-zinc-950"
-                    : "bg-zinc-50/80 dark:bg-zinc-900/40",
+                    ? "border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-950"
+                    : "border-zinc-100 bg-zinc-50/80 dark:border-zinc-800 dark:bg-zinc-900/40",
                 )}
               >
                 <div className="flex flex-wrap items-center justify-between gap-3">
@@ -306,13 +249,13 @@ export function SupplierPaymentsPanel({
         <button
           type="button"
           className="btn-brand"
-          onClick={saveForm}
+          onClick={() => persist(config, "form")}
           disabled={pending}
         >
           {pending && savingKey === "form" ? (
             <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />
           ) : null}
-          Guardar cuenta para liquidaciones
+          Guardar
         </button>
       </section>
     </div>

@@ -223,12 +223,8 @@ function ProductFields({
           </div>
           <div>
             <label htmlFor={`${idPrefix}-price`} className="label-field">
-              Tu costo (USD)
+              Costo (USD)
             </label>
-            <p className="mt-0.5 text-xs text-zinc-500">
-              Precio al que Alcéntimo te compra. El precio al público lo define
-              Alcéntimo; tú no cobras al dropshipper ni al cliente.
-            </p>
             <div className="relative mt-1.5">
               <span className="pointer-events-none absolute inset-y-0 left-3 flex items-center text-sm text-zinc-400">
                 $
@@ -342,7 +338,7 @@ export function SupplierProductsPanel({
       }
       setProducts((current) => [result.product!, ...current]);
       setCreateMessage(
-        "Producto guardado como borrador. Alcéntimo lo publicará en su inventario cuando asigne precios.",
+        "Producto guardado como borrador.",
       );
       resetCreateForm();
     });
@@ -440,13 +436,8 @@ export function SupplierProductsPanel({
       <section className="supplier-hub-card">
         <div className="supplier-hub-card-header">
           <div>
-            <p className="supplier-hub-section-label">Inventario Alcéntimo</p>
+            <p className="supplier-hub-section-label">Inventario</p>
             <h1 className="supplier-hub-heading">Cargar producto</h1>
-            <p className="supplier-hub-subheading">
-              Estos SKU alimentan el inventario corporativo de Alcéntimo. Sube
-              fotos, categoría y variantes. Alcéntimo te compra lo que apartes
-              en las órdenes de compra; no publicas una tienda propia.
-            </p>
           </div>
         </div>
 
@@ -484,7 +475,7 @@ export function SupplierProductsPanel({
             ) : (
               <Plus className="mr-2 h-4 w-4" aria-hidden="true" />
             )}
-            Publicar para Alcéntimo
+            Guardar
           </button>
         </div>
       </section>
