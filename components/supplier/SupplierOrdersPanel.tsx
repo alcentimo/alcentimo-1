@@ -1,7 +1,8 @@
 "use client";
 
 import { useMemo, useState, useTransition } from "react";
-import { Loader2 } from "lucide-react";
+import { Loader2, ShoppingBag } from "lucide-react";
+import { SupplierEmptyState } from "@/components/supplier/SupplierEmptyState";
 import { formatUsd } from "@/lib/format";
 import { cn } from "@/lib/cn";
 import type { SupplierProduct } from "@/lib/supplier/actions";
@@ -107,7 +108,11 @@ export function SupplierOrdersPanel({
       ) : null}
 
       {orders.length === 0 ? (
-        <p className="supplier-hub-empty">Sin órdenes.</p>
+        <SupplierEmptyState
+          icon={ShoppingBag}
+          title="Sin órdenes de compra"
+          description="Cuando Alcéntimo te compre stock, las órdenes aparecerán aquí para apartar y preparar la recolección."
+        />
       ) : (
         <>
           <div
@@ -139,7 +144,11 @@ export function SupplierOrdersPanel({
           </div>
 
           {filteredOrders.length === 0 ? (
-            <p className="supplier-hub-empty">Nada en este filtro.</p>
+            <SupplierEmptyState
+              icon={ShoppingBag}
+              title="Nada en este filtro"
+              description="No hay órdenes con ese estado. Prueba con Todos para ver el listado completo."
+            />
           ) : (
             <div className="overflow-x-auto rounded-2xl border border-zinc-200 dark:border-zinc-800">
               <table className="w-full text-left text-sm">
