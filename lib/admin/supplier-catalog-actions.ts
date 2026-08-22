@@ -917,21 +917,40 @@ async function applyGlobalMarginToSupplierProducts(input: {
     if (!id) continue;
     const costo = resolveCostoProveedorUsd(row);
     const nextPrice = mayoristaFromMarginPercent(costo, marginPercent);
+    const nextSuggested = mayoristaFromMarginPercent(nextPrice, marginPercent);
     const previous = resolvePrecioMayoristaUsd(row);
+    const previousSuggested = resolveSuggestedRetailUsd(row);
     const wasPublished =
       normalizePublicationStatus(row.publication_status) === "published" &&
       row.catalog_visible === true;
-    if (previous === nextPrice && (!catalogOn || wasPublished)) continue;
+    if (
+      previous === nextPrice &&
+      previousSuggested === nextSuggested &&
+      (!catalogOn || wasPublished)
+    ) {
+      continue;
+    }
+
+    const nextRow = {
+      ...row,
+      precio_mayorista: nextPrice,
+      suggested_retail_usd: nextSuggested,
+    };
+    const updatePayload: Record<string, unknown> = {
+      precio_mayorista: nextPrice,
+      suggested_retail_usd: nextSuggested,
+      updated_at: now,
+      ...(catalogOn
+        ? { publication_status: "published", catalog_visible: true }
+        : {}),
+    };
+    if (!isSupplierProductReadyForDropshippers(nextRow)) {
+      updatePayload.is_visible = false;
+    }
 
     const { error: updateError } = await admin
       .from("supplier_products")
-      .update({
-        precio_mayorista: nextPrice,
-        ...(catalogOn
-          ? { publication_status: "published", catalog_visible: true }
-          : {}),
-        updated_at: now,
-      })
+      .update(updatePayload)
       .eq("id", id)
       .eq("is_active", true);
 
