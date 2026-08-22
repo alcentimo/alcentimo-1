@@ -48,7 +48,7 @@ export interface SupplierOrderItem {
   productId: string | null;
   productTitle: string;
   quantity: number;
-  /** Precio cobrado al comerciante (snapshot inmutable). */
+  /** Precio de la orden de compra de Alcéntimo (snapshot). */
   unitPriceUsd: number;
   /** Costo mayorista congelado al emitir el pedido. */
   unitCostUsd: number;

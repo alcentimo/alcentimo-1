@@ -13,7 +13,7 @@ interface SupplierChromeProps {
   children: React.ReactNode;
 }
 
-/** Shell del hub oculto de proveedores — identidad Alcéntimo. */
+/** Shell del hub de proveedores — suministro corporativo de Alcéntimo. */
 export function SupplierChrome({ email, children }: SupplierChromeProps) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -45,7 +45,7 @@ export function SupplierChrome({ email, children }: SupplierChromeProps) {
               a
             </span>
             <div className="min-w-0">
-              <p className="supplier-hub-eyebrow">Alcéntimo · Mayoristas</p>
+              <p className="supplier-hub-eyebrow">Alcéntimo · Suministro</p>
               <p className="supplier-hub-title">Hub de proveedores</p>
             </div>
           </div>

@@ -199,7 +199,7 @@ function ProductFields({
               onChange({ ...form, description: event.target.value })
             }
             className="input-field resize-none"
-            placeholder="Detalles para el comerciante (contenido, presentación, condiciones…)"
+            placeholder="Detalles para el catálogo de Alcéntimo (contenido, presentación, condiciones…)"
             disabled={pending}
           />
         </div>
@@ -226,8 +226,8 @@ function ProductFields({
               Tu costo (USD)
             </label>
             <p className="mt-0.5 text-xs text-zinc-500">
-              Costo interno para Alcéntimo. El precio del catálogo dropshipper lo
-              define un administrador.
+              Precio al que Alcéntimo te compra. El precio al público lo define
+              Alcéntimo; tú no cobras al dropshipper ni al cliente.
             </p>
             <div className="relative mt-1.5">
               <span className="pointer-events-none absolute inset-y-0 left-3 flex items-center text-sm text-zinc-400">
@@ -342,7 +342,7 @@ export function SupplierProductsPanel({
       }
       setProducts((current) => [result.product!, ...current]);
       setCreateMessage(
-        "Producto guardado como borrador. Será visible para dropshippers cuando Alcéntimo asigne el precio mayorista y lo publique.",
+        "Producto guardado como borrador. Alcéntimo lo publicará en su inventario cuando asigne precios.",
       );
       resetCreateForm();
     });
@@ -440,13 +440,12 @@ export function SupplierProductsPanel({
       <section className="supplier-hub-card">
         <div className="supplier-hub-card-header">
           <div>
-            <p className="supplier-hub-section-label">Catálogo mayorista</p>
+            <p className="supplier-hub-section-label">Inventario Alcéntimo</p>
             <h1 className="supplier-hub-heading">Cargar producto</h1>
             <p className="supplier-hub-subheading">
-              Sube varias fotos (galería o cámara del teléfono). La primera es
-              la portada; las estandarizamos a cuadrado 1080×1080 para redes y a
-              WebP liviano para el catálogo. Añade categoría y, si aplica,
-              variantes (color, modelo o presentación).
+              Estos SKU alimentan el inventario corporativo de Alcéntimo. Sube
+              fotos, categoría y variantes. Alcéntimo te compra lo que apartes
+              en las órdenes de compra; no publicas una tienda propia.
             </p>
           </div>
         </div>
@@ -485,7 +484,7 @@ export function SupplierProductsPanel({
             ) : (
               <Plus className="mr-2 h-4 w-4" aria-hidden="true" />
             )}
-            Publicar en hub
+            Publicar para Alcéntimo
           </button>
         </div>
       </section>
