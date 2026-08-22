@@ -10,6 +10,8 @@ import { isSupportAdmin, resolveAuthEmail } from "@/lib/support/is-support-admin
 import { getOpenAiApiKey } from "@/lib/env/server";
 import { listDropshipDailySettlements } from "@/lib/dropship/settlement-admin-actions";
 import { countAdminSupplierDraftProducts } from "@/lib/admin/supplier-catalog-actions";
+import { fetchPlatformSettings } from "@/lib/platform/get-platform-settings";
+import { DEFAULT_PLATFORM_DROPSHIP_SHIPPING } from "@/lib/platform/dropship-shipping";
 
 export const dynamic = "force-dynamic";
 
@@ -69,6 +71,7 @@ export default async function AdminDashboardPage({
     suppliersResult,
     dropshipSettlementsResult,
     supplierDraftsResult,
+    platformSettingsResult,
   ] = await Promise.all([
     safeLoad(
       () => getSupportMessages(),
@@ -94,6 +97,10 @@ export default async function AdminDashboardPage({
       () => countAdminSupplierDraftProducts(),
       "No se pudieron contar los productos mayoristas pendientes.",
     ),
+    safeLoad(
+      () => fetchPlatformSettings(),
+      "No se pudieron cargar los ajustes de plataforma.",
+    ),
   ]);
 
   const messages = messagesResult.ok ? messagesResult.data : [];
@@ -111,6 +118,9 @@ export default async function AdminDashboardPage({
   const pendingSupplierDrafts = supplierDraftsResult.ok
     ? supplierDraftsResult.data
     : 0;
+  const dropshipShipping = platformSettingsResult.ok
+    ? platformSettingsResult.data.dropshipShipping
+    : DEFAULT_PLATFORM_DROPSHIP_SHIPPING;
 
   const pendingMessages = messages.filter((item) => item.status === "pendiente")
     .length;
@@ -131,7 +141,8 @@ export default async function AdminDashboardPage({
           <p className="section-label">Administración centralizada</p>
           <h1 className="page-header-title">Panel Admin</h1>
           <p className="page-header-desc">
-            Gestión de mayorista, liquidaciones dropship, usuarios y soporte.
+            Gestión de mayorista, liquidaciones dropship, envíos, usuarios y
+            soporte.
           </p>
         </div>
         <div className="admin-dashboard-quick-stats">
@@ -180,6 +191,7 @@ export default async function AdminDashboardPage({
           dropshipSettlements={dropshipSettlements}
           dropshipSettlementsError={dropshipSettlementsError}
           pendingSupplierDrafts={pendingSupplierDrafts}
+          dropshipShipping={dropshipShipping}
           initialTab={initialTab}
           legacyTabParam={legacyTabParam}
           initialStoresSection={initialStoresSection}

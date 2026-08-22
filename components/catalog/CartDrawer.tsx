@@ -23,7 +23,12 @@ import {
   isCartItemEligible,
 } from "@/lib/coupons/discount";
 import type { AppliedCoupon } from "@/lib/coupons/types";
-import { resolveShippingQuote } from "@/lib/store-settings/shipping-pricing";
+import {
+  FREE_SHIPPING_VE_LABEL,
+  NATIONAL_SHIPPING_TRUST_COPY,
+  resolveShippingQuote,
+} from "@/lib/store-settings/shipping-pricing";
+import { isNationalCarrierKey } from "@/src/config/shipping-methods";
 
 interface CartDrawerProps {
   open: boolean;
@@ -515,6 +520,11 @@ export function CartDrawer({
                     {purchaseInfo.shipping.length > 0 && (
                       <div className="store-cart-shipping-block">
                         <p className="store-cart-label">Método de envío</p>
+                        {shippingQuote.freeShipping.unlocked ? (
+                          <p className="mt-2 rounded-lg border border-emerald-300 bg-emerald-50 px-3 py-2 text-sm font-semibold text-emerald-900">
+                            {FREE_SHIPPING_VE_LABEL}
+                          </p>
+                        ) : null}
                         <div className="mt-3 grid grid-cols-1 gap-2.5 sm:grid-cols-2">
                           {purchaseInfo.shipping.map((option) => (
                             <ShippingMethodCard
@@ -529,6 +539,13 @@ export function CartDrawer({
                             />
                           ))}
                         </div>
+                        {purchaseInfo.shipping.some((option) =>
+                          isNationalCarrierKey(option.key),
+                        ) ? (
+                          <p className="mt-3 text-center text-[11px] font-medium leading-relaxed text-zinc-500">
+                            {NATIONAL_SHIPPING_TRUST_COPY}
+                          </p>
+                        ) : null}
                       </div>
                     )}
                   </div>

@@ -6,6 +6,13 @@ import type {
   ShippingSettings,
 } from "@/lib/store-settings/types";
 
+/** Texto de checkout cuando el envío nacional sale gratis. */
+export const FREE_SHIPPING_VE_LABEL = "Envío gratis a toda Venezuela";
+
+/** Micro-copy de confianza bajo agencias nacionales (MRW / Zoom). */
+export const NATIONAL_SHIPPING_TRUST_COPY =
+  "Envíos asegurados y rastreables a toda Venezuela.";
+
 export interface ShippingPricingPublicConfig {
   mode: ShippingPricingMode;
   flatRateUsd: number;
@@ -29,7 +36,7 @@ export interface ShippingQuoteInput {
 export interface ShippingQuote {
   /** Monto a sumar al total del pedido (0 en COD o gratis). */
   chargeUsd: number;
-  /** Texto corto para totales: "Gratis", "Cobro a destino", "$3.00". */
+  /** Texto corto para totales: "$0.00", "Cobro a destino", "$3.00". */
   chargeLabel: string;
   /** Resumen amigable con la modalidad. */
   summaryLabel: string;
@@ -38,6 +45,8 @@ export interface ShippingQuote {
   appliesPaidShipping: boolean;
   freeShipping: {
     enabled: boolean;
+    /** true cuando minUsd === 0 (siempre gratis si está activo). */
+    always: boolean;
     minUsd: number;
     unlocked: boolean;
     remainingUsd: number;
@@ -72,19 +81,23 @@ export function toShippingPricingPublicConfig(
 /**
  * Calcula el cobro de envío según modalidad del comerciante.
  * Retiro (pickup) no cobra. COD no suma al total. Flat suma tarifa salvo envío gratis.
+ * Envío gratis: siempre (minUsd === 0) o a partir de un monto mínimo.
  */
 export function resolveShippingQuote(input: ShippingQuoteInput): ShippingQuote {
   const pricing = readPricing(input.pricing);
   const merchandiseUsd = Math.max(0, Number(input.merchandiseUsd) || 0);
   const minUsd = Math.max(0, Number(pricing.freeShippingMinUsd) || 0);
-  const freeEnabled = Boolean(pricing.freeShippingEnabled) && minUsd > 0;
-  const unlocked = freeEnabled && merchandiseUsd >= minUsd;
-  const remainingUsd = freeEnabled
-    ? Math.max(0, Math.round((minUsd - merchandiseUsd) * 100) / 100)
-    : 0;
+  const freeEnabled = Boolean(pricing.freeShippingEnabled);
+  const always = freeEnabled && minUsd <= 0;
+  const unlocked = freeEnabled && (always || merchandiseUsd >= minUsd);
+  const remainingUsd =
+    freeEnabled && !always && !unlocked
+      ? Math.max(0, Math.round((minUsd - merchandiseUsd) * 100) / 100)
+      : 0;
 
   const freeShipping = {
     enabled: freeEnabled,
+    always,
     minUsd,
     unlocked,
     remainingUsd,
@@ -112,8 +125,8 @@ export function resolveShippingQuote(input: ShippingQuoteInput): ShippingQuote {
   if (unlocked) {
     return {
       chargeUsd: 0,
-      chargeLabel: "Gratis",
-      summaryLabel: `Envío gratis (compra desde ${formatUsd(minUsd)})`,
+      chargeLabel: formatUsd(0),
+      summaryLabel: FREE_SHIPPING_VE_LABEL,
       isFree: true,
       isCod: false,
       appliesPaidShipping: true,
@@ -148,7 +161,7 @@ export function resolveShippingQuote(input: ShippingQuoteInput): ShippingQuote {
 
 export function formatShippingOptionHint(quote: ShippingQuote): string | null {
   if (!quote.appliesPaidShipping) return null;
-  if (quote.isFree) return "Envío gratis en este pedido";
+  if (quote.isFree) return FREE_SHIPPING_VE_LABEL;
   if (quote.freeShipping.enabled && !quote.freeShipping.unlocked) {
     return `Te faltan ${formatUsd(quote.freeShipping.remainingUsd)} para envío gratis`;
   }
@@ -156,4 +169,15 @@ export function formatShippingOptionHint(quote: ShippingQuote): string | null {
     return "Pagas el envío al recibir en la agencia";
   }
   return `Envío: ${quote.chargeLabel}`;
+}
+
+/** Copy promocional según regla de envío gratis (admin / vitrina). */
+export function describeFreeShippingRule(pricing: {
+  freeShippingEnabled: boolean;
+  freeShippingMinUsd: number;
+}): string | null {
+  if (!pricing.freeShippingEnabled) return null;
+  const minUsd = Math.max(0, Number(pricing.freeShippingMinUsd) || 0);
+  if (minUsd <= 0) return FREE_SHIPPING_VE_LABEL;
+  return `Envío gratis desde ${formatUsd(minUsd)}.`;
 }

@@ -71,10 +71,14 @@ export function PurchaseInfoPanel({ purchaseInfo }: PurchaseInfoPanelProps) {
           <section>
             <h3 className="purchase-info-section-title">Envío</h3>
             <p className="mb-3 text-xs leading-relaxed text-zinc-500">
-              {purchaseInfo.shippingPricing.mode === "flat"
-                ? `Tarifa plana nacional: ${formatUsd(purchaseInfo.shippingPricing.flatRateUsd)}.`
-                : "Cobro a destino: pagas el flete en la agencia al retirar."}
-              {purchaseInfo.shippingPricing.freeShippingEnabled
+              {purchaseInfo.shippingPricing.freeShippingEnabled &&
+              purchaseInfo.shippingPricing.freeShippingMinUsd <= 0
+                ? "Envío gratis a toda Venezuela."
+                : purchaseInfo.shippingPricing.mode === "flat"
+                  ? `Tarifa plana nacional: ${formatUsd(purchaseInfo.shippingPricing.flatRateUsd)}.`
+                  : "Cobro a destino: pagas el flete en la agencia al retirar."}
+              {purchaseInfo.shippingPricing.freeShippingEnabled &&
+              purchaseInfo.shippingPricing.freeShippingMinUsd > 0
                 ? ` Envío gratis desde ${formatUsd(purchaseInfo.shippingPricing.freeShippingMinUsd)}.`
                 : ""}
             </p>

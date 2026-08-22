@@ -2,6 +2,7 @@ export type AdminDashboardTab =
   | "dropship"
   | "proveedor"
   | "tiendas"
+  | "envios"
   | "soporte"
   | "ia";
 
@@ -25,6 +26,9 @@ const LEGACY_TAB_MAP: Record<string, AdminDashboardTab> = {
   usuarios: "tiendas",
   dominios: "tiendas",
   sucursales: "tiendas",
+  envios: "envios",
+  shipping: "envios",
+  "envio-gratis": "envios",
   soporte: "soporte",
   ia: "ia",
   asistente: "ia",
@@ -37,8 +41,6 @@ const LEGACY_TAB_MAP: Record<string, AdminDashboardTab> = {
   metricas: "tiendas",
   configuracion: "tiendas",
   plataforma: "tiendas",
-  envios: "tiendas",
-  shipping: "tiendas",
 };
 
 export function resolveAdminDashboardTab(
