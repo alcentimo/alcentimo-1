@@ -70,13 +70,67 @@ function effectiveWholesaleUsd(
   return product.precioMayoristaUsd;
 }
 
+function effectiveSuggestedRetailUsd(
+  product: AdminSupplierCatalogProduct,
+  draft: PriceDraft,
+  suggestedDirty: boolean,
+): number | null {
+  if (suggestedDirty) {
+    return parseUsdAmount(draft.suggestedRetail);
+  }
+  return product.suggestedRetailUsd;
+}
+
 function canEnableDropshipperVisibility(
   product: AdminSupplierCatalogProduct,
   draft: PriceDraft,
-  dirty: boolean,
+  priceDirty: boolean,
+  suggestedDirty: boolean,
 ): boolean {
-  const price = effectiveWholesaleUsd(product, draft, dirty);
-  return price != null && price > 0;
+  const mayorista = effectiveWholesaleUsd(product, draft, priceDirty);
+  const suggested = effectiveSuggestedRetailUsd(
+    product,
+    draft,
+    suggestedDirty,
+  );
+  return mayorista != null && mayorista > 0 && suggested != null && suggested > 0;
+}
+
+function visibilityBlockMessage(
+  product: AdminSupplierCatalogProduct,
+  draft: PriceDraft,
+  priceDirty: boolean,
+  suggestedDirty: boolean,
+): string | null {
+  const mayorista = effectiveWholesaleUsd(product, draft, priceDirty);
+  if (mayorista == null || mayorista <= 0) {
+    return "Asigna un precio mayorista mayor a cero.";
+  }
+  const suggested = effectiveSuggestedRetailUsd(
+    product,
+    draft,
+    suggestedDirty,
+  );
+  if (suggested == null || suggested <= 0) {
+    return "Asigna un precio de venta sugerido mayor a cero.";
+  }
+  return null;
+}
+
+function visibilityStatusLabel(
+  product: AdminSupplierCatalogProduct,
+  draft: PriceDraft,
+  priceDirty: boolean,
+  suggestedDirty: boolean,
+  canEnable: boolean,
+): string {
+  if (product.isVisible) return "Visible";
+  if (!canEnable) {
+    const mayorista = effectiveWholesaleUsd(product, draft, priceDirty);
+    if (mayorista == null || mayorista <= 0) return "Sin precio mayor.";
+    return "Sin p. sugerido";
+  }
+  return "Oculto";
 }
 
 function MoneyInput({
@@ -86,6 +140,7 @@ function MoneyInput({
   disabled,
   onChange,
   onBlur,
+  className,
 }: {
   prefix?: string;
   suffix?: string;
@@ -93,9 +148,10 @@ function MoneyInput({
   disabled?: boolean;
   onChange: (value: string) => void;
   onBlur?: () => void;
+  className?: string;
 }) {
   return (
-    <div className="relative w-[7.5rem]">
+    <div className={cn("relative w-[6.5rem] shrink-0", className)}>
       {prefix ? (
         <span className="pointer-events-none absolute inset-y-0 left-2 flex items-center text-xs text-zinc-400">
           {prefix}
@@ -401,11 +457,16 @@ export function AdminSupplierCatalogPanel() {
     visible: boolean,
   ) {
     const draft = priceDrafts[product.id] ?? draftsFromProduct(product);
-    const dirty = isPriceDirty(product, draft);
-    if (visible && !canEnableDropshipperVisibility(product, draft, dirty)) {
-      setError(
-        "Asigna un precio mayorista mayor a cero antes de hacer visible este producto.",
-      );
+    const priceDirty = isPriceDirty(product, draft);
+    const suggestedDirty = isSuggestedRetailDirty(product, draft);
+    const blockMessage = visibilityBlockMessage(
+      product,
+      draft,
+      priceDirty,
+      suggestedDirty,
+    );
+    if (visible && blockMessage) {
+      setError(blockMessage);
       return;
     }
 
@@ -689,17 +750,40 @@ export function AdminSupplierCatalogPanel() {
                 </div>
               </header>
 
-              <div className="overflow-x-auto">
-                <table className="admin-stores-table">
+              <div className="admin-stores-table-shell">
+                <div className="admin-stores-table-scroll">
+                <table className="admin-stores-table min-w-[72rem]">
                   <thead>
                     <tr>
-                      <th className="admin-stores-th">Producto</th>
-                      <th className="admin-stores-th">Stock</th>
-                      <th className="admin-stores-th">Costo</th>
-                      <th className="admin-stores-th">Precio mayorista</th>
-                      <th className="admin-stores-th">Ganancia %</th>
-                      <th className="admin-stores-th">Precio venta sugerido</th>
-                      <th className="admin-stores-th">Visible</th>
+                      <th className="admin-stores-th min-w-[12rem]">Producto</th>
+                      <th className="admin-stores-th w-16 text-center">Stock</th>
+                      <th className="admin-stores-th w-24 whitespace-normal leading-tight">
+                        Costo
+                      </th>
+                      <th className="admin-stores-th min-w-[8.5rem] whitespace-normal leading-tight">
+                        Precio
+                        <span className="block font-normal normal-case tracking-normal text-zinc-400">
+                          mayorista
+                        </span>
+                      </th>
+                      <th className="admin-stores-th w-24 whitespace-normal leading-tight">
+                        Ganancia
+                        <span className="block font-normal normal-case tracking-normal text-zinc-400">
+                          %
+                        </span>
+                      </th>
+                      <th
+                        className="admin-stores-th min-w-[8.5rem] whitespace-normal leading-tight"
+                        title="Precio de venta sugerido para dropshippers al cargar todo el catálogo"
+                      >
+                        P. venta
+                        <span className="block font-normal normal-case tracking-normal text-zinc-400">
+                          sugerido
+                        </span>
+                      </th>
+                      <th className="admin-stores-th w-28 whitespace-normal leading-tight">
+                        Visible
+                      </th>
                     </tr>
                   </thead>
                   <tbody>
@@ -713,6 +797,13 @@ export function AdminSupplierCatalogPanel() {
                         product,
                         draft,
                         dirty,
+                        suggestedDirty,
+                      );
+                      const blockMessage = visibilityBlockMessage(
+                        product,
+                        draft,
+                        dirty,
+                        suggestedDirty,
                       );
                       return (
                         <tr
@@ -722,8 +813,8 @@ export function AdminSupplierCatalogPanel() {
                             !product.isVisible && "opacity-70",
                           )}
                         >
-                          <td className="admin-stores-td">
-                            <div className="flex min-w-[200px] items-center gap-3">
+                          <td className="admin-stores-td !max-w-none min-w-[12rem]">
+                            <div className="flex min-w-[11rem] items-center gap-3">
                               <div className="relative h-10 w-10 shrink-0 overflow-hidden rounded-md bg-zinc-100 dark:bg-zinc-900">
                                 {product.imageUrl ? (
                                   <Image
@@ -745,7 +836,7 @@ export function AdminSupplierCatalogPanel() {
                               </div>
                             </div>
                           </td>
-                          <td className="admin-stores-td">
+                          <td className="admin-stores-td !max-w-none w-16 text-center">
                             <span
                               className={cn(
                                 "tabular-nums text-sm font-medium",
@@ -757,11 +848,11 @@ export function AdminSupplierCatalogPanel() {
                               {product.stock}
                             </span>
                           </td>
-                          <td className="admin-stores-td font-medium tabular-nums text-zinc-900 dark:text-zinc-50">
+                          <td className="admin-stores-td !max-w-none w-24 font-medium tabular-nums text-zinc-900 dark:text-zinc-50">
                             {formatUsd(product.costoProveedorUsd)}
                           </td>
-                          <td className="admin-stores-td">
-                            <div className="flex items-center gap-2">
+                          <td className="admin-stores-td !max-w-none min-w-[8.5rem]">
+                            <div className="flex items-center gap-1.5">
                               <MoneyInput
                                 prefix="$"
                                 value={draft.mayorista}
@@ -772,17 +863,17 @@ export function AdminSupplierCatalogPanel() {
                                 onBlur={() => void persistPrice(product.id)}
                               />
                               {saving ? (
-                                <Loader2 className="h-3.5 w-3.5 animate-spin text-zinc-400" />
+                                <Loader2 className="h-3.5 w-3.5 shrink-0 animate-spin text-zinc-400" />
                               ) : dirty ? (
                                 <span className="text-[11px] text-amber-600">
                                   …
                                 </span>
                               ) : draft.mayorista ? (
-                                <Check className="h-3.5 w-3.5 text-emerald-500" />
+                                <Check className="h-3.5 w-3.5 shrink-0 text-emerald-500" />
                               ) : null}
                             </div>
                           </td>
-                          <td className="admin-stores-td">
+                          <td className="admin-stores-td !max-w-none w-24">
                             <MoneyInput
                               suffix="%"
                               value={draft.marginPercent}
@@ -795,8 +886,8 @@ export function AdminSupplierCatalogPanel() {
                               onBlur={() => void persistPrice(product.id)}
                             />
                           </td>
-                          <td className="admin-stores-td">
-                            <div className="flex items-center gap-2">
+                          <td className="admin-stores-td !max-w-none min-w-[8.5rem]">
+                            <div className="flex items-center gap-1.5">
                               <MoneyInput
                                 prefix="$"
                                 value={draft.suggestedRetail}
@@ -807,28 +898,19 @@ export function AdminSupplierCatalogPanel() {
                                 onBlur={() => void persistSuggestedRetail(product.id)}
                               />
                               {saving ? (
-                                <Loader2 className="h-3.5 w-3.5 animate-spin text-zinc-400" />
+                                <Loader2 className="h-3.5 w-3.5 shrink-0 animate-spin text-zinc-400" />
                               ) : suggestedDirty ? (
                                 <span className="text-[11px] text-amber-600">
                                   …
                                 </span>
                               ) : draft.suggestedRetail ? (
-                                <Check className="h-3.5 w-3.5 text-emerald-500" />
+                                <Check className="h-3.5 w-3.5 shrink-0 text-emerald-500" />
                               ) : null}
                             </div>
-                            <p className="mt-1 text-[10px] text-zinc-400">
-                              Para dropshippers al cargar todo
-                            </p>
                           </td>
-                          <td className="admin-stores-td">
-                            <div className="flex items-center gap-2">
-                              <span
-                                title={
-                                  !product.isVisible && !canEnableVisibility
-                                    ? "Asigna un precio mayorista mayor a cero para hacerlo visible"
-                                    : undefined
-                                }
-                              >
+                          <td className="admin-stores-td !max-w-none w-28">
+                            <div className="flex flex-col items-start gap-1 sm:flex-row sm:items-center sm:gap-2">
+                              <span title={blockMessage ?? undefined}>
                                 <SettingsSwitch
                                   id={`product-visible-${product.id}`}
                                   size="sm"
@@ -850,7 +932,7 @@ export function AdminSupplierCatalogPanel() {
                               </span>
                               <span
                                 className={cn(
-                                  "text-[11px] font-medium",
+                                  "text-[11px] font-medium leading-tight",
                                   product.isVisible
                                     ? "text-emerald-700 dark:text-emerald-300"
                                     : canEnableVisibility
@@ -858,11 +940,13 @@ export function AdminSupplierCatalogPanel() {
                                       : "text-amber-700 dark:text-amber-400",
                                 )}
                               >
-                                {product.isVisible
-                                  ? "Visible"
-                                  : canEnableVisibility
-                                    ? "Oculto"
-                                    : "Sin precio"}
+                                {visibilityStatusLabel(
+                                  product,
+                                  draft,
+                                  dirty,
+                                  suggestedDirty,
+                                  canEnableVisibility,
+                                )}
                               </span>
                             </div>
                           </td>
@@ -871,6 +955,7 @@ export function AdminSupplierCatalogPanel() {
                     })}
                   </tbody>
                 </table>
+                </div>
               </div>
             </section>
           );

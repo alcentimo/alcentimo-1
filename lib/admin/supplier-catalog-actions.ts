@@ -21,6 +21,8 @@ import {
   resolveCostoProveedorUsd,
   resolvePrecioMayoristaUsd,
   resolveSuggestedRetailUsd,
+  isSupplierProductReadyForDropshippers,
+  dropshipperVisibilityBlockReason,
   type SupplierPublicationStatus,
 } from "@/lib/supplier/wholesale-price";
 
@@ -358,12 +360,29 @@ export async function setAdminSupplierSuggestedRetailPrice(input: {
   }
 
   const admin = createAdminClient();
+  const { data: existing, error: loadError } = await admin
+    .from("supplier_products")
+    .select(PRODUCT_SELECT)
+    .eq("id", productId)
+    .eq("is_active", true)
+    .maybeSingle();
+
+  if (loadError) return { error: mapCatalogDbError(loadError.message) };
+  if (!existing) return { error: "Producto no encontrado." };
+
+  const current = existing as Record<string, unknown>;
+  const nextRow = { ...current, suggested_retail_usd: parsed };
+  const patch: Record<string, unknown> = {
+    suggested_retail_usd: parsed,
+    updated_at: new Date().toISOString(),
+  };
+  if (!isSupplierProductReadyForDropshippers(nextRow)) {
+    patch.is_visible = false;
+  }
+
   const { data, error } = await admin
     .from("supplier_products")
-    .update({
-      suggested_retail_usd: parsed,
-      updated_at: new Date().toISOString(),
-    })
+    .update(patch)
     .eq("id", productId)
     .eq("is_active", true)
     .select(PRODUCT_SELECT)
@@ -455,14 +474,23 @@ async function persistAdminWholesalePrice(input: {
     return { error: "El precio mayorista debe ser mayor o igual a 0." };
   }
 
+  const nextRow = {
+    ...current,
+    precio_mayorista: precioMayoristaUsd,
+  };
+  const updatePayload: Record<string, unknown> = {
+    precio_mayorista: precioMayoristaUsd,
+    publication_status: nextStatus,
+    catalog_visible: nextVisible,
+    updated_at: new Date().toISOString(),
+  };
+  if (!isSupplierProductReadyForDropshippers(nextRow)) {
+    updatePayload.is_visible = false;
+  }
+
   const { data, error } = await input.admin
     .from("supplier_products")
-    .update({
-      precio_mayorista: precioMayoristaUsd,
-      publication_status: nextStatus,
-      catalog_visible: nextVisible,
-      updated_at: new Date().toISOString(),
-    })
+    .update(updatePayload)
     .eq("id", productId)
     .eq("is_active", true)
     .select(PRODUCT_SELECT)
@@ -523,11 +551,9 @@ export async function publishAdminSupplierProduct(
   if (!existing) return { error: "Producto no encontrado." };
 
   const current = existing as Record<string, unknown>;
-  const precioMayoristaUsd = resolvePrecioMayoristaUsd(current);
-  if (precioMayoristaUsd == null) {
-    return {
-      error: "Define el precio mayorista antes de publicar el producto.",
-    };
+  const blockReason = dropshipperVisibilityBlockReason(current);
+  if (blockReason) {
+    return { error: blockReason };
   }
 
   const { data, error } = await admin
@@ -609,14 +635,11 @@ export async function setAdminSupplierProductVisibility(input: {
     if (loadError) return { error: mapCatalogDbError(loadError.message) };
     if (!current) return { error: "Producto no encontrado." };
 
-    const mayorista = resolvePrecioMayoristaUsd(
+    const blockReason = dropshipperVisibilityBlockReason(
       current as Record<string, unknown>,
     );
-    if (mayorista == null || mayorista <= 0) {
-      return {
-        error:
-          "Asigna un precio mayorista mayor a cero antes de hacer visible este producto.",
-      };
+    if (blockReason) {
+      return { error: blockReason };
     }
   }
 
@@ -678,22 +701,21 @@ export async function setSupplierCatalogPublication(input: {
 
   const { data, error } = await admin
     .from("supplier_products")
-    .select("id, precio_mayorista")
+    .select("id, precio_mayorista, suggested_retail_usd")
     .eq("created_by", supplierUserId)
     .eq("is_active", true);
 
   if (error) return { error: mapCatalogDbError(error.message) };
 
   const rows = (data as Record<string, unknown>[] | null) ?? [];
-  const pricedCount = rows.filter((row) => {
-    const price = resolvePrecioMayoristaUsd(row);
-    return price != null && price > 0;
-  }).length;
+  const readyCount = rows.filter((row) =>
+    isSupplierProductReadyForDropshippers(row),
+  ).length;
 
-  if (input.published && pricedCount === 0) {
+  if (input.published && readyCount === 0) {
     return {
       error:
-        "Ningún producto de este proveedor tiene precio mayorista todavía.",
+        "Ningún producto de este proveedor tiene precio mayorista y venta sugerido configurados.",
       updated: 0,
       skippedWithoutPrice: rows.length,
     };
@@ -717,14 +739,18 @@ export async function setSupplierCatalogPublication(input: {
     .eq("created_by", supplierUserId)
     .eq("is_active", true);
   if (input.published) {
-    query = query.not("precio_mayorista", "is", null).gt("precio_mayorista", 0);
+    query = query
+      .not("precio_mayorista", "is", null)
+      .gt("precio_mayorista", 0)
+      .not("suggested_retail_usd", "is", null)
+      .gt("suggested_retail_usd", 0);
   }
   const { error: updateError } = await query;
   if (updateError) return { error: mapCatalogDbError(updateError.message) };
 
-  const updated = input.published ? pricedCount : rows.length;
+  const updated = input.published ? readyCount : rows.length;
   const skippedWithoutPrice = input.published
-    ? Math.max(0, rows.length - pricedCount)
+    ? Math.max(0, rows.length - readyCount)
     : 0;
 
   bustPublishedCatalogCaches();

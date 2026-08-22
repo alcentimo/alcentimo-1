@@ -123,12 +123,38 @@ export function resolveSuggestedRetailUsd(row: {
   return roundSupplierUsd(amount);
 }
 
+/** Producto listo para dropshippers: precio mayorista y venta sugerido válidos. */
+export function isSupplierProductReadyForDropshippers(row: {
+  precio_mayorista?: unknown;
+  suggested_retail_usd?: unknown;
+}): boolean {
+  const mayorista = resolvePrecioMayoristaUsd(row);
+  const suggested = resolveSuggestedRetailUsd(row);
+  return mayorista != null && mayorista > 0 && suggested != null;
+}
+
+export function dropshipperVisibilityBlockReason(row: {
+  precio_mayorista?: unknown;
+  suggested_retail_usd?: unknown;
+}): string | null {
+  const mayorista = resolvePrecioMayoristaUsd(row);
+  if (mayorista == null || mayorista <= 0) {
+    return "Asigna un precio mayorista mayor a cero.";
+  }
+  const suggested = resolveSuggestedRetailUsd(row);
+  if (suggested == null) {
+    return "Asigna un precio de venta sugerido mayor a cero.";
+  }
+  return null;
+}
+
 export function isPublishedForDropship(row: {
   is_active?: unknown;
   catalog_visible?: unknown;
   is_visible?: unknown;
   publication_status?: unknown;
   precio_mayorista?: unknown;
+  suggested_retail_usd?: unknown;
 }): boolean {
   if (row.is_active === false) return false;
   if (row.catalog_visible === false) return false;
@@ -136,8 +162,7 @@ export function isPublishedForDropship(row: {
   if (normalizePublicationStatus(row.publication_status) !== "published") {
     return false;
   }
-  const price = resolvePrecioMayoristaUsd(row);
-  return price != null && price > 0;
+  return isSupplierProductReadyForDropshippers(row);
 }
 
 /**
@@ -154,6 +179,8 @@ export function applyDropshipVisibleProductFilter<T>(query: T): T {
   next = next.eq("publication_status", "published");
   next = next.not("precio_mayorista", "is", null);
   next = next.gt("precio_mayorista", 0);
+  next = next.not("suggested_retail_usd", "is", null);
+  next = next.gt("suggested_retail_usd", 0);
   return next as T;
 }
 
