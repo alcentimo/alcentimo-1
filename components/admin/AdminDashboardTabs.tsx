@@ -10,6 +10,7 @@ import type { AdminUserRow } from "@/lib/admin/get-admin-users";
 import type { AdminSupplierDirectoryRow } from "@/lib/admin/get-admin-suppliers";
 import type { SupportMessage } from "@/lib/database.types";
 import type { DropshipSettlementRecord } from "@/lib/dropship/settlement-types";
+import type { PlatformDropshipShippingSettings } from "@/lib/platform/dropship-shipping";
 import {
   resolveAdminDashboardTab,
   resolveAdminStoresSubTab,
@@ -74,6 +75,20 @@ const DropshipSettlementsPanel = dynamic(
   },
 );
 
+const AdminShippingPanel = dynamic(
+  () =>
+    import("@/components/admin/AdminShippingPanel").then((m) => ({
+      default: m.AdminShippingPanel,
+    })),
+  {
+    loading: () => (
+      <p className="text-sm text-zinc-500 dark:text-zinc-400">
+        Cargando configuración de envíos…
+      </p>
+    ),
+  },
+);
+
 interface AdminDashboardTabsProps {
   messages: SupportMessage[];
   dropshippers: AdminUserRow[];
@@ -85,6 +100,7 @@ interface AdminDashboardTabsProps {
   dropshipSettlements?: DropshipSettlementRecord[];
   dropshipSettlementsError?: string | null;
   pendingSupplierDrafts?: number;
+  dropshipShipping: PlatformDropshipShippingSettings;
   initialTab?: AdminDashboardTab | string;
   legacyTabParam?: string | null;
   initialStoresSection?: string | null;
@@ -109,6 +125,7 @@ export function AdminDashboardTabs({
   dropshipSettlements = [],
   dropshipSettlementsError = null,
   pendingSupplierDrafts = 0,
+  dropshipShipping,
   initialTab = "tiendas",
   legacyTabParam = null,
   initialStoresSection = null,
@@ -197,6 +214,10 @@ export function AdminDashboardTabs({
             )
           }
         />
+      ) : null}
+
+      {activeTab === "envios" ? (
+        <AdminShippingPanel initialShipping={dropshipShipping} />
       ) : null}
 
       {activeTab === "soporte" ? (

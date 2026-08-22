@@ -115,8 +115,12 @@ export function validatePlatformDropshipShipping(
   if (!hasEnabledNationalCarrier(shipping)) {
     return "Activa al menos una agencia nacional (MRW o Zoom).";
   }
-  if (shipping.freeShippingEnabled && shipping.freeShippingMinUsd <= 0) {
-    return "Indica un monto mínimo mayor a $0 para el envío gratis.";
+  // freeShippingMinUsd === 0 con freeShippingEnabled = envío siempre gratis.
+  if (
+    shipping.freeShippingEnabled &&
+    shipping.freeShippingMinUsd < 0
+  ) {
+    return "El monto mínimo de envío gratis no puede ser negativo.";
   }
   return null;
 }

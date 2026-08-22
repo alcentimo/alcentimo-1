@@ -35,6 +35,9 @@ import {
 import { calculatePromotionDiscountUsd } from "@/lib/promotions/discount";
 import type { AppliedPromotion } from "@/lib/promotions/types";
 import {
+  FREE_SHIPPING_VE_LABEL,
+  NATIONAL_SHIPPING_TRUST_COPY,
+  describeFreeShippingRule,
   formatShippingOptionHint,
   resolveShippingQuote,
 } from "@/lib/store-settings/shipping-pricing";
@@ -216,6 +219,10 @@ export function CheckoutPanel({
   const shippingOptions = useMemo(
     () => purchaseInfo.shipping ?? [],
     [purchaseInfo.shipping],
+  );
+  const hasNationalShippingOptions = useMemo(
+    () => shippingOptions.some((option) => isNationalCarrierKey(option.key)),
+    [shippingOptions],
   );
   const paymentOptions = useMemo(
     () => purchaseInfo.payments ?? [],
@@ -1188,19 +1195,19 @@ export function CheckoutPanel({
                           {purchaseInfo.shippingPricing.freeShippingEnabled ? (
                             <p
                               className={cn(
-                                "mb-3 rounded-lg border px-3 py-2 text-xs leading-relaxed",
+                                "mb-3 rounded-lg border px-3 py-2.5 text-sm font-semibold leading-snug tracking-tight",
                                 shippingQuote.freeShipping.unlocked
-                                  ? "border-emerald-200 bg-emerald-50 text-emerald-900 dark:border-emerald-900/50 dark:bg-emerald-950/40 dark:text-emerald-200"
-                                  : "border-zinc-200 bg-zinc-50 text-zinc-600 dark:border-zinc-800 dark:bg-zinc-900/40 dark:text-zinc-300",
+                                  ? "border-emerald-300 bg-emerald-50 text-emerald-900 dark:border-emerald-800/60 dark:bg-emerald-950/50 dark:text-emerald-100"
+                                  : "border-zinc-200 bg-zinc-50 text-zinc-700 dark:border-zinc-800 dark:bg-zinc-900/40 dark:text-zinc-200",
                               )}
                             >
                               {shippingQuote.freeShipping.unlocked
-                                ? "¡Envío gratis desbloqueado en este pedido!"
-                                : `Envío gratis desde ${formatUsd(purchaseInfo.shippingPricing.freeShippingMinUsd)}. ${
+                                ? FREE_SHIPPING_VE_LABEL
+                                : `${describeFreeShippingRule(purchaseInfo.shippingPricing) ?? ""} ${
                                     shippingQuote.freeShipping.remainingUsd > 0
                                       ? `Te faltan ${formatUsd(shippingQuote.freeShipping.remainingUsd)}.`
                                       : ""
-                                  }`}
+                                  }`.trim()}
                             </p>
                           ) : purchaseInfo.shippingPricing.mode === "cod" ? (
                             <p className="mb-3 text-xs leading-relaxed text-zinc-500 dark:text-zinc-400">
@@ -1230,6 +1237,11 @@ export function CheckoutPanel({
                               />
                             ))}
                           </div>
+                          {hasNationalShippingOptions ? (
+                            <p className="mt-3 text-center text-[11px] font-medium leading-relaxed text-zinc-500 dark:text-zinc-400">
+                              {NATIONAL_SHIPPING_TRUST_COPY}
+                            </p>
+                          ) : null}
                         </div>
                       </CheckoutFieldGroup>
                     ) : (

@@ -191,9 +191,9 @@ export function ShippingTab({ initialSettings }: ShippingTabProps) {
           </p>
           <p className="mt-1 text-xs leading-relaxed text-zinc-600 dark:text-zinc-300">
             En el checkout tus clientes verán las agencias y las reglas de
-            envío que define Alcéntimo (cobro a destino o envío gratis según el
-            monto). Tú solo agregas, si quieres, entrega local o un punto de
-            encuentro.
+            envío que define Alcéntimo (cobro a destino, envío siempre gratis o
+            gratis desde un monto). Tú solo agregas, si quieres, entrega local o
+            un punto de encuentro.
           </p>
         </div>
       </SettingsSection>

@@ -4,6 +4,7 @@ import {
   BarChart3,
   Bot,
   MessageSquare,
+  Package,
   Users,
   Truck,
   Warehouse,
@@ -44,6 +45,13 @@ export const ADMIN_NAV_ITEMS: AdminNavItem[] = [
     label: "Gestión de usuarios",
     description: "Directorio de proveedores y dropshippers.",
     icon: Users,
+  },
+  {
+    id: "envios",
+    label: "Envíos",
+    description:
+      "Agencias nacionales y envío gratis global para todas las vitrinas.",
+    icon: Package,
   },
   {
     id: "soporte",
