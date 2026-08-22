@@ -4,6 +4,7 @@ import type {
   OwnerAssistantMessage,
   OwnerAssistantRequest,
 } from "@/lib/ai/owner-assistant-types";
+import { extractAssistantSearchQuery } from "@/lib/ai/megabodega-context";
 import { getOwnerAssistantContext } from "@/lib/dashboard/get-owner-assistant-context";
 import { requireAuthStore } from "@/lib/auth/require-dashboard-auth";
 import { createClient } from "@/lib/supabase/server";
@@ -69,6 +70,7 @@ export async function POST(request: Request) {
       storeSlug: auth.store.slug,
       storeName: auth.store.name,
       storeRubro: auth.store.rubro_tienda,
+      searchQuery: extractAssistantSearchQuery(body.messages),
     });
 
     const reply = await answerOwnerAssistantQuestion({
