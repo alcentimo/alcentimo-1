@@ -48,7 +48,9 @@ import {
   DROPSHIP_SUPPLIER_PRODUCT_SELECT,
   applyDropshipVisibleProductFilter,
   isPublishedForDropship,
+  parseUsdAmount,
   resolvePrecioMayoristaUsd,
+  resolveSuggestedRetailUsd,
 } from "@/lib/supplier/wholesale-price";
 
 const DEFAULT_LOW_STOCK_THRESHOLD = 5;
@@ -74,6 +76,7 @@ type SupplierCatalogRow = {
   title: string;
   description: string | null;
   wholesalePriceUsd: number;
+  platformSuggestedRetailUsd: number | null;
   stock: number;
   category: SupplierProductCategory;
   imageUrl: string | null;
@@ -174,6 +177,7 @@ async function fetchAllActiveSupplierProducts(
             ? row.description.trim().slice(0, 2000) || null
             : null,
         wholesalePriceUsd,
+        platformSuggestedRetailUsd: resolveSuggestedRetailUsd(row),
         stock: Math.max(0, Math.floor(Number(row.stock) || 0)),
         category: normalizeSupplierProductCategory(row.category),
         imageUrl,
@@ -443,22 +447,14 @@ export async function importSupplierProductsBulkToStore(input?: {
 
       for (const supplier of chunk) {
         const overrideRaw = retailOverrides[supplier.id];
-        const overrideParsed =
-          overrideRaw == null || overrideRaw === ""
-            ? null
-            : Number(
-                typeof overrideRaw === "number"
-                  ? overrideRaw
-                  : String(overrideRaw).trim().replace(",", "."),
-              );
+        const overrideParsed = parseUsdAmount(overrideRaw, { min: 0 });
         const individualRetail =
-          Number.isFinite(overrideParsed) && overrideParsed > 0
-            ? overrideParsed
-            : null;
+          overrideParsed != null && overrideParsed > 0 ? overrideParsed : null;
         const retailUsd = resolveDropshipImportRetailUsd(
           supplier.wholesalePriceUsd,
           dropship,
           individualRetail,
+          supplier.platformSuggestedRetailUsd,
         );
         if (retailUsd == null || retailUsd <= 0) {
           failed += 1;

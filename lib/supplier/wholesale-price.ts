@@ -111,6 +111,18 @@ export function resolvePrecioMayoristaUsd(row: {
   return roundSupplierUsd(amount);
 }
 
+/** Precio de venta sugerido por Alcéntimo para dropshippers. */
+export function resolveSuggestedRetailUsd(row: {
+  suggested_retail_usd?: unknown;
+}): number | null {
+  if (row.suggested_retail_usd == null || row.suggested_retail_usd === "") {
+    return null;
+  }
+  const amount = Number(row.suggested_retail_usd);
+  if (!Number.isFinite(amount) || amount <= 0) return null;
+  return roundSupplierUsd(amount);
+}
+
 export function isPublishedForDropship(row: {
   is_active?: unknown;
   catalog_visible?: unknown;
@@ -141,6 +153,7 @@ export function applyDropshipVisibleProductFilter<T>(query: T): T {
   next = next.eq("is_visible", true);
   next = next.eq("publication_status", "published");
   next = next.not("precio_mayorista", "is", null);
+  next = next.gt("precio_mayorista", 0);
   return next as T;
 }
 
@@ -149,4 +162,4 @@ export function applyDropshipVisibleProductFilter<T>(query: T): T {
  * Nunca incluir base_price_usd (costo_proveedor).
  */
 export const DROPSHIP_SUPPLIER_PRODUCT_SELECT =
-  "id, title, description, category, variants, stock, precio_mayorista, compare_at_usd, free_shipping, image_url, created_by, created_at, is_active, publication_status, catalog_visible, is_visible";
+  "id, title, description, category, variants, stock, precio_mayorista, suggested_retail_usd, compare_at_usd, free_shipping, image_url, created_by, created_at, is_active, publication_status, catalog_visible, is_visible";

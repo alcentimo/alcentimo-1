@@ -8,6 +8,7 @@ import {
   listAdminSupplierCatalogProducts,
   saveAdminSupplierWholesalePrices,
   setAdminSupplierProductVisibility,
+  setAdminSupplierSuggestedRetailPrice,
   setAdminSupplierWholesalePrice,
   setSupplierCatalogPublication,
   type AdminSupplierCatalogProduct,
@@ -30,6 +31,7 @@ import { cn } from "@/lib/cn";
 type PriceDraft = {
   mayorista: string;
   marginPercent: string;
+  suggestedRetail: string;
 };
 
 function draftsFromProduct(product: AdminSupplierCatalogProduct): PriceDraft {
@@ -42,11 +44,19 @@ function draftsFromProduct(product: AdminSupplierCatalogProduct): PriceDraft {
         : formatSupplierAmountInput(
             marginPercentFromPrices(product.costoProveedorUsd, mayorista),
           ),
+    suggestedRetail: formatSupplierAmountInput(product.suggestedRetailUsd),
   };
 }
 
 function isPriceDirty(product: AdminSupplierCatalogProduct, draft: PriceDraft): boolean {
   return parseUsdAmount(draft.mayorista) !== product.precioMayoristaUsd;
+}
+
+function isSuggestedRetailDirty(
+  product: AdminSupplierCatalogProduct,
+  draft: PriceDraft,
+): boolean {
+  return parseUsdAmount(draft.suggestedRetail) !== product.suggestedRetailUsd;
 }
 
 function effectiveWholesaleUsd(
@@ -126,6 +136,7 @@ export function AdminSupplierCatalogPanel() {
   const productsRef = useRef(products);
   const draftsRef = useRef(priceDrafts);
   const saveTimers = useRef<Record<string, number>>({});
+  const suggestedSaveTimers = useRef<Record<string, number>>({});
 
   useEffect(() => {
     productsRef.current = products;
@@ -220,8 +231,12 @@ export function AdminSupplierCatalogPanel() {
 
   useEffect(() => {
     const timers = saveTimers.current;
+    const suggestedTimers = suggestedSaveTimers.current;
     return () => {
       for (const timer of Object.values(timers)) {
+        window.clearTimeout(timer);
+      }
+      for (const timer of Object.values(suggestedTimers)) {
         window.clearTimeout(timer);
       }
     };
@@ -300,6 +315,61 @@ export function AdminSupplierCatalogPanel() {
     saveTimers.current[productId] = window.setTimeout(() => {
       void persistPrice(productId);
     }, 650);
+  }
+
+  async function persistSuggestedRetail(productId: string) {
+    const product = productsRef.current.find((item) => item.id === productId);
+    const draft = draftsRef.current[productId];
+    if (!product || !draft || !isSuggestedRetailDirty(product, draft)) return;
+
+    setSavingIds((current) => ({ ...current, [productId]: true }));
+    setError(null);
+    try {
+      const result = await setAdminSupplierSuggestedRetailPrice({
+        productId,
+        suggestedRetailUsd: draft.suggestedRetail.trim() || null,
+      });
+      if (result.error || !result.product) {
+        setError(result.error ?? "No se pudo guardar el precio sugerido.");
+        return;
+      }
+      const latest = draftsRef.current[productId];
+      const latestParsed = latest
+        ? parseUsdAmount(latest.suggestedRetail)
+        : null;
+      const savedParsed = parseUsdAmount(draft.suggestedRetail);
+      if (latestParsed !== savedParsed) {
+        setProducts((current) =>
+          current.map((item) =>
+            item.id === result.product!.id ? result.product! : item,
+          ),
+        );
+        return;
+      }
+      replaceProduct(result.product);
+      setMessage(null);
+    } finally {
+      setSavingIds((current) => {
+        const next = { ...current };
+        delete next[productId];
+        return next;
+      });
+    }
+  }
+
+  function queueSuggestedAutosave(productId: string) {
+    window.clearTimeout(suggestedSaveTimers.current[productId]);
+    suggestedSaveTimers.current[productId] = window.setTimeout(() => {
+      void persistSuggestedRetail(productId);
+    }, 650);
+  }
+
+  function onSuggestedRetailChange(
+    product: AdminSupplierCatalogProduct,
+    raw: string,
+  ) {
+    patchDraft(product, { suggestedRetail: raw });
+    queueSuggestedAutosave(product.id);
   }
 
   function onMayoristaChange(product: AdminSupplierCatalogProduct, raw: string) {
@@ -628,6 +698,7 @@ export function AdminSupplierCatalogPanel() {
                       <th className="admin-stores-th">Costo</th>
                       <th className="admin-stores-th">Precio mayorista</th>
                       <th className="admin-stores-th">Ganancia %</th>
+                      <th className="admin-stores-th">Precio venta sugerido</th>
                       <th className="admin-stores-th">Visible</th>
                     </tr>
                   </thead>
@@ -636,6 +707,7 @@ export function AdminSupplierCatalogPanel() {
                       const draft =
                         priceDrafts[product.id] ?? draftsFromProduct(product);
                       const dirty = isPriceDirty(product, draft);
+                      const suggestedDirty = isSuggestedRetailDirty(product, draft);
                       const saving = Boolean(savingIds[product.id]);
                       const canEnableVisibility = canEnableDropshipperVisibility(
                         product,
@@ -722,6 +794,31 @@ export function AdminSupplierCatalogPanel() {
                               }
                               onBlur={() => void persistPrice(product.id)}
                             />
+                          </td>
+                          <td className="admin-stores-td">
+                            <div className="flex items-center gap-2">
+                              <MoneyInput
+                                prefix="$"
+                                value={draft.suggestedRetail}
+                                disabled={saving || busy}
+                                onChange={(value) =>
+                                  onSuggestedRetailChange(product, value)
+                                }
+                                onBlur={() => void persistSuggestedRetail(product.id)}
+                              />
+                              {saving ? (
+                                <Loader2 className="h-3.5 w-3.5 animate-spin text-zinc-400" />
+                              ) : suggestedDirty ? (
+                                <span className="text-[11px] text-amber-600">
+                                  …
+                                </span>
+                              ) : draft.suggestedRetail ? (
+                                <Check className="h-3.5 w-3.5 text-emerald-500" />
+                              ) : null}
+                            </div>
+                            <p className="mt-1 text-[10px] text-zinc-400">
+                              Para dropshippers al cargar todo
+                            </p>
                           </td>
                           <td className="admin-stores-td">
                             <div className="flex items-center gap-2">

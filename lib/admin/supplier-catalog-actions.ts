@@ -20,6 +20,7 @@ import {
   parseUsdAmount,
   resolveCostoProveedorUsd,
   resolvePrecioMayoristaUsd,
+  resolveSuggestedRetailUsd,
   type SupplierPublicationStatus,
 } from "@/lib/supplier/wholesale-price";
 
@@ -35,6 +36,7 @@ export type AdminSupplierCatalogProduct = {
   stock: number;
   costoProveedorUsd: number;
   precioMayoristaUsd: number | null;
+  suggestedRetailUsd: number | null;
   marginUsd: number | null;
   marginPercent: number | null;
   publicationStatus: SupplierPublicationStatus;
@@ -57,7 +59,7 @@ export type AdminSupplierMarginOption = {
 };
 
 const PRODUCT_SELECT =
-  "id, title, description, category, stock, base_price_usd, precio_mayorista, publication_status, catalog_visible, is_visible, image_url, created_by, created_at, updated_at, is_active";
+  "id, title, description, category, stock, base_price_usd, precio_mayorista, suggested_retail_usd, publication_status, catalog_visible, is_visible, image_url, created_by, created_at, updated_at, is_active";
 
 async function requireSupportAdmin() {
   const supabase = await createClient();
@@ -93,6 +95,7 @@ function mapAdminProduct(
     stock: Number(row.stock) || 0,
     costoProveedorUsd: costo,
     precioMayoristaUsd: mayorista,
+    suggestedRetailUsd: resolveSuggestedRetailUsd(row),
     marginUsd: mayorista == null ? null : marginUsdFromPrices(costo, mayorista),
     marginPercent:
       mayorista == null ? null : marginPercentFromPrices(costo, mayorista),
@@ -328,6 +331,53 @@ export async function setAdminSupplierWholesalePrice(input: {
   }
   bustPublishedCatalogCaches();
   return { product: persisted.product };
+}
+
+export async function setAdminSupplierSuggestedRetailPrice(input: {
+  productId: string;
+  suggestedRetailUsd: number | string | null;
+}): Promise<ActionResult<{ product: AdminSupplierCatalogProduct }>> {
+  const auth = await requireSupportAdmin();
+  if (!auth.ok) return { error: auth.error };
+
+  const productId = input.productId.trim();
+  if (!productId) return { error: "Producto inválido." };
+
+  const raw = input.suggestedRetailUsd;
+  const parsed =
+    raw == null || raw === ""
+      ? null
+      : parseUsdAmount(raw, { min: 0 });
+  if (raw != null && raw !== "" && parsed == null) {
+    return { error: "Indica un precio sugerido válido en USD." };
+  }
+  if (parsed != null && parsed <= 0) {
+    return {
+      error: "El precio de venta sugerido debe ser mayor a cero.",
+    };
+  }
+
+  const admin = createAdminClient();
+  const { data, error } = await admin
+    .from("supplier_products")
+    .update({
+      suggested_retail_usd: parsed,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", productId)
+    .eq("is_active", true)
+    .select(PRODUCT_SELECT)
+    .maybeSingle();
+
+  if (error) return { error: mapCatalogDbError(error.message) };
+  if (!data) return { error: "Producto no encontrado." };
+
+  const updated = data as Record<string, unknown>;
+  const names = await loadSupplierNames(admin, [
+    String(updated.created_by ?? ""),
+  ]);
+  bustPublishedCatalogCaches();
+  return { product: mapAdminProduct(updated, names) };
 }
 
 export async function saveAdminSupplierWholesalePrices(

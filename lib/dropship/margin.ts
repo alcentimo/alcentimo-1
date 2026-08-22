@@ -65,12 +65,15 @@ export function suggestRetailFromWholesaleCost(
 
 /**
  * Precio de venta al importar al catálogo del dropshipper:
- * usa el precio individual si es válido (> 0); si no, el margen por defecto de la tienda.
+ * 1) precio individual del comerciante (> 0)
+ * 2) precio sugerido por Alcéntimo (> 0)
+ * 3) margen por defecto de la tienda
  */
 export function resolveDropshipImportRetailUsd(
   wholesalePriceUsd: number,
   settings: DropshipPricingSettings,
   individualRetailUsd?: number | null,
+  platformSuggestedRetailUsd?: number | null,
 ): number | null {
   const wholesale = Math.max(0, Number(wholesalePriceUsd) || 0);
   if (wholesale <= 0) return null;
@@ -81,6 +84,14 @@ export function resolveDropshipImportRetailUsd(
     individualRetailUsd > 0
   ) {
     return Math.round(individualRetailUsd * 100) / 100;
+  }
+
+  if (
+    platformSuggestedRetailUsd != null &&
+    Number.isFinite(platformSuggestedRetailUsd) &&
+    platformSuggestedRetailUsd > 0
+  ) {
+    return Math.round(platformSuggestedRetailUsd * 100) / 100;
   }
 
   return suggestRetailFromWholesaleCost(wholesale, settings);

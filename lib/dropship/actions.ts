@@ -53,6 +53,7 @@ import {
   parsePercentAmount,
   parseUsdAmount,
   resolvePrecioMayoristaUsd,
+  resolveSuggestedRetailUsd,
 } from "@/lib/supplier/wholesale-price";
 
 type ActionResult<T extends object = object> = {
@@ -355,10 +356,10 @@ export async function listActiveSupplierCatalogForMerchant(): Promise<
       galleryByProduct.get(id) ?? [],
       coverUrl,
     );
-    const suggestedRetailUsd = suggestRetailFromWholesaleCost(
-      cost,
-      pricingForSuggest,
-    );
+    const platformSuggestedRetailUsd = resolveSuggestedRetailUsd(row);
+    const suggestedRetailUsd =
+      platformSuggestedRetailUsd ??
+      suggestRetailFromWholesaleCost(cost, pricingForSuggest);
     const storedRetail =
       linkedProductId != null
         ? (retailResult.prices.get(linkedProductId) ?? null)
@@ -470,10 +471,14 @@ export async function importSupplierProductToStoreCatalog(
       return { error: "Producto mayorista no disponible." };
     }
     const overrideRetail = parseUsdAmount(options?.retailUsd, { min: 0 });
+    const platformSuggestedRetailUsd = resolveSuggestedRetailUsd(
+      supplierRow as Record<string, unknown>,
+    );
     const retailUsd = resolveDropshipImportRetailUsd(
       cost,
       dropship,
       overrideRetail != null && overrideRetail > 0 ? overrideRetail : null,
+      platformSuggestedRetailUsd,
     );
     if (retailUsd == null || retailUsd <= 0) {
       return {
