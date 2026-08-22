@@ -44,7 +44,6 @@ import { syncDefaultLocationStockFromVariant } from "@/lib/locations/sync-stock"
 import { mirrorSupplierStockToLinkedStores } from "@/lib/dropship/supplier-stock";
 import { fetchAllPagedRows } from "@/lib/supabase/fetch-all-rows";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { loadSupplierDisplayNames } from "@/lib/dropship/settlement-supplier-names";
 import {
   DROPSHIP_SUPPLIER_PRODUCT_SELECT,
   applyDropshipVisibleProductFilter,
@@ -271,8 +270,6 @@ export type MerchantSupplierCatalogProduct = {
   retailPriceUsd: number | null;
   stock: number;
   category: string;
-  supplierUserId: string;
-  supplierName: string | null;
   imageUrl: string | null;
   imageUrls: string[];
   variantCount: number;
@@ -342,11 +339,6 @@ export async function listActiveSupplierCatalogForMerchant(): Promise<
   const retailResult = await loadRetailUsdByProductIds(admin, linkedProductIds);
   if (retailResult.error) return { error: retailResult.error };
 
-  const supplierUserIds = catalogRows
-    .map((row) => String(row.created_by ?? ""))
-    .filter(Boolean);
-  const supplierNames = await loadSupplierDisplayNames(supplierUserIds);
-
   const products: MerchantSupplierCatalogProduct[] = [];
   for (const row of catalogRows) {
     const id = String(row.id);
@@ -371,7 +363,6 @@ export async function listActiveSupplierCatalogForMerchant(): Promise<
         ? (retailResult.prices.get(linkedProductId) ?? null)
         : null;
 
-    const supplierUserId = String(row.created_by ?? "");
     products.push({
       id,
       title: String(row.title ?? ""),
@@ -381,8 +372,6 @@ export async function listActiveSupplierCatalogForMerchant(): Promise<
       retailPriceUsd: storedRetail ?? suggestedRetailUsd,
       stock: Number(row.stock) || 0,
       category: normalizeSupplierProductCategory(row.category),
-      supplierUserId,
-      supplierName: supplierNames.get(supplierUserId) ?? null,
       imageUrl: imageUrls[0] ?? null,
       imageUrls,
       variantCount: variants.options.length,
