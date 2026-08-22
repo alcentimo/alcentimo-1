@@ -297,6 +297,11 @@ export function OrdersPanel({
     initialTotalCount ?? initialOrders.length,
   );
   const [hasMore, setHasMore] = useState(initialHasMore);
+
+  useEffect(() => {
+    setOrders(initialOrders);
+    setTotalCount(initialTotalCount ?? initialOrders.length);
+  }, [initialOrders, initialTotalCount]);
   const [loadingMore, setLoadingMore] = useState(false);
   const [loadingFilter, setLoadingFilter] = useState(false);
   const loadMoreRef = useRef<HTMLDivElement | null>(null);
@@ -505,18 +510,15 @@ export function OrdersPanel({
     [dismissStatusNotify, statusNotifyByOrderId],
   );
 
-  if (initialOrders.length === 0) {
+  if (orders.length === 0) {
     return (
       <div className="card-panel text-center">
         <p className="text-sm font-medium text-zinc-800 dark:text-zinc-100">
-          Aún no hay pedidos del catálogo público
+          Aún no hay pedidos
         </p>
         <p className="mt-2 text-sm text-zinc-500">
-          Comparte tu enlace{" "}
-          <code className="rounded bg-zinc-100 px-1.5 py-0.5 text-xs dark:bg-zinc-900">
-            /c/tu-tienda
-          </code>{" "}
-          para que los clientes puedan comprar.
+          Comparte tu catálogo o registra una venta manual (WhatsApp, Instagram u otro canal)
+          para que Alcéntimo procese el envío.
         </p>
       </div>
     );
