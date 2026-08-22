@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { Loader2 } from "lucide-react";
+import { Loader2, Wallet } from "lucide-react";
+import { SupplierEmptyState } from "@/components/supplier/SupplierEmptyState";
 import { PaymentConfigField } from "@/components/payments/PaymentConfigField";
 import { PaymentMethodCard } from "@/components/payments/PaymentMethodCard";
 import { SettingsSwitch } from "@/components/ui/SettingsSwitch";
@@ -111,7 +112,11 @@ export function SupplierPaymentsPanel({
           </p>
         </div>
         {payouts.length === 0 ? (
-          <p className="text-sm text-zinc-500">Sin movimientos.</p>
+          <SupplierEmptyState
+            icon={Wallet}
+            title="Sin liquidaciones aún"
+            description="Cuando Alcéntimo te pague por compras de inventario, cada movimiento quedará registrado aquí."
+          />
         ) : (
           <ul className="divide-y divide-zinc-100 dark:divide-zinc-800">
             {payouts.map((payout) => (

@@ -2,17 +2,18 @@
 
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
-import { Package, ShoppingBag, Wallet } from "lucide-react";
+import { Package, ShoppingBag, TrendingUp, Wallet } from "lucide-react";
 import { SupplierProductsPanel } from "@/components/supplier/SupplierProductsPanel";
 import { SupplierOrdersPanel } from "@/components/supplier/SupplierOrdersPanel";
 import { SupplierPaymentsPanel } from "@/components/supplier/SupplierPaymentsPanel";
+import { SupplierSalesHistoryPanel } from "@/components/supplier/SupplierSalesHistoryPanel";
 import type { SupplierProduct } from "@/lib/supplier/actions";
 import type { SupplierOrder } from "@/lib/supplier/order-types";
 import type { SupplierPaymentConfig } from "@/lib/supplier/payment-types";
 import type { SupplierPayoutObligationView } from "@/lib/dropship/settlement-types";
 import { cn } from "@/lib/cn";
 
-type SupplierTab = "productos" | "pedidos" | "pagos";
+type SupplierTab = "productos" | "pedidos" | "pagos" | "historial";
 
 interface SupplierDashboardProps {
   initialProducts: SupplierProduct[];
@@ -103,6 +104,19 @@ export function SupplierDashboard({
           <Wallet className="h-4 w-4" aria-hidden="true" />
           Pagos
         </button>
+        <button
+          type="button"
+          role="tab"
+          aria-selected={tab === "historial"}
+          onClick={() => selectTab("historial")}
+          className={cn(
+            "supplier-hub-tab",
+            tab === "historial" && "supplier-hub-tab-active",
+          )}
+        >
+          <TrendingUp className="h-4 w-4" aria-hidden="true" />
+          Historial
+        </button>
       </div>
 
       {tab === "productos" ? (
@@ -147,6 +161,17 @@ export function SupplierDashboard({
             payouts={payouts}
             creditedBalanceUsd={creditedBalanceUsd}
           />
+        </div>
+      ) : null}
+
+      {tab === "historial" ? (
+        <div className="space-y-4">
+          {ordersError ? (
+            <p className="supplier-hub-alert">
+              No se pudieron cargar las ventas.
+            </p>
+          ) : null}
+          <SupplierSalesHistoryPanel orders={initialOrders} />
         </div>
       ) : null}
     </div>

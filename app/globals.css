@@ -13244,6 +13244,18 @@ button.catalog-profile-footer-link {
   @apply rounded-2xl border border-dashed border-emerald-200/80 bg-emerald-50/40 px-4 py-10 text-center text-sm text-zinc-500 dark:border-emerald-900/40 dark:bg-emerald-950/20 dark:text-zinc-400;
 }
 
+.supplier-hub-empty-icon {
+  @apply mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-100 text-emerald-800 dark:bg-emerald-950/80 dark:text-emerald-300;
+}
+
+.supplier-hub-empty-title {
+  @apply text-sm font-semibold text-zinc-800 dark:text-zinc-100;
+}
+
+.supplier-hub-empty-copy {
+  @apply mx-auto mt-1 max-w-sm text-sm leading-relaxed text-zinc-500 dark:text-zinc-400;
+}
+
 .supplier-hub-list {
   @apply overflow-hidden rounded-2xl border border-emerald-200/70 bg-white dark:border-emerald-900/40 dark:bg-zinc-950;
 }

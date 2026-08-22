@@ -19,6 +19,7 @@ import {
   type ProductGalleryFieldValue,
 } from "@/components/dashboard/ProductGalleryField";
 import { SupplierVariantsEditor } from "@/components/supplier/SupplierVariantsEditor";
+import { SupplierEmptyState } from "@/components/supplier/SupplierEmptyState";
 import {
   Dialog,
   DialogContent,
@@ -509,14 +510,21 @@ export function SupplierProductsPanel({
           <p className="supplier-hub-success mt-2">{listMessage}</p>
         ) : null}
         {products.length === 0 ? (
-          <p className="supplier-hub-empty mt-3">
-            Aún no hay productos. Usa el formulario de arriba para cargar el
-            primero.
-          </p>
+          <div className="mt-3">
+            <SupplierEmptyState
+              icon={Package}
+              title="Aún no hay productos"
+              description="Carga el primero con el formulario de arriba para que Alcéntimo pueda comprarlo."
+            />
+          </div>
         ) : filteredProducts.length === 0 ? (
-          <p className="supplier-hub-empty mt-3">
-            No hay productos en esta categoría.
-          </p>
+          <div className="mt-3">
+            <SupplierEmptyState
+              icon={Package}
+              title="Nada en esta categoría"
+              description="Cambia el filtro o carga un producto con esa categoría."
+            />
+          </div>
         ) : (
           <ul className="supplier-hub-list mt-3">
             {filteredProducts.map((product) => {

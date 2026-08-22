@@ -39,7 +39,9 @@ export default async function ProveedorDashboardPage({
   const params = await searchParams;
   const tabRaw = Array.isArray(params.tab) ? params.tab[0] : params.tab;
   const initialTab =
-    tabRaw === "pedidos" || tabRaw === "pagos" ? tabRaw : "productos";
+    tabRaw === "pedidos" || tabRaw === "pagos" || tabRaw === "historial"
+      ? tabRaw
+      : "productos";
 
   const [listedProducts, listedOrders, paymentConfigResult, payoutsResult] =
     await Promise.all([

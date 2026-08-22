@@ -21,8 +21,13 @@ export function SupplierChrome({ email, children }: SupplierChromeProps) {
   const tab = searchParams.get("tab");
   const onPedidos = pathname.startsWith("/proveedor") && tab === "pedidos";
   const onPagos = pathname.startsWith("/proveedor") && tab === "pagos";
+  const onHistorial =
+    pathname.startsWith("/proveedor") && tab === "historial";
   const onProductos =
-    pathname.startsWith("/proveedor") && !onPedidos && !onPagos;
+    pathname.startsWith("/proveedor") &&
+    !onPedidos &&
+    !onPagos &&
+    !onHistorial;
 
   async function handleSignOut() {
     if (signingOut) return;
@@ -81,6 +86,15 @@ export function SupplierChrome({ email, children }: SupplierChromeProps) {
               )}
             >
               Pagos
+            </Link>
+            <Link
+              href="/proveedor/dashboard?tab=historial"
+              className={cn(
+                "supplier-hub-nav-link",
+                onHistorial && "supplier-hub-nav-link-active",
+              )}
+            >
+              Historial
             </Link>
             <button
               type="button"
