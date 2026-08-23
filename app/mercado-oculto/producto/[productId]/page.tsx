@@ -10,7 +10,10 @@ import { MercadoProductBuyBox } from "@/components/mercado-oculto/MercadoProduct
 import { MercadoProductGallery } from "@/components/mercado-oculto/MercadoProductGallery";
 import { MercadoSellerQuestions } from "@/components/mercado-oculto/MercadoSellerQuestions";
 import { formatUsd } from "@/lib/format";
-import { supplierVariantAttributeLabel } from "@/lib/supplier/variants";
+import {
+  listSupplierFashionCatalogSkus,
+  supplierVariantAttributeLabel,
+} from "@/lib/supplier/variants";
 
 export const dynamic = "force-dynamic";
 
@@ -58,6 +61,7 @@ export default async function MercadoProductoPage({
     authUser && result.sellerUserId === authUser.id,
   );
   const variantAttr = supplierVariantAttributeLabel(product.variants);
+  const fashionSkus = listSupplierFashionCatalogSkus(product.variants);
   const chatAccessMode = isAuthenticated ? "subscriber" : "anonymous";
 
   return (
@@ -115,9 +119,10 @@ export default async function MercadoProductoPage({
             supplierUserId={product.seller_user_id}
             supplierLabel={brandLabel}
             isAuthenticated={isAuthenticated}
+            variants={product.variants}
           />
 
-          {product.variants.options.length > 0 ? (
+          {fashionSkus.length === 0 && product.variants.options.length > 0 ? (
             <div className="mercado-mp-detail-block">
               <h2>Especificaciones</h2>
               <dl className="mercado-mp-specs">

@@ -12,7 +12,6 @@ import {
   ROPA_MODA_SHOE_SIZE_US_PRESETS,
   ROPA_MODA_SIZE_PRESETS,
   createDefaultFashionMatrix,
-  fashionMatrixHasDetailedStock,
   fashionMatrixToVariants,
   fashionVariantKey,
   filterSizesForFashionKind,
@@ -114,19 +113,21 @@ function StockInput({
   disabled,
   ariaLabel,
   className,
+  step = 1,
 }: {
   value: string;
   onChange: (value: string) => void;
   disabled?: boolean;
   ariaLabel: string;
   className?: string;
+  step?: number;
 }) {
   return (
     <input
       type="number"
-      inputMode="numeric"
+      inputMode="decimal"
       min={0}
-      step={1}
+      step={step}
       value={value}
       placeholder="—"
       onChange={(e) => onChange(e.target.value)}
@@ -142,12 +143,12 @@ function StockInput({
 
 function kindDescription(kind: FashionProductKind): string {
   if (kind === "calzado") {
-    return "Numeraciones EUR o US y colores. El stock por combinación es opcional.";
+    return "Numeraciones EUR o US y colores. Cada combinación requiere stock y precio.";
   }
   if (kind === "ambos") {
-    return "Ropa (S–XL), pantalones/jeans (28–36) y calzado (EUR o US) en la misma matriz.";
+    return "Ropa (S–XL), pantalones/jeans (28–36) y calzado (EUR o US). Stock y precio por combinación.";
   }
-  return "Tallas de prenda (S–XL), pantalones/jeans (28–36) y colores.";
+  return "Tallas de prenda (S–XL), pantalones/jeans (28–36) y colores. Stock y precio por combinación.";
 }
 
 export function FashionVariantsEditor({
@@ -189,7 +190,6 @@ export function FashionVariantsEditor({
   const showShoeSizes = productKind === "calzado" || productKind === "ambos";
 
   const combinationCount = matrix.sizes.length * matrix.colors.length;
-  const hasDetailedStock = fashionMatrixHasDetailedStock(matrix);
 
   function commit(next: FashionMatrixState) {
     const stocks = { ...next.stocks };
@@ -333,6 +333,14 @@ export function FashionVariantsEditor({
     commit({
       ...matrix,
       stocks: { ...matrix.stocks, [key]: stock },
+    });
+  }
+
+  function setPrice(size: string, color: string, priceExtraUsd: string) {
+    const key = fashionVariantKey(size, color);
+    commit({
+      ...matrix,
+      priceExtras: { ...matrix.priceExtras, [key]: priceExtraUsd },
     });
   }
 
@@ -713,6 +721,14 @@ export function FashionVariantsEditor({
                           disabled={disabled}
                           ariaLabel={`Stock ${size} ${color}`}
                         />
+                        <StockInput
+                          value={matrix.priceExtras[key] ?? ""}
+                          onChange={(value) => setPrice(size, color, value)}
+                          disabled={disabled}
+                          ariaLabel={`Precio extra USD ${size} ${color}`}
+                          step={0.01}
+                        />
+                        <span className="text-[10px] text-zinc-400">USD extra</span>
                       </label>
                     );
                   })}
@@ -761,12 +777,26 @@ export function FashionVariantsEditor({
                       const key = fashionVariantKey(size, color);
                       return (
                         <td key={key} className="px-2 py-1.5">
-                          <StockInput
-                            value={matrix.stocks[key] ?? ""}
-                            onChange={(value) => setStock(size, color, value)}
-                            disabled={disabled}
-                            ariaLabel={`Stock ${size} ${color}`}
-                          />
+                          <div className="flex min-w-[6.5rem] flex-col gap-1">
+                            <StockInput
+                              value={matrix.stocks[key] ?? ""}
+                              onChange={(value) => setStock(size, color, value)}
+                              disabled={disabled}
+                              ariaLabel={`Stock ${size} ${color}`}
+                            />
+                            <StockInput
+                              value={matrix.priceExtras[key] ?? ""}
+                              onChange={(value) =>
+                                setPrice(size, color, value)
+                              }
+                              disabled={disabled}
+                              ariaLabel={`Precio extra USD ${size} ${color}`}
+                              step={0.01}
+                            />
+                            <span className="text-[10px] text-zinc-400">
+                              extra USD
+                            </span>
+                          </div>
                         </td>
                       );
                     })}
@@ -776,18 +806,10 @@ export function FashionVariantsEditor({
             </table>
           </div>
 
-          {!hasDetailedStock ? (
-            <p className="border-t border-teal-100 bg-teal-50/70 px-3 py-2 text-[11px] leading-relaxed text-teal-800 dark:border-teal-900/50 dark:bg-teal-950/40 dark:text-teal-200">
-              No has agregado stock detallado. El producto se mostrará disponible
-              para tus clientes.
-            </p>
-          ) : (
-            <p className="border-t border-zinc-100 px-3 py-2 text-[11px] leading-relaxed text-zinc-500 dark:border-zinc-800 dark:text-zinc-400">
-              Deja vacío para stock abierto. Usa 0 si esa combinación no está
-              disponible. Si escribes un número, se controlará el inventario de
-              esa variante.
-            </p>
-          )}
+          <p className="border-t border-zinc-100 px-3 py-2 text-[11px] leading-relaxed text-zinc-500 dark:border-zinc-800 dark:text-zinc-400">
+            Cada combinación exige stock (0 = agotado) y precio extra en USD
+            sobre el precio base (0 = mismo precio).
+          </p>
         </div>
       ) : null}
     </div>

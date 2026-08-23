@@ -253,6 +253,36 @@ export function fashionMatrixHasDetailedStock(
   return false;
 }
 
+/** Stock y precio extra (USD) obligatorios en cada combinación talla × color. */
+export function validateRequiredFashionVariants(
+  variants: VariantFormInput[],
+): string | null {
+  if (variants.length === 0) {
+    return "Añade al menos una talla y un color, con stock y precio en cada combinación.";
+  }
+  if (!looksLikeFashionVariants(variants)) {
+    return "Completa talla y color en todas las variantes.";
+  }
+  for (const variant of variants) {
+    if (isOpenStockVariant(variant)) {
+      return `Indica el stock de «${variant.name}» (usa 0 si está agotada).`;
+    }
+    const stock = Number.parseInt(String(variant.stock ?? "").trim(), 10);
+    if (!Number.isFinite(stock) || stock < 0) {
+      return `Indica el stock de «${variant.name}».`;
+    }
+    const extraRaw = String(variant.priceExtraUsd ?? "").trim();
+    if (!extraRaw) {
+      return `Indica el precio extra en USD de «${variant.name}» (0 si usa el precio base).`;
+    }
+    const extra = Number(extraRaw.replace(",", "."));
+    if (!Number.isFinite(extra) || extra < 0) {
+      return `Indica un precio válido para «${variant.name}».`;
+    }
+  }
+  return null;
+}
+
 /** Conserva cm solo de tallas de calzado activas (sin re-normalizar al editar). */
 export function pruneFashionSizeLengthCm(
   matrix: FashionMatrixState,

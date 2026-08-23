@@ -14,6 +14,7 @@ import {
   clearMercadoCart,
   groupMercadoCartBySupplier,
   mercadoCartItemCount,
+  mercadoCartLineKey,
   mercadoCartSubtotal,
   readMercadoCart,
   writeMercadoCart,
@@ -24,6 +25,7 @@ import {
 
 type AddInput = {
   productId: string;
+  variantId?: string;
   productName: string;
   priceUsd: number;
   quantity?: number;
@@ -42,8 +44,8 @@ type MercadoCartContextValue = {
   subtotalUsd: number;
   supplierCount: number;
   addItem: (input: AddInput) => void;
-  setQuantity: (productId: string, quantity: number) => void;
-  removeItem: (productId: string) => void;
+  setQuantity: (lineKey: string, quantity: number) => void;
+  removeItem: (lineKey: string) => void;
   clear: () => void;
 };
 
@@ -113,12 +115,19 @@ export function MercadoCartProvider({
       const stock = Math.max(0, Math.floor(input.availableStock ?? 0));
       const supplierUserId = input.supplierUserId.trim();
       const current = readMercadoCart();
-      const existing = current.find((item) => item.productId === input.productId);
+      const incomingKey = mercadoCartLineKey({
+        productId: input.productId,
+        variantId: input.variantId,
+      });
+      const existing = current.find(
+        (item) => mercadoCartLineKey(item) === incomingKey,
+      );
       let nextQty = (existing?.quantity ?? 0) + qty;
       if (stock > 0) nextQty = Math.min(nextQty, stock);
 
       const nextItem: MercadoCartItem = {
         productId: input.productId,
+        ...(input.variantId ? { variantId: input.variantId } : {}),
         productName: input.productName,
         priceUsd: input.priceUsd,
         quantity: nextQty,
@@ -130,7 +139,7 @@ export function MercadoCartProvider({
 
       const next = existing
         ? current.map((item) =>
-            item.productId === input.productId ? nextItem : item,
+            mercadoCartLineKey(item) === incomingKey ? nextItem : item,
           )
         : [...current, nextItem];
       persist(next);
@@ -139,16 +148,16 @@ export function MercadoCartProvider({
   );
 
   const setQuantity = useCallback(
-    (productId: string, quantity: number) => {
+    (lineKey: string, quantity: number) => {
       const qty = Math.floor(quantity);
       const current = readMercadoCart();
       if (qty <= 0) {
-        persist(current.filter((item) => item.productId !== productId));
+        persist(current.filter((item) => mercadoCartLineKey(item) !== lineKey));
         return;
       }
       persist(
         current.map((item) => {
-          if (item.productId !== productId) return item;
+          if (mercadoCartLineKey(item) !== lineKey) return item;
           const max = item.availableStock > 0 ? item.availableStock : qty;
           return { ...item, quantity: Math.min(qty, max) };
         }),
@@ -158,8 +167,10 @@ export function MercadoCartProvider({
   );
 
   const removeItem = useCallback(
-    (productId: string) => {
-      persist(readMercadoCart().filter((item) => item.productId !== productId));
+    (lineKey: string) => {
+      persist(
+        readMercadoCart().filter((item) => mercadoCartLineKey(item) !== lineKey),
+      );
     },
     [persist],
   );

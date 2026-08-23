@@ -179,7 +179,7 @@ export function FashionVariantPicker({
                 role="option"
                 aria-selected={selected}
                 title={cm ? `${size} · ${cm} cm` : size}
-                disabled={!hasAnyStock && !selected}
+                disabled={!hasAnyStock}
                 onClick={() => setTalla(size)}
                 className={cn(
                   "fashion-variant-chip",
@@ -226,7 +226,7 @@ export function FashionVariantPicker({
                   aria-selected={selected}
                   aria-label={item}
                   title={unavailable || missing ? `${item} (agotado)` : item}
-                  disabled={(unavailable || missing) && !selected}
+                  disabled={unavailable || missing}
                   onClick={() => setColor(item)}
                   className={cn(
                     "fashion-variant-swatch",
@@ -247,7 +247,7 @@ export function FashionVariantPicker({
                 role="option"
                 aria-selected={selected}
                 title={unavailable || missing ? `${item} (agotado)` : item}
-                disabled={(unavailable || missing) && !selected}
+                disabled={unavailable || missing}
                 onClick={() => setColor(item)}
                 className={cn(
                   "fashion-variant-chip",

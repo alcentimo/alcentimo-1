@@ -43,6 +43,7 @@ export {
   variantsToFashionMatrix,
   fashionMatrixToVariants,
   fashionMatrixHasDetailedStock,
+  validateRequiredFashionVariants,
   pruneFashionSizeLengthCm,
   type FashionMatrixState,
 } from "@/lib/rubros/modules/ropa-moda/matrix";

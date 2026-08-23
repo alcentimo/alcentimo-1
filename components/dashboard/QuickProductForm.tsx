@@ -57,6 +57,7 @@ import { getProductNamePlaceholderForRubro } from "@/src/config/categories";
 import { useProductTitleAutoDetect } from "@/components/dashboard/useProductTitleAutoDetect";
 import { LocationStockFields } from "@/components/dashboard/LocationStockFields";
 import { validateProductPublishInput } from "@/lib/products/validate-publish-form";
+import { validateRequiredFashionVariants } from "@/lib/rubros/modules/ropa-moda";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/cn";
 import { ensureClientCompressedImages } from "@/lib/products/ensure-client-compressed-images";
@@ -264,6 +265,14 @@ function QuickProductFormSession({
     if (validationError) {
       setLocalError(validationError);
       return;
+    }
+
+    if (isRopaModa) {
+      const fashionError = validateRequiredFashionVariants(variants);
+      if (fashionError) {
+        setLocalError(fashionError);
+        return;
+      }
     }
 
     const usd = parseFloat(priceUsd);
