@@ -23,10 +23,14 @@ import {
   applyUniformPriceToSupplierSkus,
   normalizeSupplierProductVariants,
   parseSupplierVariantsFromForm,
-  sumSupplierVariantStock,
+  resolveSupplierProductStock,
   validateSupplierFashionVariants,
   type SupplierProductVariants,
 } from "@/lib/supplier/variants";
+import {
+  SUPPLIER_PRODUCT_PHOTO_REQUIRED_ERROR,
+  SUPPLIER_PRODUCT_STOCK_REQUIRED_ERROR,
+} from "@/lib/supplier/validate-product-form";
 import {
   normalizePublicationStatus,
   type SupplierPublicationStatus,
@@ -178,10 +182,15 @@ function parseProductFields(formData: FormData): {
     if (fashionError) return { error: fashionError };
   }
 
-  const summedStock = sumSupplierVariantStock(variants);
-  const resolvedStock = summedStock != null ? summedStock : stock;
+  const resolvedInventory = resolveSupplierProductStock(variants, stock);
+  const resolvedStock = resolvedInventory.stock;
+  if (resolvedStock <= 0) {
+    return { error: SUPPLIER_PRODUCT_STOCK_REQUIRED_ERROR };
+  }
   let resolvedPrice = Math.round(basePriceUsd * 100) / 100;
-  let resolvedVariants = normalizeSupplierProductVariants(variants);
+  let resolvedVariants = normalizeSupplierProductVariants(
+    resolvedInventory.variants,
+  );
 
   if (
     category === "ropa" &&
@@ -297,6 +306,17 @@ export async function createSupplierProduct(
       .eq("created_by", auth.user.id);
     return { error: gallery.error };
   }
+  if (gallery.images.length === 0) {
+    await admin
+      .from("supplier_products")
+      .update({
+        is_active: false,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", createdRow.id)
+      .eq("created_by", auth.user.id);
+    return { error: SUPPLIER_PRODUCT_PHOTO_REQUIRED_ERROR };
+  }
 
   const created = mapRow(createdRow, gallery.images);
   await admin.from("supplier_product_price_history").insert({
@@ -373,6 +393,9 @@ export async function updateSupplierProduct(
   );
   if (gallery.error) {
     return { error: gallery.error };
+  }
+  if (gallery.images.length === 0) {
+    return { error: SUPPLIER_PRODUCT_PHOTO_REQUIRED_ERROR };
   }
 
   const updated = mapRow(data as Record<string, unknown>, gallery.images);
