@@ -64,6 +64,11 @@ export interface SupplierProductVariants {
   axes?: SupplierVariantAxis[];
   /** Combinaciones cartesianas con stock y precio propios. */
   skus?: SupplierVariantSku[];
+  /**
+   * Si es true, cada SKU tiene precio propio.
+   * Si es false o ausente, rige el costo (USD) del producto.
+   */
+  differentiatedPrices?: boolean;
 }
 
 export function emptySupplierVariants(): SupplierProductVariants {
@@ -389,12 +394,15 @@ export function normalizeSupplierProductVariants(
       ? optionsFromSkus(skus)
       : options;
 
+  const differentiatedPrices = record.differentiatedPrices === true;
+
   return {
     attribute,
     ...(attribute === "otro" && attributeLabel ? { attributeLabel } : {}),
     options: derivedOptions,
     ...(axes.length > 0 ? { axes } : {}),
     ...(skus.length > 0 ? { skus } : {}),
+    ...(differentiatedPrices ? { differentiatedPrices: true } : {}),
   };
 }
 
@@ -446,27 +454,68 @@ export function hasSupplierMultiAttributeVariants(
   return axes.length >= 2;
 }
 
+export function applyUniformPriceToSupplierSkus(
+  variants: SupplierProductVariants,
+  priceUsd: number,
+): SupplierProductVariants {
+  const price =
+    Number.isFinite(priceUsd) && priceUsd >= 0
+      ? Math.round(priceUsd * 100) / 100
+      : 0;
+  const skus = (variants.skus ?? []).map((sku) => ({
+    ...sku,
+    priceUsd: price,
+  }));
+  return {
+    ...variants,
+    skus,
+    differentiatedPrices: false,
+    options: skus.length > 0 ? optionsFromSkus(skus) : variants.options,
+  };
+}
+
+export function supplierSkusUseDistinctPrices(
+  variants: SupplierProductVariants,
+  basePriceUsd: number,
+): boolean {
+  if (variants.differentiatedPrices) return true;
+  const skus = variants.skus ?? [];
+  if (skus.length === 0) return false;
+  const roundedBase = Math.round(basePriceUsd * 100) / 100;
+  const prices = new Set(
+    skus.map((sku) => Math.round((Number(sku.priceUsd) || 0) * 100) / 100),
+  );
+  if (prices.size > 1) return true;
+  const only = [...prices][0] ?? 0;
+  return only > 0 && Math.abs(only - roundedBase) > 0.009;
+}
+
+/**
+ * Valida SKUs cartesianos de Ropa y moda.
+ * Solo exige stock (y precio si está habilitado) en las filas generadas.
+ * Ejes vacíos (p. ej. Color sin chips, o “Otra talla” sin texto) se ignoran.
+ */
 export function validateSupplierFashionVariants(
   variants: SupplierProductVariants,
+  options?: { requireSkuPrice?: boolean },
 ): string | null {
   const axes = variants.axes ?? [];
   const active = axes.filter((axis) => axis.values.length > 0);
   if (active.length === 0) return null;
 
-  if (axes.some((axis) => axis.values.length === 0)) {
-    return "Completa los valores de cada atributo (por ejemplo Talla y Color) o quita el atributo vacío.";
-  }
-
   const skus = variants.skus ?? [];
   if (skus.length === 0) {
-    return "Selecciona al menos un valor por atributo para generar las combinaciones.";
+    return "Selecciona al menos un valor (talla o color) para generar las combinaciones.";
   }
+
+  const requireSkuPrice =
+    options?.requireSkuPrice ?? Boolean(variants.differentiatedPrices);
 
   for (const sku of skus) {
     if (!Number.isInteger(sku.stock) || sku.stock < 0) {
       return `Indica el stock de la variante «${sku.label}».`;
     }
-    if (!Number.isFinite(sku.priceUsd) || sku.priceUsd <= 0) {
+    if (requireSkuPrice && (!Number.isFinite(sku.priceUsd) || sku.priceUsd <= 0)) {
       return `Indica el precio en USD de la variante «${sku.label}».`;
     }
   }

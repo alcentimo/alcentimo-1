@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useMemo, useState, useTransition } from "react";
+import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import {
   Boxes,
   CircleAlert,
@@ -45,13 +45,20 @@ import {
   type SupplierProductCategory,
 } from "@/lib/supplier/categories";
 import {
+  applyUniformPriceToSupplierSkus,
   countSupplierVariantOptions,
   emptySupplierFashionVariants,
   emptySupplierVariants,
   serializeSupplierVariants,
+  supplierSkusUseDistinctPrices,
   supplierVariantAttributeLabel,
   type SupplierProductVariants,
 } from "@/lib/supplier/variants";
+import { detectSupplierCategoryFromTitle } from "@/lib/supplier/detect-category-from-title";
+import {
+  readLastSupplierProductCategory,
+  writeLastSupplierProductCategory,
+} from "@/lib/supplier/last-category";
 import { formatUsd } from "@/lib/format";
 import { cn } from "@/lib/cn";
 
@@ -85,12 +92,29 @@ const EMPTY_FORM: Omit<ProductFormState, "galleryKey"> = {
   gallery: EMPTY_GALLERY,
 };
 
+function variantsForCategory(
+  category: SupplierProductCategory,
+  current: SupplierProductVariants,
+  previousCategory: SupplierProductCategory,
+): SupplierProductVariants {
+  if (category === "ropa") {
+    return previousCategory === "ropa" ? current : emptySupplierFashionVariants();
+  }
+  return previousCategory === "ropa" ? emptySupplierVariants() : current;
+}
+
 function formFromProduct(product: SupplierProduct): ProductFormState {
+  const variants = product.variants ?? emptySupplierVariants();
+  const withFlag =
+    product.category === "ropa" &&
+    supplierSkusUseDistinctPrices(variants, product.basePriceUsd)
+      ? { ...variants, differentiatedPrices: true }
+      : variants;
   return {
     title: product.title,
     description: product.description,
     category: product.category,
-    variants: product.variants ?? emptySupplierVariants(),
+    variants: withFlag,
     stock: String(product.stock),
     basePriceUsd: String(product.basePriceUsd),
     gallery: EMPTY_GALLERY,
@@ -126,6 +150,7 @@ function ProductFields({
   onGalleryBusy,
   initialImages,
   imageMode,
+  rememberCategory = false,
 }: {
   idPrefix: string;
   form: ProductFormState;
@@ -135,7 +160,34 @@ function ProductFields({
   onGalleryBusy: (busy: boolean) => void;
   initialImages: ReturnType<typeof supplierImagesToEditImages>;
   imageMode: "create" | "edit";
+  rememberCategory?: boolean;
 }) {
+  const categoryLockedRef = useRef(!rememberCategory);
+
+  function applyCategory(
+    category: SupplierProductCategory,
+    options?: { lock?: boolean },
+  ) {
+    if (options?.lock) categoryLockedRef.current = true;
+    writeLastSupplierProductCategory(category);
+    onChange({
+      ...form,
+      category,
+      variants: variantsForCategory(category, form.variants, form.category),
+    });
+  }
+
+  function applyBasePrice(raw: string) {
+    const parsed = Number(raw.replace(",", "."));
+    const nextVariants =
+      form.category === "ropa" && !form.variants.differentiatedPrices
+        ? applyUniformPriceToSupplierSkus(
+            form.variants,
+            Number.isFinite(parsed) && parsed > 0 ? parsed : 0,
+          )
+        : form.variants;
+    onChange({ ...form, basePriceUsd: raw, variants: nextVariants });
+  }
   return (
     <>
       <ProductGalleryField
@@ -159,9 +211,30 @@ function ProductFields({
           <input
             id={`${idPrefix}-title`}
             value={form.title}
-            onChange={(event) =>
-              onChange({ ...form, title: event.target.value })
-            }
+            onChange={(event) => {
+              const title = event.target.value;
+              const detected = detectSupplierCategoryFromTitle(title);
+              if (
+                rememberCategory &&
+                !categoryLockedRef.current &&
+                detected &&
+                detected !== form.category
+              ) {
+                writeLastSupplierProductCategory(detected);
+                onChange({
+                  ...form,
+                  title,
+                  category: detected,
+                  variants: variantsForCategory(
+                    detected,
+                    form.variants,
+                    form.category,
+                  ),
+                });
+                return;
+              }
+              onChange({ ...form, title });
+            }}
             className="input-field"
             placeholder="Ej: Caja mayorista de snacks"
             disabled={pending}
@@ -176,24 +249,12 @@ function ProductFields({
             className="input-field"
             value={form.category}
             disabled={pending}
-            onChange={(event) => {
-              const category = normalizeSupplierProductCategory(
-                event.target.value,
-              );
-              const nextVariants =
-                category === "ropa"
-                  ? form.category === "ropa"
-                    ? form.variants
-                    : emptySupplierFashionVariants()
-                  : form.category === "ropa"
-                    ? emptySupplierVariants()
-                    : form.variants;
-              onChange({
-                ...form,
-                category,
-                variants: nextVariants,
-              });
-            }}
+            onChange={(event) =>
+              applyCategory(
+                normalizeSupplierProductCategory(event.target.value),
+                { lock: true },
+              )
+            }
           >
             {SUPPLIER_PRODUCT_CATEGORIES.map((item) => (
               <option key={item.value} value={item.value}>
@@ -201,6 +262,12 @@ function ProductFields({
               </option>
             ))}
           </select>
+          {rememberCategory ? (
+            <p className="mt-1 text-[11px] leading-relaxed text-zinc-500">
+              Recordamos tu última categoría. Si el título es claro, la
+              sugerimos automáticamente.
+            </p>
+          ) : null}
         </div>
         <div>
           <label htmlFor={`${idPrefix}-description`} className="label-field">
@@ -251,9 +318,7 @@ function ProductFields({
                 step="0.01"
                 inputMode="decimal"
                 value={form.basePriceUsd}
-                onChange={(event) =>
-                  onChange({ ...form, basePriceUsd: event.target.value })
-                }
+                onChange={(event) => applyBasePrice(event.target.value)}
                 className="input-field !mt-0 pl-7"
                 placeholder="0.00"
                 disabled={pending}
@@ -269,6 +334,7 @@ function ProductFields({
             idPrefix={`${idPrefix}-variants`}
             value={form.variants}
             disabled={pending}
+            basePriceUsd={form.basePriceUsd}
             onChange={(variants) => onChange({ ...form, variants })}
           />
         ) : (
@@ -304,6 +370,26 @@ export function SupplierProductsPanel({
   const [createGalleryBusy, setCreateGalleryBusy] = useState(false);
   const [editGalleryBusy, setEditGalleryBusy] = useState(false);
   const [pending, startTransition] = useTransition();
+  const didRestoreCategory = useRef(false);
+
+  useEffect(() => {
+    if (didRestoreCategory.current) return;
+    didRestoreCategory.current = true;
+    const lastCategory = readLastSupplierProductCategory("otros");
+    if (lastCategory === "otros") return;
+    setCreateForm((current) => {
+      if (current.category !== "otros") return current;
+      return {
+        ...current,
+        category: lastCategory,
+        variants: variantsForCategory(
+          lastCategory,
+          current.variants,
+          current.category,
+        ),
+      };
+    });
+  }, []);
 
   const metrics = useMemo(() => {
     const totalProducts = products.length;
@@ -324,9 +410,13 @@ export function SupplierProductsPanel({
   const editOpen = Boolean(editingProduct && editForm);
 
   function resetCreateForm() {
+    const lastCategory = readLastSupplierProductCategory(
+      createForm.category !== "otros" ? createForm.category : "otros",
+    );
     setCreateForm({
       ...EMPTY_FORM,
-      variants: emptySupplierVariants(),
+      category: lastCategory,
+      variants: variantsForCategory(lastCategory, emptySupplierVariants(), "otros"),
       gallery: EMPTY_GALLERY,
       galleryKey: Date.now(),
     });
@@ -364,6 +454,7 @@ export function SupplierProductsPanel({
       setCreateMessage(
         "Producto guardado como borrador.",
       );
+      writeLastSupplierProductCategory(createForm.category);
       resetCreateForm();
     });
   }
@@ -389,6 +480,7 @@ export function SupplierProductsPanel({
         ),
       );
       setListMessage("Producto actualizado.");
+      writeLastSupplierProductCategory(updated.category);
       closeEditModal();
     });
   }
@@ -475,6 +567,7 @@ export function SupplierProductsPanel({
             onGalleryBusy={setCreateGalleryBusy}
             initialImages={[]}
             imageMode="create"
+            rememberCategory
           />
         </div>
 

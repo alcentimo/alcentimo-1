@@ -20,6 +20,7 @@ import {
   type SupplierProductImage,
 } from "@/lib/supplier/product-images";
 import {
+  applyUniformPriceToSupplierSkus,
   normalizeSupplierProductVariants,
   parseSupplierVariantsFromForm,
   sumSupplierVariantStock,
@@ -171,15 +172,35 @@ function parseProductFields(formData: FormData): {
   }
 
   if (category === "ropa") {
-    const fashionError = validateSupplierFashionVariants(variants);
+    const fashionError = validateSupplierFashionVariants(variants, {
+      requireSkuPrice: Boolean(variants.differentiatedPrices),
+    });
     if (fashionError) return { error: fashionError };
   }
 
   const summedStock = sumSupplierVariantStock(variants);
   const resolvedStock = summedStock != null ? summedStock : stock;
   let resolvedPrice = Math.round(basePriceUsd * 100) / 100;
-  if (resolvedPrice <= 0 && variants.skus && variants.skus.length > 0) {
-    const minSku = Math.min(...variants.skus.map((sku) => sku.priceUsd));
+  let resolvedVariants = normalizeSupplierProductVariants(variants);
+
+  if (
+    category === "ropa" &&
+    resolvedVariants.skus &&
+    resolvedVariants.skus.length > 0 &&
+    !resolvedVariants.differentiatedPrices
+  ) {
+    if (resolvedPrice <= 0) {
+      return {
+        error:
+          "Indica el costo (USD) del producto. Se aplicará a todas las tallas y colores.",
+      };
+    }
+    resolvedVariants = applyUniformPriceToSupplierSkus(
+      resolvedVariants,
+      resolvedPrice,
+    );
+  } else if (resolvedPrice <= 0 && resolvedVariants.skus && resolvedVariants.skus.length > 0) {
+    const minSku = Math.min(...resolvedVariants.skus.map((sku) => sku.priceUsd));
     if (Number.isFinite(minSku) && minSku > 0) {
       resolvedPrice = minSku;
     }
@@ -189,7 +210,7 @@ function parseProductFields(formData: FormData): {
     title,
     description,
     category,
-    variants: normalizeSupplierProductVariants(variants),
+    variants: resolvedVariants,
     stock: resolvedStock,
     basePriceUsd: resolvedPrice,
   };
