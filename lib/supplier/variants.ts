@@ -490,6 +490,11 @@ export function supplierSkusUseDistinctPrices(
   return only > 0 && Math.abs(only - roundedBase) > 0.009;
 }
 
+/**
+ * Valida SKUs cartesianos de Ropa y moda.
+ * Solo exige stock (y precio si está habilitado) en las filas generadas.
+ * Ejes vacíos (p. ej. Color sin chips, o “Otra talla” sin texto) se ignoran.
+ */
 export function validateSupplierFashionVariants(
   variants: SupplierProductVariants,
   options?: { requireSkuPrice?: boolean },
@@ -498,13 +503,9 @@ export function validateSupplierFashionVariants(
   const active = axes.filter((axis) => axis.values.length > 0);
   if (active.length === 0) return null;
 
-  if (axes.some((axis) => axis.values.length === 0)) {
-    return "Completa los valores de cada atributo (por ejemplo Talla y Color) o quita el atributo vacío.";
-  }
-
   const skus = variants.skus ?? [];
   if (skus.length === 0) {
-    return "Selecciona al menos un valor por atributo para generar las combinaciones.";
+    return "Selecciona al menos un valor (talla o color) para generar las combinaciones.";
   }
 
   const requireSkuPrice =

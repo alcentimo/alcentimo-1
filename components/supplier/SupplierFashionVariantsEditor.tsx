@@ -191,9 +191,10 @@ export function SupplierFashionVariantsEditor({
         <div>
           <p className="supplier-hub-section-label">Talla y color</p>
           <p className="mt-1 text-xs leading-relaxed text-zinc-500 dark:text-zinc-400">
-            Añade Talla y Color a la vez. Cada combinación (ej. M / Negro)
-            requiere su stock. El costo (USD) del producto se aplica a todas
-            salvo que actives precios diferenciados
+            Elige talla, color o ambos. Cada combinación generada (ej. M, o M /
+            Negro) requiere su stock. Los campos “Otra talla” u “Otro color” son
+            opcionales. El costo (USD) del producto se aplica a todas salvo que
+            actives precios diferenciados
             {skus.length > 0
               ? ` · ${skus.length} variante${skus.length === 1 ? "" : "s"}`
               : ""}
