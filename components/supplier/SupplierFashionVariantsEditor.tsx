@@ -7,6 +7,7 @@ import {
 } from "@/lib/rubros/modules/ropa-moda";
 import {
   MAX_SUPPLIER_VARIANT_SKUS,
+  applyUniformPriceToSupplierSkus,
   emptySupplierFashionVariants,
   rebuildSupplierSkus,
   supplierAxisLabel,
@@ -19,6 +20,8 @@ interface SupplierFashionVariantsEditorProps {
   idPrefix: string;
   value: SupplierProductVariants;
   disabled?: boolean;
+  /** Costo (USD) del producto; se copia a todas las filas si no hay precios diferenciados. */
+  basePriceUsd?: string;
   onChange: (next: SupplierProductVariants) => void;
 }
 
@@ -89,24 +92,34 @@ function ensureFashionAxes(
 function commit(
   next: SupplierProductVariants,
   onChange: (value: SupplierProductVariants) => void,
+  uniformPrice = 0,
 ) {
   const axes = next.axes ?? [];
-  onChange({
+  let rebuilt: SupplierProductVariants = {
     ...next,
     attribute: (axes[0]?.attribute ?? "talla") as SupplierVariantAttribute,
     skus: rebuildSupplierSkus(axes, next.skus),
-  });
+  };
+  if (!rebuilt.differentiatedPrices) {
+    rebuilt = applyUniformPriceToSupplierSkus(rebuilt, uniformPrice);
+  }
+  onChange(rebuilt);
 }
 
 export function SupplierFashionVariantsEditor({
   idPrefix,
   value,
   disabled = false,
+  basePriceUsd = "",
   onChange,
 }: SupplierFashionVariantsEditorProps) {
   const variants = ensureFashionAxes(value);
   const axes = variants.axes ?? [];
   const skus = variants.skus ?? rebuildSupplierSkus(axes, undefined);
+  const differentiated = Boolean(variants.differentiatedPrices);
+  const parsedBase = Number(String(basePriceUsd).replace(",", "."));
+  const uniformPrice =
+    Number.isFinite(parsedBase) && parsedBase > 0 ? parsedBase : 0;
 
   function toggleValue(axisId: string, item: string) {
     const nextAxes = axes.map((axis) => {
@@ -123,7 +136,7 @@ export function SupplierFashionVariantsEditor({
           : [...axis.values, item],
       };
     });
-    commit({ ...variants, axes: nextAxes }, onChange);
+    commit({ ...variants, axes: nextAxes }, onChange, uniformPrice);
   }
 
   function addCustomValue(axisId: string, raw: string) {
@@ -146,6 +159,7 @@ export function SupplierFashionVariantsEditor({
         ),
       },
       onChange,
+      uniformPrice,
     );
   }
 
@@ -177,8 +191,9 @@ export function SupplierFashionVariantsEditor({
         <div>
           <p className="supplier-hub-section-label">Talla y color</p>
           <p className="mt-1 text-xs leading-relaxed text-zinc-500 dark:text-zinc-400">
-            Añade Talla y Color a la vez. Cada combinación (ej. M / Negro) exige
-            stock y precio propios
+            Añade Talla y Color a la vez. Cada combinación (ej. M / Negro)
+            requiere su stock. El costo (USD) del producto se aplica a todas
+            salvo que actives precios diferenciados
             {skus.length > 0
               ? ` · ${skus.length} variante${skus.length === 1 ? "" : "s"}`
               : ""}
@@ -277,11 +292,52 @@ export function SupplierFashionVariantsEditor({
 
       {skus.length > 0 ? (
         <div className="overflow-hidden rounded-xl border border-emerald-100 bg-white dark:border-emerald-900/40 dark:bg-zinc-950">
+          <div className="flex flex-wrap items-center justify-between gap-2 border-b border-emerald-50 px-3 py-2 dark:border-emerald-950/60">
+            <p className="text-[11px] leading-relaxed text-zinc-500">
+              {differentiated
+                ? "Cada combinación usa su propio precio."
+                : uniformPrice > 0
+                  ? `Costo aplicado a todas: $${uniformPrice.toFixed(2)}`
+                  : "Indica el costo (USD) arriba; se copiará a todas las combinaciones."}
+            </p>
+            <button
+              type="button"
+              className={`rounded-full border px-3 py-1 text-[11px] font-semibold transition ${
+                differentiated
+                  ? "border-emerald-600 bg-emerald-600 text-white"
+                  : "border-zinc-200 bg-white text-zinc-700 hover:border-zinc-300 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-200"
+              }`}
+              disabled={disabled}
+              onClick={() => {
+                if (differentiated) {
+                  onChange(
+                    applyUniformPriceToSupplierSkus(variants, uniformPrice),
+                  );
+                  return;
+                }
+                onChange({
+                  ...variants,
+                  differentiatedPrices: true,
+                  skus: skus.map((sku) => ({
+                    ...sku,
+                    priceUsd:
+                      sku.priceUsd > 0 ? sku.priceUsd : uniformPrice,
+                  })),
+                });
+              }}
+            >
+              Precios diferenciados por variante
+            </button>
+          </div>
           <ul className="divide-y divide-emerald-50 dark:divide-emerald-950/60">
             {skus.map((sku) => (
               <li
                 key={sku.id}
-                className="flex flex-wrap items-end gap-2 p-3 sm:grid sm:grid-cols-[minmax(0,1fr)_5.5rem_6.5rem] sm:items-center"
+                className={`flex flex-wrap items-end gap-2 p-3 sm:items-center ${
+                  differentiated
+                    ? "sm:grid sm:grid-cols-[minmax(0,1fr)_5.5rem_6.5rem]"
+                    : "sm:grid sm:grid-cols-[minmax(0,1fr)_5.5rem]"
+                }`}
               >
                 <p className="w-full text-sm font-medium text-zinc-800 dark:text-zinc-100">
                   {sku.label}
@@ -308,29 +364,31 @@ export function SupplierFashionVariantsEditor({
                     aria-label={`Stock ${sku.label}`}
                   />
                 </div>
-                <div className="w-28 sm:w-auto">
-                  <label
-                    htmlFor={`${idPrefix}-price-${sku.id}`}
-                    className="label-field"
-                  >
-                    Precio USD *
-                  </label>
-                  <input
-                    id={`${idPrefix}-price-${sku.id}`}
-                    type="number"
-                    min={0.01}
-                    step="0.01"
-                    required
-                    disabled={disabled}
-                    value={sku.priceUsd ? String(sku.priceUsd) : ""}
-                    placeholder="0.00"
-                    onChange={(event) =>
-                      updateSku(sku.id, { priceUsd: event.target.value })
-                    }
-                    className="input-field"
-                    aria-label={`Precio ${sku.label}`}
-                  />
-                </div>
+                {differentiated ? (
+                  <div className="w-28 sm:w-auto">
+                    <label
+                      htmlFor={`${idPrefix}-price-${sku.id}`}
+                      className="label-field"
+                    >
+                      Precio USD *
+                    </label>
+                    <input
+                      id={`${idPrefix}-price-${sku.id}`}
+                      type="number"
+                      min={0.01}
+                      step="0.01"
+                      required
+                      disabled={disabled}
+                      value={sku.priceUsd ? String(sku.priceUsd) : ""}
+                      placeholder="0.00"
+                      onChange={(event) =>
+                        updateSku(sku.id, { priceUsd: event.target.value })
+                      }
+                      className="input-field"
+                      aria-label={`Precio ${sku.label}`}
+                    />
+                  </div>
+                ) : null}
               </li>
             ))}
           </ul>
