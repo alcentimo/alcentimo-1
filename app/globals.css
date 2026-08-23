@@ -14290,6 +14290,10 @@ button.mercado-mp-card-btn {
   @apply space-y-3 rounded-2xl border border-[var(--mo-border)] bg-[var(--mo-page)] p-5;
 }
 
+.mercado-fashion-picker {
+  @apply pb-1;
+}
+
 .mercado-ml-buybox-price {
   @apply m-0 text-[2rem] font-semibold tabular-nums leading-none text-[var(--mo-ink)];
 }

@@ -1,11 +1,16 @@
 "use client";
 
+import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
 import { ShoppingCart, Truck } from "lucide-react";
 import { useMercadoCart } from "@/components/mercado-oculto/MercadoCartProvider";
+import { MercadoFashionVariantPicker } from "@/components/mercado-oculto/MercadoFashionVariantPicker";
 import { buildMercadoLoginHref } from "@/lib/mercado-oculto/access";
 import { formatUsd } from "@/lib/format";
+import {
+  listSupplierFashionCatalogSkus,
+  type SupplierProductVariants,
+} from "@/lib/supplier/variants";
 
 interface MercadoProductBuyBoxProps {
   productId: string;
@@ -19,6 +24,7 @@ interface MercadoProductBuyBoxProps {
   supplierUserId: string;
   supplierLabel: string;
   isAuthenticated: boolean;
+  variants?: SupplierProductVariants | null;
 }
 
 export function MercadoProductBuyBox({
@@ -33,17 +39,31 @@ export function MercadoProductBuyBox({
   supplierUserId,
   supplierLabel,
   isAuthenticated,
+  variants = null,
 }: MercadoProductBuyBoxProps) {
   const router = useRouter();
   const { addItem } = useMercadoCart();
-  const maxQty = Math.max(1, availableStock || 99);
+  const fashionSkus = useMemo(
+    () => (variants ? listSupplierFashionCatalogSkus(variants) : []),
+    [variants],
+  );
+  const firstAvailable =
+    fashionSkus.find((sku) => sku.stock > 0) ?? fashionSkus[0] ?? null;
+  const [selectedSkuId, setSelectedSkuId] = useState(firstAvailable?.id ?? "");
+  const selectedSku =
+    fashionSkus.find((sku) => sku.id === selectedSkuId) ?? firstAvailable;
+
+  const unitPrice = selectedSku?.priceUsd || priceUsd;
+  const stock =
+    selectedSku != null ? selectedSku.stock : availableStock;
+  const maxQty = Math.max(1, stock || 99);
   const [quantity, setQuantity] = useState(1);
   const [feedback, setFeedback] = useState<string | null>(null);
   const showDiscount =
-    availableStock > 0 &&
+    stock > 0 &&
     discountPercent != null &&
     compareAtUsd != null &&
-    compareAtUsd > priceUsd;
+    compareAtUsd > unitPrice;
 
   function clampQty(value: number) {
     return Math.min(maxQty, Math.max(1, value));
@@ -52,13 +72,16 @@ export function MercadoProductBuyBox({
   function pushItemToCart() {
     addItem({
       productId,
-      productName,
-      priceUsd,
+      variantId: selectedSku?.id,
+      productName: selectedSku
+        ? `${productName} · ${selectedSku.label}`
+        : productName,
+      priceUsd: unitPrice,
       quantity,
       thumbUrl,
       supplierUserId,
       supplierLabel,
-      availableStock,
+      availableStock: stock,
     });
   }
 
@@ -87,11 +110,11 @@ export function MercadoProductBuyBox({
           <p className="mercado-mp-card-compare">{formatUsd(compareAtUsd)}</p>
         </div>
       ) : null}
-      <p className="mercado-ml-buybox-price">{formatUsd(priceUsd)}</p>
+      <p className="mercado-ml-buybox-price">{formatUsd(unitPrice)}</p>
       <p className="mercado-ml-buybox-hint">
         Compra protegida · Pago contra entrega disponible
       </p>
-      {freeShipping && availableStock > 0 ? (
+      {freeShipping && stock > 0 ? (
         <p className="mercado-mp-free-ship">
           <Truck className="h-3.5 w-3.5" aria-hidden="true" />
           Envío gratis a nivel nacional
@@ -99,6 +122,18 @@ export function MercadoProductBuyBox({
       ) : (
         <p className="mercado-ml-buybox-hint">Envío a nivel nacional</p>
       )}
+
+      {fashionSkus.length > 0 && selectedSku ? (
+        <MercadoFashionVariantPicker
+          productId={productId}
+          skus={fashionSkus}
+          selectedId={selectedSku.id}
+          onSelect={(sku) => {
+            setSelectedSkuId(sku.id);
+            setQuantity(1);
+          }}
+        />
+      ) : null}
 
       <div className="mercado-ml-qty">
         <label htmlFor={`qty-${productId}`}>Cantidad</label>
@@ -129,8 +164,8 @@ export function MercadoProductBuyBox({
           </button>
         </div>
         <span className="mercado-ml-qty-stock">
-          {availableStock > 0
-            ? `${availableStock} disponibles`
+          {stock > 0
+            ? `${stock} disponibles`
             : "Agotado temporalmente"}
         </span>
       </div>
@@ -139,7 +174,7 @@ export function MercadoProductBuyBox({
         type="button"
         className="mercado-ml-btn-primary"
         onClick={handleBuyNow}
-        disabled={availableStock <= 0}
+        disabled={stock <= 0}
       >
         Comprar ahora
       </button>
@@ -147,7 +182,7 @@ export function MercadoProductBuyBox({
         type="button"
         className="mercado-ml-btn-secondary"
         onClick={handleAdd}
-        disabled={availableStock <= 0}
+        disabled={stock <= 0}
       >
         <ShoppingCart className="h-4 w-4" aria-hidden="true" />
         Agregar al carrito

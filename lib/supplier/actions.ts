@@ -22,6 +22,8 @@ import {
 import {
   normalizeSupplierProductVariants,
   parseSupplierVariantsFromForm,
+  sumSupplierVariantStock,
+  validateSupplierFashionVariants,
   type SupplierProductVariants,
 } from "@/lib/supplier/variants";
 import {
@@ -168,13 +170,28 @@ function parseProductFields(formData: FormData): {
     }
   }
 
+  if (category === "ropa") {
+    const fashionError = validateSupplierFashionVariants(variants);
+    if (fashionError) return { error: fashionError };
+  }
+
+  const summedStock = sumSupplierVariantStock(variants);
+  const resolvedStock = summedStock != null ? summedStock : stock;
+  let resolvedPrice = Math.round(basePriceUsd * 100) / 100;
+  if (resolvedPrice <= 0 && variants.skus && variants.skus.length > 0) {
+    const minSku = Math.min(...variants.skus.map((sku) => sku.priceUsd));
+    if (Number.isFinite(minSku) && minSku > 0) {
+      resolvedPrice = minSku;
+    }
+  }
+
   return {
     title,
     description,
     category,
     variants: normalizeSupplierProductVariants(variants),
-    stock,
-    basePriceUsd: Math.round(basePriceUsd * 100) / 100,
+    stock: resolvedStock,
+    basePriceUsd: resolvedPrice,
   };
 }
 

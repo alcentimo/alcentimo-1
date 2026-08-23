@@ -34,8 +34,7 @@ import { syncProductVariants } from "@/lib/products/sync-variants";
 import { normalizeSupplierProductCategory } from "@/lib/supplier/categories";
 import {
   normalizeSupplierProductVariants,
-  supplierVariantAttributeLabel,
-  type SupplierProductVariants,
+  supplierVariantsToCatalogJson,
 } from "@/lib/supplier/variants";
 import {
   listSupplierProductImages,
@@ -76,25 +75,15 @@ async function requireDropshipStore() {
 }
 
 function mapSupplierVariantsToCatalog(
-  supplierVariants: SupplierProductVariants,
+  supplierVariants: Parameters<typeof supplierVariantsToCatalogJson>[0],
+  basePriceUsd = 0,
 ): ProductVariantJson[] {
-  if (supplierVariants.options.length === 0) return [];
-
-  const attributeKey =
-    supplierVariantAttributeLabel(supplierVariants)
-      .trim()
-      .toLowerCase()
-      .replace(/\s+/g, "_")
-      .slice(0, 40) || "variante";
-
-  // El stock vive en el mayorista; las opciones solo describen atributos.
-  return supplierVariants.options.map((option) => ({
-    id: crypto.randomUUID(),
-    name: option.label,
-    price_extra_usd: Number(option.priceExtraUsd) || 0,
-    stock: 0,
-    attributes: { [attributeKey]: option.label },
-  }));
+  return supplierVariantsToCatalogJson(supplierVariants, basePriceUsd).map(
+    (variant) => ({
+      ...variant,
+      id: crypto.randomUUID(),
+    }),
+  );
 }
 
 async function upsertCatalogProductImages(
@@ -536,7 +525,10 @@ export async function importSupplierProductToStoreCatalog(
     const supplierVariants = normalizeSupplierProductVariants(
       supplierRow.variants,
     );
-    const catalogVariants = mapSupplierVariantsToCatalog(supplierVariants);
+    const catalogVariants = mapSupplierVariantsToCatalog(
+      supplierVariants,
+      cost,
+    );
     const metadata = buildProductMetadata(null, {}, []);
     const sortOrder = await nextProductSortOrder(admin, auth.store.id);
 

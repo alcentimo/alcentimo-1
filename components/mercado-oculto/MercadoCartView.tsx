@@ -10,6 +10,7 @@ import {
   MORICHE_BRAND_LABEL,
 } from "@/lib/mercado-oculto/access";
 import { formatUsd } from "@/lib/format";
+import { mercadoCartLineKey } from "@/lib/mercado-oculto/cart";
 
 interface MercadoCartViewProps {
   isAuthenticated: boolean;
@@ -117,7 +118,7 @@ export function MercadoCartView({ isAuthenticated }: MercadoCartViewProps) {
                           value={item.quantity}
                           onChange={(event) =>
                             setQuantity(
-                              item.productId,
+                              mercadoCartLineKey(item),
                               Number(event.target.value) || 1,
                             )
                           }
@@ -125,7 +126,7 @@ export function MercadoCartView({ isAuthenticated }: MercadoCartViewProps) {
                       </label>
                       <button
                         type="button"
-                        onClick={() => removeItem(item.productId)}
+                        onClick={() => removeItem(mercadoCartLineKey(item))}
                         aria-label={`Quitar ${item.productName}`}
                       >
                         <Trash2 className="h-4 w-4" aria-hidden="true" />

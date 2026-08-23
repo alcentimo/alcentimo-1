@@ -59,6 +59,7 @@ import {
   type PCBuilderSlotId,
 } from "@/lib/rubros/modules/tecnologia/pc-builder";
 import { validateProductPublishInput } from "@/lib/products/validate-publish-form";
+import { validateRequiredFashionVariants } from "@/lib/rubros/modules/ropa-moda";
 
 interface ProductFormProps {
   store: Store;
@@ -235,6 +236,14 @@ export function ProductForm({
     if (validationError) {
       setLocalError(validationError);
       return;
+    }
+
+    if (isRopaModa) {
+      const fashionError = validateRequiredFashionVariants(variants);
+      if (fashionError) {
+        setLocalError(fashionError);
+        return;
+      }
     }
 
     formData.set("product_category_slug", categorySlug);

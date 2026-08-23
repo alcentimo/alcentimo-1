@@ -1,9 +1,11 @@
 /** Carrito del mercado oculto (persistencia en sessionStorage). */
 
-export const MERCADO_CART_STORAGE_KEY = "alcentimo-mercado-oculto-cart-v2";
+export const MERCADO_CART_STORAGE_KEY = "alcentimo-mercado-oculto-cart-v3";
 
 export interface MercadoCartItem {
   productId: string;
+  /** Combinación talla/color u otra SKU; agrupa líneas distintas. */
+  variantId?: string;
   productName: string;
   priceUsd: number;
   quantity: number;
@@ -12,6 +14,15 @@ export interface MercadoCartItem {
   supplierUserId: string;
   supplierLabel: string;
   availableStock: number;
+}
+
+export function mercadoCartLineKey(item: {
+  productId: string;
+  variantId?: string;
+}): string {
+  return item.variantId
+    ? `${item.productId}::${item.variantId}`
+    : item.productId;
 }
 
 export type MercadoCartSupplierGroup = {
@@ -63,12 +74,18 @@ export function sanitizeMercadoCartItems(raw: unknown): MercadoCartItem[] {
           ? row.supplierId.trim()
           : "";
 
+    const variantId =
+      typeof row.variantId === "string" && row.variantId.trim()
+        ? row.variantId.trim().slice(0, 80)
+        : undefined;
+
     if (!productId || !productName || quantity <= 0 || !Number.isFinite(priceUsd)) {
       continue;
     }
 
     items.push({
       productId,
+      ...(variantId ? { variantId } : {}),
       productName,
       priceUsd,
       quantity: availableStock > 0 ? Math.min(quantity, availableStock) : quantity,
@@ -92,6 +109,7 @@ export function readMercadoCart(): MercadoCartItem[] {
   try {
     const raw =
       window.sessionStorage.getItem(MERCADO_CART_STORAGE_KEY) ??
+      window.sessionStorage.getItem("alcentimo-mercado-oculto-cart-v2") ??
       window.sessionStorage.getItem("alcentimo-mercado-oculto-cart-v1");
     if (!raw) return [];
     return sanitizeMercadoCartItems(JSON.parse(raw));
@@ -108,12 +126,14 @@ export function writeMercadoCart(items: MercadoCartItem[]): void {
   );
   // Limpia clave legacy para no mezclar formatos.
   window.sessionStorage.removeItem("alcentimo-mercado-oculto-cart-v1");
+  window.sessionStorage.removeItem("alcentimo-mercado-oculto-cart-v2");
 }
 
 export function clearMercadoCart(): void {
   if (typeof window === "undefined") return;
   window.sessionStorage.removeItem(MERCADO_CART_STORAGE_KEY);
   window.sessionStorage.removeItem("alcentimo-mercado-oculto-cart-v1");
+  window.sessionStorage.removeItem("alcentimo-mercado-oculto-cart-v2");
 }
 
 export function mercadoCartItemCount(items: MercadoCartItem[]): number {

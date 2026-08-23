@@ -18,6 +18,7 @@ import {
   ProductGalleryField,
   type ProductGalleryFieldValue,
 } from "@/components/dashboard/ProductGalleryField";
+import { SupplierFashionVariantsEditor } from "@/components/supplier/SupplierFashionVariantsEditor";
 import { SupplierVariantsEditor } from "@/components/supplier/SupplierVariantsEditor";
 import { SupplierEmptyState } from "@/components/supplier/SupplierEmptyState";
 import {
@@ -45,6 +46,7 @@ import {
 } from "@/lib/supplier/categories";
 import {
   countSupplierVariantOptions,
+  emptySupplierFashionVariants,
   emptySupplierVariants,
   serializeSupplierVariants,
   supplierVariantAttributeLabel,
@@ -174,12 +176,24 @@ function ProductFields({
             className="input-field"
             value={form.category}
             disabled={pending}
-            onChange={(event) =>
+            onChange={(event) => {
+              const category = normalizeSupplierProductCategory(
+                event.target.value,
+              );
+              const nextVariants =
+                category === "ropa"
+                  ? form.category === "ropa"
+                    ? form.variants
+                    : emptySupplierFashionVariants()
+                  : form.category === "ropa"
+                    ? emptySupplierVariants()
+                    : form.variants;
               onChange({
                 ...form,
-                category: normalizeSupplierProductCategory(event.target.value),
-              })
-            }
+                category,
+                variants: nextVariants,
+              });
+            }}
           >
             {SUPPLIER_PRODUCT_CATEGORIES.map((item) => (
               <option key={item.value} value={item.value}>
@@ -250,12 +264,21 @@ function ProductFields({
       </div>
 
       <div className="mt-4">
-        <SupplierVariantsEditor
-          idPrefix={`${idPrefix}-variants`}
-          value={form.variants}
-          disabled={pending}
-          onChange={(variants) => onChange({ ...form, variants })}
-        />
+        {form.category === "ropa" ? (
+          <SupplierFashionVariantsEditor
+            idPrefix={`${idPrefix}-variants`}
+            value={form.variants}
+            disabled={pending}
+            onChange={(variants) => onChange({ ...form, variants })}
+          />
+        ) : (
+          <SupplierVariantsEditor
+            idPrefix={`${idPrefix}-variants`}
+            value={form.variants}
+            disabled={pending}
+            onChange={(variants) => onChange({ ...form, variants })}
+          />
+        )}
       </div>
     </>
   );

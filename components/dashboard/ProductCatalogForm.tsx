@@ -60,6 +60,7 @@ import {
 } from "@/lib/rubros/modules/tecnologia/pc-builder";
 import type { VariantFormInput } from "@/lib/products/variants";
 import { validateProductPublishInput } from "@/lib/products/validate-publish-form";
+import { validateRequiredFashionVariants } from "@/lib/rubros/modules/ropa-moda";
 import { ensureClientCompressedImages } from "@/lib/products/ensure-client-compressed-images";
 
 interface ProductCatalogFormProps {
@@ -244,6 +245,14 @@ export function ProductCatalogForm({
     if (validationError) {
       setLocalError(validationError);
       return;
+    }
+
+    if (isRopaModa) {
+      const fashionError = validateRequiredFashionVariants(variants);
+      if (fashionError) {
+        setLocalError(fashionError);
+        return;
+      }
     }
 
     formData.set("product_category_slug", categorySlug);
