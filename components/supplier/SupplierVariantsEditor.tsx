@@ -46,7 +46,7 @@ export function SupplierVariantsEditor({
 
   function updateOption(
     optionId: string,
-    patch: { label?: string; priceExtraUsd?: string },
+    patch: { label?: string; priceExtraUsd?: string; stock?: string },
   ) {
     onChange({
       ...variants,
@@ -54,6 +54,14 @@ export function SupplierVariantsEditor({
         if (option.id !== optionId) return option;
         const next = { ...option };
         if (patch.label != null) next.label = patch.label;
+        if (patch.stock != null) {
+          const parsed = Number.parseInt(patch.stock, 10);
+          if (!patch.stock.trim() || !Number.isFinite(parsed) || parsed < 0) {
+            delete next.stock;
+          } else {
+            next.stock = parsed;
+          }
+        }
         if (patch.priceExtraUsd != null) {
           const parsed = Number(patch.priceExtraUsd.replace(",", "."));
           if (!patch.priceExtraUsd.trim() || !Number.isFinite(parsed)) {
@@ -85,7 +93,8 @@ export function SupplierVariantsEditor({
           <p className="supplier-hub-section-label">Variantes (opcional)</p>
           <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
             Color, modelo o presentación en una sola ficha, sin duplicar el
-            producto.
+            producto. El stock general se aplica a las opciones si no indicas
+            uno propio.
           </p>
         </div>
         {variants.options.length > 0 ? (
@@ -175,6 +184,27 @@ export function SupplierVariantsEditor({
                   disabled={disabled}
                   onChange={(event) =>
                     updateOption(option.id, { label: event.target.value })
+                  }
+                />
+              </div>
+              <div className="w-24">
+                <label
+                  htmlFor={`${idPrefix}-stock-${option.id}`}
+                  className="label-field"
+                >
+                  Stock
+                </label>
+                <input
+                  id={`${idPrefix}-stock-${option.id}`}
+                  type="number"
+                  min={0}
+                  step={1}
+                  className="input-field"
+                  value={option.stock != null ? String(option.stock) : ""}
+                  placeholder="—"
+                  disabled={disabled}
+                  onChange={(event) =>
+                    updateOption(option.id, { stock: event.target.value })
                   }
                 />
               </div>

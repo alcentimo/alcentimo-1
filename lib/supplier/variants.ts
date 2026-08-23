@@ -236,7 +236,12 @@ export function skuSelectionKey(selection: Record<string, string>): string {
 export function rebuildSupplierSkus(
   axes: SupplierVariantAxis[],
   previous: SupplierVariantSku[] | undefined,
+  defaultStock = 0,
 ): SupplierVariantSku[] {
+  const fallbackStock =
+    Number.isFinite(defaultStock) && defaultStock > 0
+      ? Math.floor(defaultStock)
+      : 0;
   const prevByKey = new Map(
     (previous ?? []).map((sku) => [skuSelectionKey(sku.selection), sku]),
   );
@@ -247,7 +252,7 @@ export function rebuildSupplierSkus(
       id: prev?.id ?? crypto.randomUUID(),
       selection,
       label: formatSupplierSkuLabel(axes, selection),
-      stock: prev?.stock ?? 0,
+      stock: prev?.stock ?? fallbackStock,
       priceUsd: prev?.priceUsd ?? 0,
     };
   });
@@ -445,6 +450,105 @@ export function sumSupplierVariantStock(
     .filter((stock): stock is number => stock != null);
   if (optionStocks.length === 0) return null;
   return optionStocks.reduce((sum, stock) => sum + Math.max(0, stock), 0);
+}
+
+function parseGeneralStock(raw: number): number {
+  if (!Number.isFinite(raw) || raw < 0) return 0;
+  return Math.floor(raw);
+}
+
+function variantRowStocks(variants: SupplierProductVariants): number[] {
+  if (variants.skus && variants.skus.length > 0) {
+    return variants.skus.map((sku) => Math.max(0, sku.stock));
+  }
+  return variants.options.map((option) => Math.max(0, option.stock ?? 0));
+}
+
+function shouldApplyGeneralStockToRow(
+  rowStock: number,
+  previousGeneralStock: number | undefined,
+  stocks: number[],
+): boolean {
+  if (stocks.length === 0) return false;
+  const allUnspecified = stocks.every((stock) => stock <= 0);
+  if (allUnspecified) return true;
+
+  if (previousGeneralStock == null) return false;
+  const previous = parseGeneralStock(previousGeneralStock);
+  if (previous <= 0) return false;
+  const allMatchPrevious = stocks.every((stock) => stock === previous);
+  return allMatchPrevious && rowStock === previous;
+}
+
+/**
+ * Copia el stock general a filas de variante sin stock propio (0) o que
+ * todavía reflejan el stock general anterior.
+ */
+export function applyGeneralStockToUnspecifiedSupplierVariants(
+  variants: SupplierProductVariants,
+  generalStock: number,
+  previousGeneralStock?: number,
+): SupplierProductVariants {
+  const nextStock = parseGeneralStock(generalStock);
+  if (nextStock <= 0) return variants;
+
+  const skus = variants.skus ?? [];
+  if (skus.length > 0) {
+    const stocks = variantRowStocks(variants);
+    const nextSkus = skus.map((sku) => {
+      if (
+        !shouldApplyGeneralStockToRow(
+          sku.stock,
+          previousGeneralStock,
+          stocks,
+        )
+      ) {
+        return sku;
+      }
+      return { ...sku, stock: nextStock };
+    });
+    return {
+      ...variants,
+      skus: nextSkus,
+      options: optionsFromSkus(nextSkus),
+    };
+  }
+
+  if (variants.options.length === 0) return variants;
+
+  const optionStocks = variantRowStocks(variants);
+  const nextOptions = variants.options.map((option) => {
+    const current = option.stock ?? 0;
+    const unspecified = option.stock == null;
+    if (
+      unspecified ||
+      shouldApplyGeneralStockToRow(
+        current,
+        previousGeneralStock,
+        optionStocks.length > 0 ? optionStocks : [0],
+      )
+    ) {
+      return { ...option, stock: nextStock };
+    }
+    return option;
+  });
+
+  return { ...variants, options: nextOptions };
+}
+
+export function resolveSupplierProductStock(
+  variants: SupplierProductVariants,
+  generalStock: number,
+): { variants: SupplierProductVariants; stock: number } {
+  const applied = applyGeneralStockToUnspecifiedSupplierVariants(
+    variants,
+    generalStock,
+  );
+  const summed = sumSupplierVariantStock(applied);
+  return {
+    variants: applied,
+    stock: summed != null ? summed : parseGeneralStock(generalStock),
+  };
 }
 
 export function hasSupplierMultiAttributeVariants(

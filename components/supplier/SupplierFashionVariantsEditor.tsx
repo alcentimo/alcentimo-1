@@ -22,6 +22,8 @@ interface SupplierFashionVariantsEditorProps {
   disabled?: boolean;
   /** Costo (USD) del producto; se copia a todas las filas si no hay precios diferenciados. */
   basePriceUsd?: string;
+  /** Stock general; se usa como valor inicial de combinaciones nuevas. */
+  generalStock?: string;
   onChange: (next: SupplierProductVariants) => void;
 }
 
@@ -89,16 +91,22 @@ function ensureFashionAxes(
   return emptySupplierFashionVariants();
 }
 
+function parseGeneralStock(raw: string | undefined): number {
+  const parsed = Number.parseInt(String(raw ?? "").trim(), 10);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : 0;
+}
+
 function commit(
   next: SupplierProductVariants,
   onChange: (value: SupplierProductVariants) => void,
   uniformPrice = 0,
+  generalStock = 0,
 ) {
   const axes = next.axes ?? [];
   let rebuilt: SupplierProductVariants = {
     ...next,
     attribute: (axes[0]?.attribute ?? "talla") as SupplierVariantAttribute,
-    skus: rebuildSupplierSkus(axes, next.skus),
+    skus: rebuildSupplierSkus(axes, next.skus, generalStock),
   };
   if (!rebuilt.differentiatedPrices) {
     rebuilt = applyUniformPriceToSupplierSkus(rebuilt, uniformPrice);
@@ -111,11 +119,13 @@ export function SupplierFashionVariantsEditor({
   value,
   disabled = false,
   basePriceUsd = "",
+  generalStock = "",
   onChange,
 }: SupplierFashionVariantsEditorProps) {
   const variants = ensureFashionAxes(value);
   const axes = variants.axes ?? [];
-  const skus = variants.skus ?? rebuildSupplierSkus(axes, undefined);
+  const fallbackStock = parseGeneralStock(generalStock);
+  const skus = variants.skus ?? rebuildSupplierSkus(axes, undefined, fallbackStock);
   const differentiated = Boolean(variants.differentiatedPrices);
   const parsedBase = Number(String(basePriceUsd).replace(",", "."));
   const uniformPrice =
@@ -136,7 +146,7 @@ export function SupplierFashionVariantsEditor({
           : [...axis.values, item],
       };
     });
-    commit({ ...variants, axes: nextAxes }, onChange, uniformPrice);
+    commit({ ...variants, axes: nextAxes }, onChange, uniformPrice, fallbackStock);
   }
 
   function addCustomValue(axisId: string, raw: string) {
@@ -160,6 +170,7 @@ export function SupplierFashionVariantsEditor({
       },
       onChange,
       uniformPrice,
+      fallbackStock,
     );
   }
 
@@ -191,10 +202,10 @@ export function SupplierFashionVariantsEditor({
         <div>
           <p className="supplier-hub-section-label">Talla y color</p>
           <p className="mt-1 text-xs leading-relaxed text-zinc-500 dark:text-zinc-400">
-            Elige talla, color o ambos. Cada combinación generada (ej. M, o M /
-            Negro) requiere su stock. Los campos “Otra talla” u “Otro color” son
-            opcionales. El costo (USD) del producto se aplica a todas salvo que
-            actives precios diferenciados
+            Elige talla, color o ambos.             Cada combinación generada (ej. M, o M /
+            Negro) toma el stock general si no indicas uno propio. Los campos
+            “Otra talla” u “Otro color” son opcionales. El costo (USD) del
+            producto se aplica a todas salvo que actives precios diferenciados
             {skus.length > 0
               ? ` · ${skus.length} variante${skus.length === 1 ? "" : "s"}`
               : ""}
@@ -394,7 +405,9 @@ export function SupplierFashionVariantsEditor({
             ))}
           </ul>
           <p className="border-t border-emerald-50 px-3 py-2 text-[11px] leading-relaxed text-zinc-500 dark:border-emerald-950/60">
-            Stock 0 deshabilita esa combinación en el catálogo del dropshipper.
+            El stock general se aplica a combinaciones nuevas o sin stock
+            propio. Un stock 0 en una fila la oculta en el catálogo del
+            dropshipper; el producto no se puede guardar si el total queda en 0.
           </p>
         </div>
       ) : (

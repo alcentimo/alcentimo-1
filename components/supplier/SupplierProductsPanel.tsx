@@ -45,6 +45,7 @@ import {
   type SupplierProductCategory,
 } from "@/lib/supplier/categories";
 import {
+  applyGeneralStockToUnspecifiedSupplierVariants,
   applyUniformPriceToSupplierSkus,
   countSupplierVariantOptions,
   emptySupplierFashionVariants,
@@ -54,6 +55,7 @@ import {
   supplierVariantAttributeLabel,
   type SupplierProductVariants,
 } from "@/lib/supplier/variants";
+import { validateSupplierProductForm } from "@/lib/supplier/validate-product-form";
 import { detectSupplierCategoryFromTitle } from "@/lib/supplier/detect-category-from-title";
 import {
   readLastSupplierProductCategory,
@@ -87,7 +89,7 @@ const EMPTY_FORM: Omit<ProductFormState, "galleryKey"> = {
   description: "",
   category: "otros",
   variants: emptySupplierVariants(),
-  stock: "0",
+  stock: "",
   basePriceUsd: "",
   gallery: EMPTY_GALLERY,
 };
@@ -114,7 +116,10 @@ function formFromProduct(product: SupplierProduct): ProductFormState {
     title: product.title,
     description: product.description,
     category: product.category,
-    variants: withFlag,
+    variants: applyGeneralStockToUnspecifiedSupplierVariants(
+      withFlag,
+      product.stock,
+    ),
     stock: String(product.stock),
     basePriceUsd: String(product.basePriceUsd),
     gallery: EMPTY_GALLERY,
@@ -188,6 +193,22 @@ function ProductFields({
         : form.variants;
     onChange({ ...form, basePriceUsd: raw, variants: nextVariants });
   }
+
+  function applyGeneralStock(raw: string) {
+    const parsed = Number.parseInt(raw, 10);
+    const nextStock = Number.isFinite(parsed) && parsed >= 0 ? parsed : 0;
+    const previousStock = Number.parseInt(form.stock, 10);
+    onChange({
+      ...form,
+      stock: raw,
+      variants: applyGeneralStockToUnspecifiedSupplierVariants(
+        form.variants,
+        nextStock,
+        Number.isFinite(previousStock) ? previousStock : undefined,
+      ),
+    });
+  }
+
   return (
     <>
       <ProductGalleryField
@@ -288,20 +309,23 @@ function ProductFields({
         <div className="grid gap-3 sm:grid-cols-2">
           <div>
             <label htmlFor={`${idPrefix}-stock`} className="label-field">
-              Stock
+              Stock *
             </label>
             <input
               id={`${idPrefix}-stock`}
               type="number"
-              min={0}
+              min={1}
               step={1}
+              required
               value={form.stock}
-              onChange={(event) =>
-                onChange({ ...form, stock: event.target.value })
-              }
+              onChange={(event) => applyGeneralStock(event.target.value)}
               className="input-field"
               disabled={pending}
             />
+            <p className="mt-1 text-[11px] leading-relaxed text-zinc-500">
+              Obligatorio y mayor a 0. Si hay tallas o colores, este valor se
+              copia a las filas sin stock propio.
+            </p>
           </div>
           <div>
             <label htmlFor={`${idPrefix}-price`} className="label-field">
@@ -335,6 +359,7 @@ function ProductFields({
             value={form.variants}
             disabled={pending}
             basePriceUsd={form.basePriceUsd}
+            generalStock={form.stock}
             onChange={(variants) => onChange({ ...form, variants })}
           />
         ) : (
@@ -444,6 +469,18 @@ export function SupplierProductsPanel({
     setCreateMessage(null);
     setListMessage(null);
 
+    const validationError = validateSupplierProductForm({
+      title: createForm.title,
+      stock: createForm.stock,
+      galleryItemCount: createForm.gallery.items.length,
+      galleryBusy: createGalleryBusy,
+      variants: createForm.variants,
+    });
+    if (validationError) {
+      setCreateError(validationError);
+      return;
+    }
+
     startTransition(async () => {
       const result = await createSupplierProduct(buildFormData(createForm));
       if (result.error || !result.product) {
@@ -463,6 +500,25 @@ export function SupplierProductsPanel({
     if (!editingProduct || !editForm) return;
     setEditError(null);
     setListMessage(null);
+
+    const validationError = validateSupplierProductForm({
+      title: editForm.title,
+      stock: editForm.stock,
+      galleryItemCount: editForm.gallery.items.length,
+      existingImageCount:
+        editForm.gallery.removedDbIds.length > 0
+          ? 0
+          : Math.max(
+              editingProduct.gallery?.length ?? 0,
+              editingProduct.imageUrl ? 1 : 0,
+            ),
+      galleryBusy: editGalleryBusy,
+      variants: editForm.variants,
+    });
+    if (validationError) {
+      setEditError(validationError);
+      return;
+    }
 
     startTransition(async () => {
       const result = await updateSupplierProduct(
