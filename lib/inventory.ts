@@ -1,6 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import type { CatalogListItem, ExchangeRate } from "@/lib/database.types";
-import { getCurrentExchangeRate } from "@/lib/catalog";
+import { CATALOG_PRODUCT_IN_CHUNK, getCurrentExchangeRate } from "@/lib/catalog";
 import { listDropshipLinkedCatalogEntriesForStoreSlug } from "@/lib/dropship/linked-catalog";
 import { applySupplierCategoriesToCatalogItems } from "@/lib/catalog/apply-supplier-categories";
 import {
@@ -82,13 +82,16 @@ export async function getStoreInventory(
       };
     }
 
+    const useInFilter = linkedProductIds.length <= CATALOG_PRODUCT_IN_CHUNK;
     let productsQuery = supabase
       .from("catalog_list_view")
       .select(CATALOG_LIST_SELECT, paginated ? { count: "exact" } : undefined)
       .eq("store_slug", storeSlug)
-      .in("product_id", linkedProductIds)
       .order("sort_order", { ascending: true })
       .order("created_at", { ascending: false });
+    if (useInFilter) {
+      productsQuery = productsQuery.in("product_id", linkedProductIds);
+    }
 
     if (stockFilter === "critical") {
       productsQuery = productsQuery
@@ -125,12 +128,16 @@ export async function getStoreInventory(
       };
     }
 
-    const products = applySupplierCategoriesToCatalogItems(
+    let products = applySupplierCategoriesToCatalogItems(
       (productsResult.data ?? []).map((row) =>
         normalizeCatalogItem(row as unknown as CatalogListItem),
       ),
       linkedEntries,
     );
+    if (!useInFilter) {
+      const allowed = new Set(linkedProductIds);
+      products = products.filter((product) => allowed.has(product.product_id));
+    }
     const totalCount = paginated
       ? productsResult.count ?? products.length
       : products.length;

@@ -211,7 +211,7 @@ function catalogProductsCacheKey(options: GetCatalogOptions): string[] {
 }
 
 /** PostgREST `.in()` por GET se rompe con muchos UUID (vitrina vacía tras carga masiva). */
-const CATALOG_PRODUCT_IN_CHUNK = 80;
+export const CATALOG_PRODUCT_IN_CHUNK = 80;
 
 async function loadCatalogProductsUncached(
   options: GetCatalogOptions,
@@ -368,7 +368,7 @@ export async function getCatalogProducts(
   const normalizedSlug = options.storeSlug.trim().toLowerCase();
   return withPublicCatalogCache(
     ["public-catalog-products-v2", ...catalogProductsCacheKey(options)],
-    { slug: normalizedSlug },
+    { slug: normalizedSlug, storeId: options.storeId },
     () => loadCatalogProductsUncached({ ...options, storeSlug: normalizedSlug }),
   );
 }
