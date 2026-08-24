@@ -5,6 +5,10 @@ import {
   DROPSHIP_SUPPLIER_PRODUCT_SELECT,
   resolveSuggestedRetailUsd,
 } from "@/lib/supplier/wholesale-price";
+import {
+  mapSupplierRowToMercadoCard,
+  type MercadoProductCard,
+} from "@/lib/mercado-oculto/types";
 import { parsePublicCatalogEnabled } from "@/lib/catalog/supplier-public-catalog-flag";
 import {
   normalizeSupplierStorefrontConfig,

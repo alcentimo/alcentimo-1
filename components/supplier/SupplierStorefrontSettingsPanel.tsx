@@ -51,12 +51,20 @@ export function SupplierStorefrontSettingsPanel({
   );
   const [mobileMenuOpen, setMobileMenuOpen] = useState(() => !explicitTab);
 
-  const navGroups = [
+  const navGroups: {
+    label: string;
+    items: {
+      id: StorefrontTabId;
+      label: string;
+      description: string;
+      icon: typeof Settings2;
+    }[];
+  }[] = [
     {
       label: "Tienda",
       items: [
         {
-          id: "general" as const,
+          id: "general",
           label: "Identidad",
           description: "Marca, logo y nombre comercial",
           icon: Settings2,
@@ -67,13 +75,13 @@ export function SupplierStorefrontSettingsPanel({
       label: "Operación",
       items: [
         {
-          id: "shipping" as const,
+          id: "shipping",
           label: "Envíos",
           description: "Agencias y entrega de tu vitrina",
           icon: Truck,
         },
         {
-          id: "payments" as const,
+          id: "payments",
           label: "Pagos",
           description: "Cómo te pagan tus clientes",
           icon: CreditCard,

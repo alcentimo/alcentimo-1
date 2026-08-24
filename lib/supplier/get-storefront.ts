@@ -57,14 +57,15 @@ async function loadProfileRow(
     return full.data as Record<string, unknown>;
   }
 
+  const err = full.error?.message ?? "";
   const missingColumns =
-    Boolean(full.error?.message) &&
-    (full.error.message.includes("show_public_catalog") ||
-      full.error.message.includes("public_catalog_slug") ||
-      full.error.message.includes("trade_name") ||
-      full.error.message.includes("storefront_config") ||
-      full.error.message.includes("public_description") ||
-      full.error.message.includes("logo_url"));
+    Boolean(err) &&
+    (err.includes("show_public_catalog") ||
+      err.includes("public_catalog_slug") ||
+      err.includes("trade_name") ||
+      err.includes("storefront_config") ||
+      err.includes("public_description") ||
+      err.includes("logo_url"));
 
   if (!missingColumns) return null;
 
