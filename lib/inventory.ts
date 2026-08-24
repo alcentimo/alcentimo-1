@@ -71,18 +71,10 @@ export async function getStoreInventory(
       await listDropshipLinkedCatalogEntriesForStoreSlug(storeSlug);
     const linkedProductIds = linkedEntries.map((entry) => entry.productId);
 
-    // Dropshipping puro: sin vínculos mayoristas → catálogo vacío.
-    if (linkedProductIds.length === 0) {
-      const exchangeRate = await getCurrentExchangeRate().catch(() => null);
-      return {
-        products: [],
-        exchangeRate,
-        totalCount: 0,
-        hasMore: false,
-      };
-    }
-
-    const useInFilter = linkedProductIds.length <= CATALOG_PRODUCT_IN_CHUNK;
+    // Sin vínculos: igual se lee catalog_list_view filtrado por tienda (activos).
+    const useInFilter =
+      linkedProductIds.length > 0 &&
+      linkedProductIds.length <= CATALOG_PRODUCT_IN_CHUNK;
     let productsQuery = supabase
       .from("catalog_list_view")
       .select(CATALOG_LIST_SELECT, paginated ? { count: "exact" } : undefined)
@@ -134,7 +126,7 @@ export async function getStoreInventory(
       ),
       linkedEntries,
     );
-    if (!useInFilter) {
+    if (!useInFilter && linkedProductIds.length > 0) {
       const allowed = new Set(linkedProductIds);
       products = products.filter((product) => allowed.has(product.product_id));
     }
