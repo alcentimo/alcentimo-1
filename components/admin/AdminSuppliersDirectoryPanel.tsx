@@ -1,8 +1,10 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { ChevronLeft, ChevronRight, Search } from "lucide-react";
+import { ChevronLeft, ChevronRight, ExternalLink, Search } from "lucide-react";
 import type { AdminSupplierDirectoryRow } from "@/lib/admin/get-admin-suppliers";
+import { setSupplierPublicCatalogEnabled } from "@/lib/admin/supplier-catalog-actions";
+import { SettingsSwitch } from "@/components/ui/SettingsSwitch";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/cn";
 import {
@@ -19,24 +21,58 @@ interface AdminSuppliersDirectoryPanelProps {
 export function AdminSuppliersDirectoryPanel({
   initialSuppliers,
 }: AdminSuppliersDirectoryPanelProps) {
+  const [suppliers, setSuppliers] = useState(initialSuppliers);
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
+  const [busyUserId, setBusyUserId] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   const filtered = useMemo(() => {
-    return initialSuppliers.filter((row) =>
+    return suppliers.filter((row) =>
       matchesDirectorySearch(search, [
         row.companyName,
         row.contactName,
         row.email,
       ]),
     );
-  }, [initialSuppliers, search]);
+  }, [suppliers, search]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / DIRECTORY_PAGE_SIZE));
   const safePage = Math.min(page, totalPages);
   const pageStart = (safePage - 1) * DIRECTORY_PAGE_SIZE;
   const paged = filtered.slice(pageStart, pageStart + DIRECTORY_PAGE_SIZE);
   const pageItems = buildPageItems(safePage, totalPages);
+
+  async function handlePublicCatalogToggle(
+    row: AdminSupplierDirectoryRow,
+    enabled: boolean,
+  ) {
+    setBusyUserId(row.userId);
+    setError(null);
+    try {
+      const result = await setSupplierPublicCatalogEnabled({
+        supplierUserId: row.userId,
+        enabled,
+      });
+      if (result.error) {
+        setError(result.error);
+        return;
+      }
+      setSuppliers((current) =>
+        current.map((item) =>
+          item.userId === row.userId
+            ? {
+                ...item,
+                showPublicCatalog: result.showPublicCatalog === true,
+                publicCatalogSlug: result.publicCatalogSlug ?? item.publicCatalogSlug,
+              }
+            : item,
+        ),
+      );
+    } finally {
+      setBusyUserId(null);
+    }
+  }
 
   return (
     <div className="admin-stores-panel space-y-4">
@@ -55,6 +91,12 @@ export function AdminSuppliersDirectoryPanel({
         />
       </div>
 
+      {error ? (
+        <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700 dark:border-red-900/50 dark:bg-red-950/30 dark:text-red-300">
+          {error}
+        </p>
+      ) : null}
+
       <div className="admin-stores-table-shell">
         <div className="admin-stores-table-scroll">
           <table className="admin-stores-table">
@@ -65,6 +107,7 @@ export function AdminSuppliersDirectoryPanel({
                 <th className="admin-stores-th">Teléfono</th>
                 <th className="admin-stores-th">Ubicación</th>
                 <th className="admin-stores-th admin-stores-th-num">Productos</th>
+                <th className="admin-stores-th">Vitrina pública habilitada</th>
               </tr>
             </thead>
             <tbody>
@@ -103,11 +146,37 @@ export function AdminSuppliersDirectoryPanel({
                   <td className="admin-stores-td admin-stores-td-num">
                     {row.activeProductCount.toLocaleString("es-VE")}
                   </td>
+                  <td className="admin-stores-td">
+                    <div className="flex items-center gap-2">
+                      <SettingsSwitch
+                        id={`directory-public-catalog-${row.userId}`}
+                        checked={row.showPublicCatalog === true}
+                        disabled={busyUserId === row.userId}
+                        label={`Vitrina pública habilitada de ${row.companyName}`}
+                        onChange={(checked) =>
+                          void handlePublicCatalogToggle(row, checked)
+                        }
+                      />
+                      {row.showPublicCatalog && row.publicCatalogSlug ? (
+                        <a
+                          href={`/vitrina/${row.publicCatalogSlug}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="admin-stores-link inline-flex items-center gap-1"
+                        >
+                          Enlace
+                          <ExternalLink className="h-3 w-3" aria-hidden="true" />
+                        </a>
+                      ) : (
+                        <span className="admin-stores-td-muted">Apagada</span>
+                      )}
+                    </div>
+                  </td>
                 </tr>
               ))}
               {filtered.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="admin-stores-empty-state">
+                  <td colSpan={6} className="admin-stores-empty-state">
                     No hay proveedores con esa búsqueda.
                   </td>
                 </tr>

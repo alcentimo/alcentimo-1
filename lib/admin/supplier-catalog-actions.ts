@@ -6,6 +6,10 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { isSupportAdmin, resolveAuthEmail } from "@/lib/support/is-support-admin";
 import { recordSupplierPriceChangeAndNotify } from "@/lib/dropship/price-change";
 import { MERCADO_CATALOG_CACHE_TAG } from "@/lib/mercado-oculto/catalog-cache";
+import {
+  allocateSupplierPublicCatalogSlug,
+  supplierPublicCatalogPath,
+} from "@/lib/catalog/supplier-public-catalog";
 import { revalidateAllPublicCatalogCaches } from "@/lib/catalog/public-catalog-cache";
 import {
   normalizeSupplierProductCategory,
@@ -58,6 +62,8 @@ export type AdminSupplierMarginOption = {
   draftCount: number;
   globalMarginPercent: number | null;
   catalogVisible: boolean;
+  showPublicCatalog: boolean;
+  publicCatalogSlug: string | null;
 };
 
 const PRODUCT_SELECT =
@@ -193,10 +199,44 @@ async function loadCatalogVisibility(
   return visibility;
 }
 
+async function loadPublicCatalogFlags(
+  admin: ReturnType<typeof createAdminClient>,
+  userIds: string[],
+): Promise<Map<string, { enabled: boolean; slug: string | null }>> {
+  const flags = new Map<string, { enabled: boolean; slug: string | null }>();
+  const ids = [...new Set(userIds.filter(Boolean))];
+  if (ids.length === 0) return flags;
+
+  const { data, error } = await admin
+    .from("supplier_profiles")
+    .select("user_id, show_public_catalog, public_catalog_slug")
+    .in("user_id", ids);
+  if (error) return flags;
+
+  for (const row of (data as Array<{
+    user_id?: string;
+    show_public_catalog?: unknown;
+    public_catalog_slug?: unknown;
+  }> | null) ?? []) {
+    const id = typeof row.user_id === "string" ? row.user_id : "";
+    if (!id) continue;
+    flags.set(id, {
+      enabled: row.show_public_catalog === true,
+      slug:
+        typeof row.public_catalog_slug === "string" &&
+        row.public_catalog_slug.trim()
+          ? row.public_catalog_slug.trim().toLowerCase()
+          : null,
+    });
+  }
+  return flags;
+}
+
 function buildSupplierOptions(
   products: AdminSupplierCatalogProduct[],
   marginBySupplier: Map<string, number>,
   visibilityBySupplier: Map<string, boolean>,
+  publicCatalogBySupplier: Map<string, { enabled: boolean; slug: string | null }>,
 ): AdminSupplierMarginOption[] {
   const grouped = new Map<
     string,
@@ -221,6 +261,8 @@ function buildSupplierOptions(
       draftCount: value.draftCount,
       globalMarginPercent: marginBySupplier.get(id) ?? null,
       catalogVisible: visibilityBySupplier.get(id) === true,
+      showPublicCatalog: publicCatalogBySupplier.get(id)?.enabled === true,
+      publicCatalogSlug: publicCatalogBySupplier.get(id)?.slug ?? null,
     }))
     .sort((a, b) => a.name.localeCompare(b.name, "es"));
 }
@@ -251,11 +293,13 @@ export async function listAdminSupplierCatalogProducts(): Promise<
     if (batch.length < pageSize) break;
   }
   const creatorIds = rows.map((row) => String(row.created_by ?? ""));
-  const [names, marginBySupplier, visibilityBySupplier] = await Promise.all([
-    loadSupplierNames(admin, creatorIds),
-    loadMarginRules(admin, creatorIds),
-    loadCatalogVisibility(admin, creatorIds),
-  ]);
+  const [names, marginBySupplier, visibilityBySupplier, publicCatalogBySupplier] =
+    await Promise.all([
+      loadSupplierNames(admin, creatorIds),
+      loadMarginRules(admin, creatorIds),
+      loadCatalogVisibility(admin, creatorIds),
+      loadPublicCatalogFlags(admin, creatorIds),
+    ]);
   const products = rows.map((row) => mapAdminProduct(row, names));
   return {
     products,
@@ -265,6 +309,7 @@ export async function listAdminSupplierCatalogProducts(): Promise<
       products,
       marginBySupplier,
       visibilityBySupplier,
+      publicCatalogBySupplier,
     ),
   };
 }
@@ -309,6 +354,13 @@ function mapCatalogDbError(message: string): string {
     (text.includes("does not exist") || text.includes("schema cache"))
   ) {
     return "Falta aplicar la migración de visibilidad por producto.";
+  }
+  if (
+    (text.includes("show_public_catalog") ||
+      text.includes("public_catalog_slug")) &&
+    (text.includes("does not exist") || text.includes("schema cache"))
+  ) {
+    return "Falta aplicar la migración de vitrina pública de proveedores.";
   }
   return message;
 }
@@ -768,6 +820,76 @@ export async function setSupplierCatalogPublication(input: {
   };
 }
 
+export async function setSupplierPublicCatalogEnabled(input: {
+  supplierUserId: string;
+  enabled: boolean;
+}): Promise<
+  ActionResult<{
+    showPublicCatalog: boolean;
+    publicCatalogSlug: string | null;
+    publicCatalogPath: string | null;
+    products: AdminSupplierCatalogProduct[];
+    suppliers: AdminSupplierMarginOption[];
+  }>
+> {
+  const auth = await requireSupportAdmin();
+  if (!auth.ok) return { error: auth.error };
+
+  const supplierUserId = input.supplierUserId.trim();
+  if (!supplierUserId) return { error: "Selecciona un proveedor." };
+
+  const admin = createAdminClient();
+  const { data: profile, error: profileError } = await admin
+    .from("supplier_profiles")
+    .select("user_id, company_name, public_catalog_slug, show_public_catalog")
+    .eq("user_id", supplierUserId)
+    .maybeSingle();
+
+  if (profileError) return { error: mapCatalogDbError(profileError.message) };
+  if (!profile) return { error: "Proveedor no encontrado." };
+
+  const row = profile as Record<string, unknown>;
+  let slug =
+    typeof row.public_catalog_slug === "string"
+      ? row.public_catalog_slug.trim().toLowerCase()
+      : "";
+
+  if (input.enabled) {
+    slug = await allocateSupplierPublicCatalogSlug({
+      admin,
+      supplierUserId,
+      companyName: String(row.company_name ?? ""),
+      existingSlug: slug || null,
+    });
+  }
+
+  const { error: updateError } = await admin
+    .from("supplier_profiles")
+    .update({
+      show_public_catalog: input.enabled,
+      public_catalog_slug: slug || null,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("user_id", supplierUserId);
+
+  if (updateError) return { error: mapCatalogDbError(updateError.message) };
+
+  if (slug) revalidatePath(supplierPublicCatalogPath(slug));
+  revalidatePath("/admin/dashboard");
+
+  const listed = await listAdminSupplierCatalogProducts();
+  const publicCatalogPath = slug ? supplierPublicCatalogPath(slug) : null;
+
+  return {
+    showPublicCatalog: input.enabled,
+    publicCatalogSlug: slug || null,
+    publicCatalogPath,
+    products: listed.products ?? [],
+    suppliers: listed.suppliers ?? [],
+    error: listed.error,
+  };
+}
+
 async function listActiveSupplierUserIds(
   admin: ReturnType<typeof createAdminClient>,
 ): Promise<{ ids: string[]; error?: string }> {
@@ -858,12 +980,15 @@ export async function setSupplierGlobalMarginRule(input: {
         draftCount,
         globalMarginPercent: marginPercent,
         catalogVisible: false,
+        showPublicCatalog: false,
+        publicCatalogSlug: null,
       },
     };
   }
 
   const names = await loadSupplierNames(admin, [supplierUserId]);
   const visibility = await loadCatalogVisibility(admin, [supplierUserId]);
+  const publicFlags = await loadPublicCatalogFlags(admin, [supplierUserId]);
   const { count } = await admin
     .from("supplier_products")
     .select("id", { count: "exact", head: true })
@@ -885,6 +1010,8 @@ export async function setSupplierGlobalMarginRule(input: {
       draftCount: draftCount ?? 0,
       globalMarginPercent: marginPercent,
       catalogVisible: visibility.get(supplierUserId) === true,
+      showPublicCatalog: publicFlags.get(supplierUserId)?.enabled === true,
+      publicCatalogSlug: publicFlags.get(supplierUserId)?.slug ?? null,
     },
   };
 }
