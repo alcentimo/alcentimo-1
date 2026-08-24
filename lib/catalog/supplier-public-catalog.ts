@@ -5,10 +5,14 @@ import {
   DROPSHIP_SUPPLIER_PRODUCT_SELECT,
   resolveSuggestedRetailUsd,
 } from "@/lib/supplier/wholesale-price";
+import { parsePublicCatalogEnabled } from "@/lib/catalog/supplier-public-catalog-flag";
 import {
-  mapSupplierRowToMercadoCard,
-  type MercadoProductCard,
-} from "@/lib/mercado-oculto/types";
+  normalizeSupplierStorefrontConfig,
+} from "@/lib/supplier/storefront-types";
+import type {
+  PaymentsSettings,
+  ShippingSettings,
+} from "@/lib/store-settings/types";
 
 export const SUPPLIER_PUBLIC_CATALOG_PREFIX = "/vitrina";
 
@@ -29,6 +33,10 @@ export type SupplierPublicCatalogProfile = {
   companyName: string;
   slug: string;
   showPublicCatalog: boolean;
+  logoUrl: string | null;
+  description: string;
+  shipping: ShippingSettings;
+  payments: PaymentsSettings;
 };
 
 export type SupplierPublicCatalogPage = {
@@ -59,11 +67,23 @@ function mapProfile(
   const userId = String(row.user_id ?? "");
   const slug = String(row.public_catalog_slug ?? "").trim().toLowerCase();
   if (!userId) return null;
+  const companyName =
+    String(row.trade_name ?? "").trim() ||
+    String(row.company_name ?? "").trim() ||
+    "Proveedor";
+  const config = normalizeSupplierStorefrontConfig(row.storefront_config);
   return {
     userId,
-    companyName: String(row.company_name ?? "").trim() || "Proveedor",
+    companyName,
     slug,
-    showPublicCatalog: row.show_public_catalog === true,
+    showPublicCatalog: parsePublicCatalogEnabled(row.show_public_catalog),
+    logoUrl:
+      typeof row.logo_url === "string" && row.logo_url.trim()
+        ? row.logo_url.trim()
+        : null,
+    description: String(row.public_description ?? "").trim(),
+    shipping: config.shipping,
+    payments: config.payments,
   };
 }
 
@@ -85,11 +105,12 @@ export async function allocateSupplierPublicCatalogSlug(input: {
             base,
             `${attempt}${input.supplierUserId.replace(/-/g, "")}`,
           );
-    const { data } = await input.admin
+    const { data, error } = await input.admin
       .from("supplier_profiles")
       .select("user_id")
       .eq("public_catalog_slug", candidate)
       .maybeSingle();
+    if (error) return candidate;
     const owner = data
       ? String((data as { user_id?: string }).user_id ?? "")
       : "";
@@ -105,18 +126,28 @@ export async function getSupplierPublicCatalogBySlug(
   if (!normalized) return null;
 
   const admin = createAdminClient();
-  const { data: profileRow, error: profileError } = await admin
+  let profileQuery = await admin
     .from("supplier_profiles")
     .select(
-      "user_id, company_name, status, show_public_catalog, public_catalog_slug",
+      "user_id, company_name, trade_name, logo_url, public_description, status, show_public_catalog, public_catalog_slug, storefront_config",
     )
     .eq("public_catalog_slug", normalized)
     .maybeSingle();
 
-  if (profileError || !profileRow) return null;
-  const row = profileRow as Record<string, unknown>;
+  if (profileQuery.error) {
+    profileQuery = await admin
+      .from("supplier_profiles")
+      .select(
+        "user_id, company_name, status, show_public_catalog, public_catalog_slug",
+      )
+      .eq("public_catalog_slug", normalized)
+      .maybeSingle();
+  }
+
+  if (profileQuery.error || !profileQuery.data) return null;
+  const row = profileQuery.data as Record<string, unknown>;
   if (String(row.status ?? "") !== "active") return null;
-  if (row.show_public_catalog !== true) return null;
+  if (!parsePublicCatalogEnabled(row.show_public_catalog)) return null;
 
   const profile = mapProfile(row);
   if (!profile || !profile.slug) return null;
