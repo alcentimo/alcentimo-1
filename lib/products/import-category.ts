@@ -41,6 +41,30 @@ export function findDuplicateImportNames(
 
 export type ImportCategoryCache = Map<string, string>;
 
+function activeCategoryCacheKey(categoryId: string): string {
+  return `active:${categoryId}`;
+}
+
+/** La vitrina pública exige categorías activas (`catalog_list_view.c.is_active`). */
+async function ensureStoreCategoryPublic(
+  supabase: SupabaseClient,
+  storeId: string,
+  categoryId: string,
+  cache: ImportCategoryCache,
+): Promise<void> {
+  const flag = activeCategoryCacheKey(categoryId);
+  if (cache.get(flag)) return;
+  await supabase
+    .from("categories")
+    .update({
+      is_active: true,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", categoryId)
+    .eq("store_id", storeId);
+  cache.set(flag, categoryId);
+}
+
 export function buildImportCategoryCache(
   categories: { id: string; name: string; slug: string }[],
 ): ImportCategoryCache {
@@ -173,6 +197,7 @@ export async function resolveOrCreateSupplierStoreCategory(
   const cached =
     cache.get(slug) ?? (normalizedName ? cache.get(normalizedName) : undefined);
   if (cached) {
+    await ensureStoreCategoryPublic(supabase, storeId, cached, cache);
     return { categoryId: cached };
   }
 
@@ -200,6 +225,7 @@ export async function resolveOrCreateSupplierStoreCategory(
       })
       .eq("id", categoryId)
       .eq("store_id", storeId);
+    cache.set(activeCategoryCacheKey(categoryId), categoryId);
     return { categoryId };
   }
 
@@ -227,6 +253,7 @@ export async function resolveOrCreateSupplierStoreCategory(
         const categoryId = raced.id as string;
         cache.set(slug, categoryId);
         if (normalizedName) cache.set(normalizedName, categoryId);
+        await ensureStoreCategoryPublic(supabase, storeId, categoryId, cache);
         return { categoryId };
       }
     }

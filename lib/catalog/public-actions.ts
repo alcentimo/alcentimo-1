@@ -1,6 +1,7 @@
 "use server";
 
 import { getCatalogProducts } from "@/lib/catalog";
+import { getPublicStoreBySlug } from "@/lib/stores";
 import {
   CATALOG_PAGE_SIZE,
   parseCatalogPriceBound,
@@ -30,8 +31,10 @@ export async function fetchPublicCatalogProducts(
 ): Promise<FetchPublicCatalogProductsResult> {
   try {
     const limit = input.limit ?? CATALOG_PAGE_SIZE;
+    const store = await getPublicStoreBySlug(input.storeSlug);
     const result = await getCatalogProducts({
       storeSlug: input.storeSlug,
+      storeId: store?.id,
       limit,
       offset: input.offset,
       categorySlug: input.categorySlug?.trim() || undefined,

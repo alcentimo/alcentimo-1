@@ -698,6 +698,16 @@ export async function importSupplierProductToStoreCatalog(
       };
     }
 
+    await admin
+      .from("products")
+      .update({
+        store_id: auth.store.id,
+        is_active: true,
+        is_deleted: false,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", productId);
+
     await mirrorSupplierStockToLinkedStores(admin, supplierId, stock);
 
     if (!options?.skipRevalidate) {
