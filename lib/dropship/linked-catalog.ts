@@ -4,7 +4,7 @@ import {
   normalizeSupplierProductCategory,
   type SupplierProductCategory,
 } from "@/lib/supplier/categories";
-import { isPublishedForDropship } from "@/lib/supplier/wholesale-price";
+import { normalizePublicationStatus } from "@/lib/supplier/wholesale-price";
 
 export type DropshipLinkedCatalogEntry = {
   productId: string;
@@ -23,6 +23,24 @@ function chunkIds(ids: string[], size = 200): string[][] {
     chunks.push(ids.slice(index, index + size));
   }
   return chunks;
+}
+
+/** SKU mayorista ya importado: visible en vitrina si sigue publicado (sin exigir suggested_retail en el SELECT). */
+function isLinkedSupplierListedOnStorefront(row: {
+  is_active?: unknown;
+  catalog_visible?: unknown;
+  is_visible?: unknown;
+  publication_status?: unknown;
+  precio_mayorista?: unknown;
+  suggested_retail_usd?: unknown;
+}): boolean {
+  if (row.is_active === false) return false;
+  if (row.catalog_visible === false) return false;
+  if (row.is_visible === false) return false;
+  if (normalizePublicationStatus(row.publication_status) !== "published") {
+    return false;
+  }
+  return true;
 }
 
 async function lookupStoreIdBySlug(storeSlug: string): Promise<string | null> {
@@ -102,7 +120,7 @@ export async function listDropshipLinkedCatalogEntriesForStoreId(
       const { data: supplierRows, error: supplierError } = await client
         .from("supplier_products")
         .select(
-          "id, category, is_active, publication_status, catalog_visible, is_visible, precio_mayorista",
+          "id, category, is_active, publication_status, catalog_visible, is_visible, precio_mayorista, suggested_retail_usd",
         )
         .in("id", chunk);
 
@@ -119,9 +137,10 @@ export async function listDropshipLinkedCatalogEntriesForStoreId(
         catalog_visible?: unknown;
         is_visible?: unknown;
         precio_mayorista?: unknown;
+        suggested_retail_usd?: unknown;
       }> | null) ?? []) {
         if (typeof row.id !== "string" || !row.id) continue;
-        if (!isPublishedForDropship(row)) continue;
+        if (!isLinkedSupplierListedOnStorefront(row)) continue;
         categoryBySupplierId.set(
           row.id,
           normalizeSupplierProductCategory(row.category),

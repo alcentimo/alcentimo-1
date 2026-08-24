@@ -1,5 +1,6 @@
 import { cache } from "react";
 import { getSupabaseAnonClient } from "@/lib/supabase";
+import { getPublicServerClient } from "@/lib/supabase/public-server";
 import { getDisplayableUsdExchangeRate } from "@/lib/exchange-rate/get-tasa-cambio";
 import { ensureBcvRateFreshForToday } from "@/lib/exchange-rate/ensure-bcv-rate-fresh";
 import { CATALOG_LIST_SELECT, PUBLIC_CATALOG_LIST_SELECT } from "@/lib/inventory/constants";
@@ -80,6 +81,7 @@ type CatalogProductsQueryMode = "ranked" | "legacy";
 
 interface CatalogProductsQueryOptions {
   storeSlug: string;
+  storeId?: string;
   select: string;
   paginated: boolean;
   offset: number;
@@ -92,11 +94,12 @@ interface CatalogProductsQueryOptions {
 }
 
 function buildCatalogProductsQuery(
-  supabase: ReturnType<typeof getSupabaseAnonClient>,
+  supabase: ReturnType<typeof getPublicServerClient>,
   options: CatalogProductsQueryOptions,
 ) {
   const {
     storeSlug,
+    storeId,
     select,
     paginated,
     offset,
@@ -108,10 +111,14 @@ function buildCatalogProductsQuery(
     mode,
   } = options;
 
-  const baseQuery = supabase
+  let baseQuery = supabase
     .from("catalog_list_view")
     .select(select, paginated ? { count: "exact" } : undefined)
     .eq("store_slug", storeSlug);
+
+  if (storeId?.trim()) {
+    baseQuery = baseQuery.eq("store_id", storeId.trim());
+  }
 
   let query =
     mode === "ranked"
@@ -144,7 +151,7 @@ function buildCatalogProductsQuery(
 async function runCatalogProductsQuery(
   options: CatalogProductsQueryOptions,
 ) {
-  const supabase = getSupabaseAnonClient();
+  const supabase = getPublicServerClient();
   return buildCatalogProductsQuery(supabase, options);
 }
 
@@ -233,15 +240,6 @@ async function loadCatalogProductsUncached(
     : await listDropshipLinkedCatalogEntriesForStoreSlug(normalizedSlug);
   const linkedProductIds = linkedEntries.map((entry) => entry.productId);
 
-  if (linkedProductIds.length === 0) {
-    return {
-      products: [],
-      exchangeRate: await getCurrentExchangeRate(),
-      totalCount: 0,
-      hasMore: false,
-    };
-  }
-
   const requestedCategory = categorySlug?.trim().toLowerCase() ?? "";
   const categoryProductIds = requestedCategory
     ? linkedEntries
@@ -250,10 +248,16 @@ async function loadCatalogProductsUncached(
     : linkedProductIds;
 
   const allowedProductIds = productIds?.length
-    ? productIds.filter((id) => categoryProductIds.includes(id))
-    : categoryProductIds;
+    ? productIds.filter((id) =>
+        categoryProductIds.length > 0
+          ? categoryProductIds.includes(id)
+          : true,
+      )
+    : categoryProductIds.length > 0
+      ? categoryProductIds
+      : undefined;
 
-  if (allowedProductIds.length === 0) {
+  if (productIds?.length && (allowedProductIds?.length ?? 0) === 0) {
     return {
       products: [],
       exchangeRate: await getCurrentExchangeRate(),
@@ -263,13 +267,18 @@ async function loadCatalogProductsUncached(
   }
 
   // Paginación solo en listados; las hidrataciones por IDs traen el set completo.
+  // Filtro de tienda: store_slug + store_id en catalog_list_view (productos activos).
+  // Los vínculos dropship enriquecen categorías; no vacían la vitrina si fallan.
   const paginated = limit != null && productIds == null;
   const searchOr = buildInventorySearchOrFilter(search ?? "") || null;
-  const useInFilter = allowedProductIds.length <= CATALOG_PRODUCT_IN_CHUNK;
+  const useInFilter =
+    Boolean(allowedProductIds?.length) &&
+    (allowedProductIds?.length ?? 0) <= CATALOG_PRODUCT_IN_CHUNK;
 
   const baseQueryOptions: Omit<CatalogProductsQueryOptions, "select" | "mode"> =
     {
       storeSlug: normalizedSlug,
+      storeId: storeId?.trim() || undefined,
       paginated,
       offset,
       limit,
@@ -324,9 +333,13 @@ async function loadCatalogProductsUncached(
     linkedEntries,
   );
 
-  if (!useInFilter) {
+  if (!useInFilter && (allowedProductIds?.length ?? 0) > 0) {
     const allowed = new Set(allowedProductIds);
     products = products.filter((product) => allowed.has(product.product_id));
+  } else if (requestedCategory && linkedEntries.length === 0) {
+    products = products.filter(
+      (product) => product.category_slug === requestedCategory,
+    );
   }
 
   const supplierGalleryByProductId = await resolveSupplierGalleryForProductIds(
@@ -367,7 +380,7 @@ export async function getCatalogProducts(
 
   const normalizedSlug = options.storeSlug.trim().toLowerCase();
   return withPublicCatalogCache(
-    ["public-catalog-products-v2", ...catalogProductsCacheKey(options)],
+    ["public-catalog-products-v3", ...catalogProductsCacheKey(options)],
     { slug: normalizedSlug, storeId: options.storeId },
     () => loadCatalogProductsUncached({ ...options, storeSlug: normalizedSlug }),
   );

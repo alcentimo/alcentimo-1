@@ -37,7 +37,7 @@ export async function getPublicStoreCategories(
   const id = storeId.trim();
   if (!id) return [];
   return withPublicCatalogCache(
-    ["public-store-categories-v2", id],
+    ["public-store-categories-v3", id],
     { storeId: id },
     () => loadPublicStoreCategoriesUncached(id),
   );
