@@ -548,39 +548,81 @@ export function AdminSupplierCatalogPanel() {
   }
 
   async function handlePublicCatalogToggle(supplierId: string, enabled: boolean) {
+    const previous = suppliers.find((item) => item.id === supplierId);
     setBusySupplierId(supplierId);
     setError(null);
     setMessage(null);
+    setSuppliers((current) =>
+      current.map((supplier) =>
+        supplier.id === supplierId
+          ? { ...supplier, showPublicCatalog: enabled }
+          : supplier,
+      ),
+    );
     try {
       const result = await setSupplierPublicCatalogEnabled({
         supplierUserId: supplierId,
-        enabled,
+        enabled: enabled ? "true" : "false",
       });
       if (result.error) {
+        if (previous) {
+          setSuppliers((current) =>
+            current.map((supplier) =>
+              supplier.id === supplierId ? previous : supplier,
+            ),
+          );
+        }
         setError(result.error);
         return;
       }
+      const savedEnabled = result.showPublicCatalog === true;
+      const savedSlug =
+        result.publicCatalogSlug ?? previous?.publicCatalogSlug ?? null;
       if (result.products && result.suppliers) {
-        hydrate(result.products, result.suppliers);
+        hydrate(
+          result.products,
+          result.suppliers.map((supplier) =>
+            supplier.id === supplierId
+              ? {
+                  ...supplier,
+                  showPublicCatalog: savedEnabled,
+                  publicCatalogSlug: savedSlug,
+                }
+              : supplier,
+          ),
+        );
       } else {
         setSuppliers((current) =>
           current.map((supplier) =>
             supplier.id === supplierId
               ? {
                   ...supplier,
-                  showPublicCatalog: result.showPublicCatalog === true,
-                  publicCatalogSlug: result.publicCatalogSlug ?? null,
+                  showPublicCatalog: savedEnabled,
+                  publicCatalogSlug: savedSlug,
                 }
               : supplier,
           ),
         );
       }
       setMessage(
-        enabled
+        savedEnabled
           ? result.publicCatalogPath
             ? `Vitrina pública habilitada: ${result.publicCatalogPath}`
             : "Vitrina pública habilitada."
           : "Vitrina pública deshabilitada.",
+      );
+    } catch (err) {
+      if (previous) {
+        setSuppliers((current) =>
+          current.map((supplier) =>
+            supplier.id === supplierId ? previous : supplier,
+          ),
+        );
+      }
+      setError(
+        err instanceof Error
+          ? err.message
+          : "No se pudo guardar la vitrina pública.",
       );
     } finally {
       setBusySupplierId(null);

@@ -49,12 +49,22 @@ export function AdminSuppliersDirectoryPanel({
   ) {
     setBusyUserId(row.userId);
     setError(null);
+    setSuppliers((current) =>
+      current.map((item) =>
+        item.userId === row.userId
+          ? { ...item, showPublicCatalog: enabled }
+          : item,
+      ),
+    );
     try {
       const result = await setSupplierPublicCatalogEnabled({
         supplierUserId: row.userId,
-        enabled,
+        enabled: enabled ? "true" : "false",
       });
       if (result.error) {
+        setSuppliers((current) =>
+          current.map((item) => (item.userId === row.userId ? row : item)),
+        );
         setError(result.error);
         return;
       }
@@ -64,10 +74,20 @@ export function AdminSuppliersDirectoryPanel({
             ? {
                 ...item,
                 showPublicCatalog: result.showPublicCatalog === true,
-                publicCatalogSlug: result.publicCatalogSlug ?? item.publicCatalogSlug,
+                publicCatalogSlug:
+                  result.publicCatalogSlug ?? item.publicCatalogSlug,
               }
             : item,
         ),
+      );
+    } catch (err) {
+      setSuppliers((current) =>
+        current.map((item) => (item.userId === row.userId ? row : item)),
+      );
+      setError(
+        err instanceof Error
+          ? err.message
+          : "No se pudo guardar la vitrina pública.",
       );
     } finally {
       setBusyUserId(null);

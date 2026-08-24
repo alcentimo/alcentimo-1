@@ -820,9 +820,19 @@ export async function setSupplierCatalogPublication(input: {
   };
 }
 
+function parsePublicCatalogEnabled(value: unknown): boolean {
+  if (typeof value === "boolean") return value;
+  if (typeof value === "number") return value === 1;
+  if (typeof value === "string") {
+    const normalized = value.trim().toLowerCase();
+    return normalized === "true" || normalized === "1" || normalized === "on";
+  }
+  return false;
+}
+
 export async function setSupplierPublicCatalogEnabled(input: {
   supplierUserId: string;
-  enabled: boolean;
+  enabled: boolean | string | number;
 }): Promise<
   ActionResult<{
     showPublicCatalog: boolean;
@@ -835,8 +845,9 @@ export async function setSupplierPublicCatalogEnabled(input: {
   const auth = await requireSupportAdmin();
   if (!auth.ok) return { error: auth.error };
 
-  const supplierUserId = input.supplierUserId.trim();
+  const supplierUserId = String(input.supplierUserId ?? "").trim();
   if (!supplierUserId) return { error: "Selecciona un proveedor." };
+  const enabled = parsePublicCatalogEnabled(input.enabled);
 
   const admin = createAdminClient();
   const { data: profile, error: profileError } = await admin
@@ -854,7 +865,7 @@ export async function setSupplierPublicCatalogEnabled(input: {
       ? row.public_catalog_slug.trim().toLowerCase()
       : "";
 
-  if (input.enabled) {
+  if (enabled) {
     slug = await allocateSupplierPublicCatalogSlug({
       admin,
       supplierUserId,
@@ -863,30 +874,70 @@ export async function setSupplierPublicCatalogEnabled(input: {
     });
   }
 
-  const { error: updateError } = await admin
+  const patch = {
+    show_public_catalog: enabled,
+    public_catalog_slug: slug || null,
+    updated_at: new Date().toISOString(),
+  };
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: updated, error: updateError } = await (admin as any)
     .from("supplier_profiles")
-    .update({
-      show_public_catalog: input.enabled,
-      public_catalog_slug: slug || null,
-      updated_at: new Date().toISOString(),
-    })
-    .eq("user_id", supplierUserId);
+    .update(patch)
+    .eq("user_id", supplierUserId)
+    .select("user_id, show_public_catalog, public_catalog_slug")
+    .maybeSingle();
 
   if (updateError) return { error: mapCatalogDbError(updateError.message) };
+  if (!updated) {
+    return { error: "No se pudo guardar la vitrina pública de este proveedor." };
+  }
 
-  if (slug) revalidatePath(supplierPublicCatalogPath(slug));
+  const saved = updated as Record<string, unknown>;
+  const savedEnabled = parsePublicCatalogEnabled(saved.show_public_catalog);
+  const savedSlug =
+    typeof saved.public_catalog_slug === "string" &&
+    saved.public_catalog_slug.trim()
+      ? saved.public_catalog_slug.trim().toLowerCase()
+      : slug || null;
+
+  if (savedEnabled !== enabled) {
+    return {
+      error: "La base de datos no persistió el interruptor de vitrina pública.",
+    };
+  }
+
+  if (savedSlug) revalidatePath(supplierPublicCatalogPath(savedSlug));
   revalidatePath("/admin/dashboard");
 
   const listed = await listAdminSupplierCatalogProducts();
-  const publicCatalogPath = slug ? supplierPublicCatalogPath(slug) : null;
+  const publicCatalogPath = savedSlug
+    ? supplierPublicCatalogPath(savedSlug)
+    : null;
+  const suppliers = (listed.suppliers ?? []).map((supplier) =>
+    supplier.id === supplierUserId
+      ? {
+          ...supplier,
+          showPublicCatalog: savedEnabled,
+          publicCatalogSlug: savedSlug,
+        }
+      : supplier,
+  );
+
+  if (listed.error) {
+    return {
+      showPublicCatalog: savedEnabled,
+      publicCatalogSlug: savedSlug,
+      publicCatalogPath,
+    };
+  }
 
   return {
-    showPublicCatalog: input.enabled,
-    publicCatalogSlug: slug || null,
+    showPublicCatalog: savedEnabled,
+    publicCatalogSlug: savedSlug,
     publicCatalogPath,
     products: listed.products ?? [],
-    suppliers: listed.suppliers ?? [],
-    error: listed.error,
+    suppliers,
   };
 }
 
