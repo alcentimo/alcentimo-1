@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { Check, Copy, ExternalLink } from "lucide-react";
 import {
   SettingsSection,
@@ -37,12 +37,6 @@ export function SupplierIdentityTab({
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
-
-  useEffect(() => {
-    setName(tradeName);
-    setLogo(logoUrl);
-    setAbout(description.slice(0, STORE_DESCRIPTION_MAX_LENGTH));
-  }, [tradeName, description, logoUrl]);
 
   const catalogUrl = useMemo(() => {
     const path = supplierPublicCatalogPath(publicSlug);

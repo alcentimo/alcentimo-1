@@ -1,6 +1,5 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { CreditCard, Settings2, Truck } from "lucide-react";
 import { PaymentsTab } from "@/components/dashboard/settings/PaymentsTab";
@@ -32,6 +31,45 @@ function resolveTab(tab: string | undefined): StorefrontTabId {
   return "general";
 }
 
+const NAV_GROUPS: {
+  label: string;
+  items: {
+    id: StorefrontTabId;
+    label: string;
+    description: string;
+    icon: typeof Settings2;
+  }[];
+}[] = [
+  {
+    label: "Tienda",
+    items: [
+      {
+        id: "general",
+        label: "Identidad",
+        description: "Marca, logo y nombre comercial",
+        icon: Settings2,
+      },
+    ],
+  },
+  {
+    label: "Operación",
+    items: [
+      {
+        id: "shipping",
+        label: "Envíos",
+        description: "Agencias y entrega de tu vitrina",
+        icon: Truck,
+      },
+      {
+        id: "payments",
+        label: "Pagos",
+        description: "Cómo te pagan tus clientes",
+        icon: CreditCard,
+      },
+    ],
+  },
+];
+
 export function SupplierStorefrontSettingsPanel({
   storefront,
   initialTab,
@@ -40,75 +78,23 @@ export function SupplierStorefrontSettingsPanel({
   initialTab?: string;
 }) {
   const router = useRouter();
-  const explicitTab = useMemo(
-    () => (initialTab && VALID_TABS.has(initialTab as StorefrontTabId)
+  const explicitTab =
+    initialTab && VALID_TABS.has(initialTab as StorefrontTabId)
       ? (initialTab as StorefrontTabId)
-      : null),
-    [initialTab],
-  );
-  const [activeTab, setActiveTab] = useState<StorefrontTabId>(() =>
-    resolveTab(initialTab),
-  );
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(() => !explicitTab);
-
-  const navGroups: {
-    label: string;
-    items: {
-      id: StorefrontTabId;
-      label: string;
-      description: string;
-      icon: typeof Settings2;
-    }[];
-  }[] = [
-    {
-      label: "Tienda",
-      items: [
-        {
-          id: "general",
-          label: "Identidad",
-          description: "Marca, logo y nombre comercial",
-          icon: Settings2,
-        },
-      ],
-    },
-    {
-      label: "Operación",
-      items: [
-        {
-          id: "shipping",
-          label: "Envíos",
-          description: "Agencias y entrega de tu vitrina",
-          icon: Truck,
-        },
-        {
-          id: "payments",
-          label: "Pagos",
-          description: "Cómo te pagan tus clientes",
-          icon: CreditCard,
-        },
-      ],
-    },
-  ];
-
-  useEffect(() => {
-    setActiveTab(resolveTab(initialTab));
-    setMobileMenuOpen(!explicitTab);
-  }, [initialTab, explicitTab]);
+      : null;
+  const activeTab = resolveTab(initialTab);
+  const mobileMenuOpen = !explicitTab;
+  const activeLabel =
+    NAV_GROUPS.flatMap((group) => group.items).find((item) => item.id === activeTab)
+      ?.label ?? "Ajustes";
 
   function openTab(id: StorefrontTabId) {
-    setActiveTab(id);
-    setMobileMenuOpen(false);
     router.replace(`/proveedor/dashboard/ajustes?tab=${id}`, { scroll: false });
   }
 
   function backToMobileMenu() {
-    setMobileMenuOpen(true);
     router.replace("/proveedor/dashboard/ajustes", { scroll: false });
   }
-
-  const activeLabel =
-    navGroups.flatMap((group) => group.items).find((item) => item.id === activeTab)
-      ?.label ?? "Ajustes";
 
   return (
     <div
@@ -126,7 +112,7 @@ export function SupplierStorefrontSettingsPanel({
           </p>
         </header>
         <SettingsMobileNav
-          groups={navGroups}
+          groups={NAV_GROUPS}
           onSelect={(id) => openTab(id as StorefrontTabId)}
           ariaLabel="Menú de configuración de vitrina"
         />
@@ -138,7 +124,7 @@ export function SupplierStorefrontSettingsPanel({
           aria-label="Secciones de configuración"
         >
           <nav className="settings-sidebar-nav">
-            {navGroups.map((group) => (
+            {NAV_GROUPS.map((group) => (
               <div key={group.label} className="settings-sidebar-group">
                 <p className="settings-sidebar-group-label">{group.label}</p>
                 <ul className="settings-sidebar-list">
@@ -183,6 +169,7 @@ export function SupplierStorefrontSettingsPanel({
           </div>
           {activeTab === "general" ? (
             <SupplierIdentityTab
+              key={`${storefront.tradeName}|${storefront.logoUrl ?? ""}|${storefront.description}`}
               tradeName={storefront.tradeName}
               description={storefront.description}
               logoUrl={storefront.logoUrl}
