@@ -7,6 +7,25 @@ import {
   type SupplierPublicCatalogProfile,
 } from "@/lib/catalog/supplier-public-catalog";
 import type { MercadoProductCard } from "@/lib/mercado-oculto/types";
+import { getPaymentMethod } from "@/src/config/payment-methods";
+import { getShippingMethod } from "@/src/config/shipping-methods";
+import type { PaymentMethodKey, ShippingCarrierKey } from "@/lib/store-settings/types";
+
+function enabledPaymentLabels(profile: SupplierPublicCatalogProfile): string[] {
+  return (Object.entries(profile.payments.methods) as Array<
+    [PaymentMethodKey, { enabled: boolean }]
+  >)
+    .filter(([, method]) => method.enabled)
+    .map(([key]) => getPaymentMethod(key).label);
+}
+
+function enabledShippingLabels(profile: SupplierPublicCatalogProfile): string[] {
+  return (Object.entries(profile.shipping.carriers) as Array<
+    [ShippingCarrierKey, boolean]
+  >)
+    .filter(([, enabled]) => enabled)
+    .map(([key]) => getShippingMethod(key).label);
+}
 
 export function SupplierPublicCatalogView({
   profile,
@@ -15,18 +34,42 @@ export function SupplierPublicCatalogView({
   profile: SupplierPublicCatalogProfile;
   products: MercadoProductCard[];
 }) {
+  const payments = enabledPaymentLabels(profile);
+  const shipping = enabledShippingLabels(profile);
+  const initials = profile.companyName.trim().slice(0, 1).toUpperCase() || "P";
+
   return (
     <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 sm:py-12">
       <header className="mb-8 border-b border-zinc-200 pb-6 dark:border-zinc-800">
-        <p className="text-xs font-medium uppercase tracking-wide text-zinc-500">
-          Vitrina pública
-        </p>
-        <h1 className="mt-1 text-2xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-50">
-          {profile.companyName}
-        </h1>
-        <p className="mt-1 text-sm text-zinc-500">
-          Catálogo exclusivo de este proveedor.
-        </p>
+        <div className="flex items-start gap-4">
+          <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-2xl border border-zinc-200 bg-zinc-100 dark:border-zinc-800 dark:bg-zinc-900">
+            {profile.logoUrl ? (
+              <Image
+                src={profile.logoUrl}
+                alt=""
+                fill
+                className="object-cover"
+                sizes="64px"
+              />
+            ) : (
+              <span className="flex h-full items-center justify-center text-lg font-semibold text-zinc-400">
+                {initials}
+              </span>
+            )}
+          </div>
+          <div className="min-w-0">
+            <p className="text-xs font-medium uppercase tracking-wide text-zinc-500">
+              Vitrina pública
+            </p>
+            <h1 className="mt-1 text-2xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-50">
+              {profile.companyName}
+            </h1>
+            <p className="mt-1 text-sm text-zinc-500">
+              {profile.description ||
+                "Catálogo exclusivo de este proveedor."}
+            </p>
+          </div>
+        </div>
       </header>
 
       {products.length === 0 ? (
@@ -69,6 +112,36 @@ export function SupplierPublicCatalogView({
           ))}
         </ul>
       )}
+
+      {payments.length > 0 || shipping.length > 0 ? (
+        <footer className="mt-10 grid gap-4 border-t border-zinc-200 pt-6 text-sm dark:border-zinc-800 sm:grid-cols-2">
+          {payments.length > 0 ? (
+            <div>
+              <p className="text-xs font-medium uppercase tracking-wide text-zinc-500">
+                Pagos
+              </p>
+              <p className="mt-1 text-zinc-700 dark:text-zinc-300">
+                {payments.join(" · ")}
+              </p>
+            </div>
+          ) : null}
+          {shipping.length > 0 ? (
+            <div>
+              <p className="text-xs font-medium uppercase tracking-wide text-zinc-500">
+                Envíos
+              </p>
+              <p className="mt-1 text-zinc-700 dark:text-zinc-300">
+                {shipping.join(" · ")}
+              </p>
+              {profile.shipping.deliveryDetails.trim() ? (
+                <p className="mt-1 text-xs text-zinc-500">
+                  {profile.shipping.deliveryDetails}
+                </p>
+              ) : null}
+            </div>
+          ) : null}
+        </footer>
+      ) : null}
     </div>
   );
 }
@@ -80,8 +153,7 @@ export function SupplierPublicCatalogProductView({
   profile: SupplierPublicCatalogProfile;
   product: MercadoProductCard;
 }) {
-  const image =
-    product.gallery_urls[0] ?? product.thumb_url ?? null;
+  const image = product.gallery_urls[0] ?? product.thumb_url ?? null;
   return (
     <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6 sm:py-12">
       <Link

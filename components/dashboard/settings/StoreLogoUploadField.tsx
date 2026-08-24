@@ -19,6 +19,11 @@ interface StoreLogoUploadFieldProps {
   storeName: string;
   disabled?: boolean;
   onLogoChange: (url: string | null) => void;
+  uploadAction?: (
+    formData: FormData,
+  ) => Promise<{ url?: string; warning?: string; error?: string }>;
+  clearAction?: () => Promise<{ error?: string }>;
+  inputId?: string;
 }
 
 /** Subida de logo de tienda (bucket store-logos + stores.logo_url). */
@@ -27,6 +32,9 @@ export function StoreLogoUploadField({
   storeName,
   disabled = false,
   onLogoChange,
+  uploadAction = uploadStoreLogo,
+  clearAction = clearStoreLogo,
+  inputId = "store-logo-upload",
 }: StoreLogoUploadFieldProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [error, setError] = useState<string | null>(null);
@@ -73,7 +81,7 @@ export function StoreLogoUploadField({
     formData.set("file", file);
 
     startTransition(async () => {
-      const result = await uploadStoreLogo(formData);
+      const result = await uploadAction(formData);
       if (result.error) {
         setError(result.error);
         clearPreview();
@@ -103,7 +111,7 @@ export function StoreLogoUploadField({
     clearPreview();
 
     startTransition(async () => {
-      const result = await clearStoreLogo();
+      const result = await clearAction();
       if (result.error) {
         setError(result.error);
         return;
@@ -114,7 +122,7 @@ export function StoreLogoUploadField({
 
   return (
     <div className="space-y-2">
-      <LabelRow />
+      <LabelRow inputId={inputId} />
       <div className="flex items-start gap-3 sm:gap-4">
         <button
           type="button"
@@ -155,7 +163,7 @@ export function StoreLogoUploadField({
         <div className="min-w-0 flex-1 space-y-1.5">
           <input
             ref={inputRef}
-            id="store-logo-upload"
+            id={inputId}
             type="file"
             accept={STORE_LOGO_ACCEPT}
             className="sr-only"
@@ -227,9 +235,9 @@ export function StoreLogoUploadField({
   );
 }
 
-function LabelRow() {
+function LabelRow({ inputId }: { inputId: string }) {
   return (
-    <label htmlFor="store-logo-upload" className="payment-field-label">
+    <label htmlFor={inputId} className="payment-field-label">
       Logotipo
     </label>
   );

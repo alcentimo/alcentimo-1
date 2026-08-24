@@ -23,9 +23,15 @@ import type {
 
 interface ShippingTabProps {
   initialSettings: ShippingSettings;
+  persistSettings?: (
+    settings: ShippingSettings,
+  ) => Promise<{ error?: string; success?: boolean }>;
 }
 
-export function ShippingTab({ initialSettings }: ShippingTabProps) {
+export function ShippingTab({
+  initialSettings,
+  persistSettings = saveShippingSettings,
+}: ShippingTabProps) {
   const { country } = useCountry();
   const localShipping = getLocalShippingForCountry(country);
   const [carriers, setCarriers] = useState(initialSettings.carriers);
@@ -80,7 +86,7 @@ export function ShippingTab({ initialSettings }: ShippingTabProps) {
     if (mode === "form") setSavingForm(true);
 
     startTransition(async () => {
-      const result = await saveShippingSettings(payload);
+      const result = await persistSettings(payload);
       if (mode === "toggle" && key) setSavingToggle(null);
       if (mode === "form") setSavingForm(false);
 

@@ -2,6 +2,8 @@ import { Suspense } from "react";
 import { createClient } from "@/lib/supabase/server";
 import { SupplierChrome } from "@/components/supplier/SupplierChrome";
 import { resolveSupplierAuthEmail } from "@/lib/supplier/access";
+import { getSupplierPublicStorefront } from "@/lib/supplier/get-storefront";
+import { CountryProvider } from "@/components/providers/CountryProvider";
 
 export default async function ProveedorDashboardLayout({
   children,
@@ -12,24 +14,30 @@ export default async function ProveedorDashboardLayout({
   const {
     data: { user },
   } = await supabase.auth.getUser();
+  const storefront = user
+    ? await getSupplierPublicStorefront(user.id)
+    : null;
 
   return (
-    <Suspense
-      fallback={
-        <div className="supplier-hub-shell">
-          <main className="supplier-hub-main">
-            <div className="supplier-hub-card text-sm text-zinc-500">
-              Cargando hub…
-            </div>
-          </main>
-        </div>
-      }
-    >
-      <SupplierChrome
-        email={resolveSupplierAuthEmail(user) ?? user?.email ?? null}
+    <CountryProvider country="Venezuela">
+      <Suspense
+        fallback={
+          <div className="supplier-hub-shell">
+            <main className="supplier-hub-main">
+              <div className="supplier-hub-card text-sm text-zinc-500">
+                Cargando hub…
+              </div>
+            </main>
+          </div>
+        }
       >
-        {children}
-      </SupplierChrome>
-    </Suspense>
+        <SupplierChrome
+          email={resolveSupplierAuthEmail(user) ?? user?.email ?? null}
+          showStorefrontSettings={storefront?.showPublicCatalog === true}
+        >
+          {children}
+        </SupplierChrome>
+      </Suspense>
+    </CountryProvider>
   );
 }

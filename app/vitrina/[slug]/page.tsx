@@ -19,7 +19,9 @@ export async function generateMetadata({
   }
   return {
     title: `${catalog.profile.companyName} · Vitrina pública`,
-    description: `Catálogo público de ${catalog.profile.companyName}.`,
+    description:
+      catalog.profile.description ||
+      `Catálogo público de ${catalog.profile.companyName}.`,
   };
 }
 

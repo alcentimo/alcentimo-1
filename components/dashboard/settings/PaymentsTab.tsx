@@ -20,7 +20,7 @@ import {
   validatePaymentsSettings,
   type PaymentFieldErrors,
 } from "@/lib/payments/validate-payment-fields";
-import { savePaymentsSettings } from "@/lib/settings/actions";
+import { savePaymentsSettings, type SavePaymentsOptions, type SettingsActionResult } from "@/lib/settings/actions";
 import { requestDashboardShellRefresh } from "@/lib/dashboard/shell-refresh";
 import { useCountry } from "@/components/providers/CountryProvider";
 import { getCountryConfig } from "@/lib/country-config";
@@ -32,6 +32,10 @@ import type {
 
 interface PaymentsTabProps {
   initialSettings: PaymentsSettings;
+  persistSettings?: (
+    settings: PaymentsSettings,
+    options?: SavePaymentsOptions,
+  ) => Promise<SettingsActionResult>;
 }
 
 function fieldErrorKey(methodKey: PaymentMethodKey, fieldKey: string): string {
@@ -63,7 +67,10 @@ function filterErrorsForEnabledMethods(
   return next;
 }
 
-export function PaymentsTab({ initialSettings }: PaymentsTabProps) {
+export function PaymentsTab({
+  initialSettings,
+  persistSettings = savePaymentsSettings,
+}: PaymentsTabProps) {
   const { paymentGroups } = useCountry();
   const currencyConfig = getCountryConfig().currency;
   const [payments, setPayments] = useState(initialSettings.methods);
@@ -97,7 +104,7 @@ export function PaymentsTab({ initialSettings }: PaymentsTabProps) {
     if (mode === "form") setSavingForm(true);
 
     startTransition(async () => {
-      const result = await savePaymentsSettings(payload, {
+      const result = await persistSettings(payload, {
         validate: mode === "form",
       });
       if (mode === "toggle" && toggleKey) setSavingToggle(null);

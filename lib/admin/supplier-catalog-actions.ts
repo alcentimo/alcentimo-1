@@ -10,6 +10,7 @@ import {
   allocateSupplierPublicCatalogSlug,
   supplierPublicCatalogPath,
 } from "@/lib/catalog/supplier-public-catalog";
+import { parsePublicCatalogEnabled } from "@/lib/catalog/supplier-public-catalog-flag";
 import { revalidateAllPublicCatalogCaches } from "@/lib/catalog/public-catalog-cache";
 import {
   normalizeSupplierProductCategory,
@@ -820,14 +821,104 @@ export async function setSupplierCatalogPublication(input: {
   };
 }
 
-function parsePublicCatalogEnabled(value: unknown): boolean {
-  if (typeof value === "boolean") return value;
-  if (typeof value === "number") return value === 1;
-  if (typeof value === "string") {
-    const normalized = value.trim().toLowerCase();
-    return normalized === "true" || normalized === "1" || normalized === "on";
+function isMissingPublicCatalogSchema(message: string): boolean {
+  const text = message.toLowerCase();
+  return (
+    (text.includes("show_public_catalog") ||
+      text.includes("public_catalog_slug") ||
+      text.includes("admin_set_supplier_public_catalog") ||
+      text.includes("ensure_supplier_public_catalog_columns")) &&
+    (text.includes("does not exist") ||
+      text.includes("schema cache") ||
+      text.includes("could not find") ||
+      (text.includes("function") && text.includes("not found")))
+  );
+}
+
+async function persistSupplierPublicCatalogRow(input: {
+  admin: ReturnType<typeof createAdminClient>;
+  supplierUserId: string;
+  enabled: boolean;
+  slug: string;
+}): Promise<
+  ActionResult<{
+    showPublicCatalog: boolean;
+    publicCatalogSlug: string | null;
+  }>
+> {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const admin = input.admin as any;
+  try {
+    await admin.rpc("ensure_supplier_public_catalog_columns");
+  } catch {
+    // La función puede no existir todavía; el UPDATE o el RPC principal lo dirán.
   }
-  return false;
+
+  const rpc = await admin.rpc("admin_set_supplier_public_catalog", {
+    p_user_id: input.supplierUserId,
+    p_enabled: input.enabled,
+    p_slug: input.slug || null,
+  });
+
+  if (!rpc.error) {
+    const row = Array.isArray(rpc.data) ? rpc.data[0] : rpc.data;
+    if (row) {
+      const savedEnabled = parsePublicCatalogEnabled(row.show_public_catalog);
+      const savedSlug =
+        typeof row.public_catalog_slug === "string" &&
+        row.public_catalog_slug.trim()
+          ? row.public_catalog_slug.trim().toLowerCase()
+          : input.slug || null;
+      if (savedEnabled === input.enabled) {
+        return {
+          showPublicCatalog: savedEnabled,
+          publicCatalogSlug: savedSlug,
+        };
+      }
+    }
+  } else if (
+    !isMissingPublicCatalogSchema(rpc.error.message) &&
+    !rpc.error.message.toLowerCase().includes("could not find the function")
+  ) {
+    return { error: mapCatalogDbError(rpc.error.message) };
+  }
+
+  const patch = {
+    show_public_catalog: input.enabled,
+    public_catalog_slug: input.slug || null,
+    updated_at: new Date().toISOString(),
+  };
+
+  const { data: updated, error: updateError } = await admin
+    .from("supplier_profiles")
+    .update(patch)
+    .eq("user_id", input.supplierUserId)
+    .select("user_id, show_public_catalog, public_catalog_slug")
+    .maybeSingle();
+
+  if (updateError) return { error: mapCatalogDbError(updateError.message) };
+  if (!updated) {
+    return { error: "No se pudo guardar la vitrina pública de este proveedor." };
+  }
+
+  const saved = updated as Record<string, unknown>;
+  const savedEnabled = parsePublicCatalogEnabled(saved.show_public_catalog);
+  const savedSlug =
+    typeof saved.public_catalog_slug === "string" &&
+    saved.public_catalog_slug.trim()
+      ? saved.public_catalog_slug.trim().toLowerCase()
+      : input.slug || null;
+
+  if (savedEnabled !== input.enabled) {
+    return {
+      error: "La base de datos no persistió el interruptor de vitrina pública.",
+    };
+  }
+
+  return {
+    showPublicCatalog: savedEnabled,
+    publicCatalogSlug: savedSlug,
+  };
 }
 
 export async function setSupplierPublicCatalogEnabled(input: {
@@ -850,16 +941,27 @@ export async function setSupplierPublicCatalogEnabled(input: {
   const enabled = parsePublicCatalogEnabled(input.enabled);
 
   const admin = createAdminClient();
-  const { data: profile, error: profileError } = await admin
+  let profileQuery = await admin
     .from("supplier_profiles")
     .select("user_id, company_name, public_catalog_slug, show_public_catalog")
     .eq("user_id", supplierUserId)
     .maybeSingle();
 
-  if (profileError) return { error: mapCatalogDbError(profileError.message) };
-  if (!profile) return { error: "Proveedor no encontrado." };
+  if (profileQuery.error) {
+    const missing = isMissingPublicCatalogSchema(profileQuery.error.message);
+    if (!missing) return { error: mapCatalogDbError(profileQuery.error.message) };
+    profileQuery = await admin
+      .from("supplier_profiles")
+      .select("user_id, company_name")
+      .eq("user_id", supplierUserId)
+      .maybeSingle();
+    if (profileQuery.error) {
+      return { error: mapCatalogDbError(profileQuery.error.message) };
+    }
+  }
+  if (!profileQuery.data) return { error: "Proveedor no encontrado." };
 
-  const row = profile as Record<string, unknown>;
+  const row = profileQuery.data as Record<string, unknown>;
   let slug =
     typeof row.public_catalog_slug === "string"
       ? row.public_catalog_slug.trim().toLowerCase()
@@ -874,41 +976,21 @@ export async function setSupplierPublicCatalogEnabled(input: {
     });
   }
 
-  const patch = {
-    show_public_catalog: enabled,
-    public_catalog_slug: slug || null,
-    updated_at: new Date().toISOString(),
-  };
+  const persisted = await persistSupplierPublicCatalogRow({
+    admin,
+    supplierUserId,
+    enabled,
+    slug,
+  });
+  if (persisted.error) return { error: persisted.error };
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data: updated, error: updateError } = await (admin as any)
-    .from("supplier_profiles")
-    .update(patch)
-    .eq("user_id", supplierUserId)
-    .select("user_id, show_public_catalog, public_catalog_slug")
-    .maybeSingle();
-
-  if (updateError) return { error: mapCatalogDbError(updateError.message) };
-  if (!updated) {
-    return { error: "No se pudo guardar la vitrina pública de este proveedor." };
-  }
-
-  const saved = updated as Record<string, unknown>;
-  const savedEnabled = parsePublicCatalogEnabled(saved.show_public_catalog);
-  const savedSlug =
-    typeof saved.public_catalog_slug === "string" &&
-    saved.public_catalog_slug.trim()
-      ? saved.public_catalog_slug.trim().toLowerCase()
-      : slug || null;
-
-  if (savedEnabled !== enabled) {
-    return {
-      error: "La base de datos no persistió el interruptor de vitrina pública.",
-    };
-  }
+  const savedEnabled = persisted.showPublicCatalog === true;
+  const savedSlug = persisted.publicCatalogSlug ?? (slug || null);
 
   if (savedSlug) revalidatePath(supplierPublicCatalogPath(savedSlug));
   revalidatePath("/admin/dashboard");
+  revalidatePath("/proveedor/dashboard");
+  revalidatePath("/proveedor/dashboard/ajustes");
 
   const listed = await listAdminSupplierCatalogProducts();
   const publicCatalogPath = savedSlug

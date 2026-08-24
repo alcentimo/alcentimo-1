@@ -10,24 +10,33 @@ import { SUPPLIER_LOGIN_PATH } from "@/lib/landing/supplier-zone-href";
 
 interface SupplierChromeProps {
   email: string | null;
+  showStorefrontSettings?: boolean;
   children: React.ReactNode;
 }
 
 /** Shell del hub de proveedores — suministro corporativo de Alcéntimo. */
-export function SupplierChrome({ email, children }: SupplierChromeProps) {
+export function SupplierChrome({
+  email,
+  showStorefrontSettings = false,
+  children,
+}: SupplierChromeProps) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const [signingOut, setSigningOut] = useState(false);
   const tab = searchParams.get("tab");
-  const onPedidos = pathname.startsWith("/proveedor") && tab === "pedidos";
-  const onPagos = pathname.startsWith("/proveedor") && tab === "pagos";
+  const onAjustes = pathname.startsWith("/proveedor/dashboard/ajustes");
+  const onPedidos =
+    pathname.startsWith("/proveedor") && tab === "pedidos" && !onAjustes;
+  const onPagos =
+    pathname.startsWith("/proveedor") && tab === "pagos" && !onAjustes;
   const onHistorial =
-    pathname.startsWith("/proveedor") && tab === "historial";
+    pathname.startsWith("/proveedor") && tab === "historial" && !onAjustes;
   const onProductos =
     pathname.startsWith("/proveedor") &&
     !onPedidos &&
     !onPagos &&
-    !onHistorial;
+    !onHistorial &&
+    !onAjustes;
 
   async function handleSignOut() {
     if (signingOut) return;
@@ -96,6 +105,17 @@ export function SupplierChrome({ email, children }: SupplierChromeProps) {
             >
               Historial
             </Link>
+            {showStorefrontSettings ? (
+              <Link
+                href="/proveedor/dashboard/ajustes"
+                className={cn(
+                  "supplier-hub-nav-link",
+                  onAjustes && "supplier-hub-nav-link-active",
+                )}
+              >
+                Tienda
+              </Link>
+            ) : null}
             <button
               type="button"
               className="supplier-hub-logout"
