@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Check, Loader2, Search } from "lucide-react";
+import { Check, ExternalLink, Loader2, Search } from "lucide-react";
 import {
   applySupplierGlobalMargin,
   listAdminSupplierCatalogProducts,
@@ -11,6 +11,7 @@ import {
   setAdminSupplierSuggestedRetailPrice,
   setAdminSupplierWholesalePrice,
   setSupplierCatalogPublication,
+  setSupplierPublicCatalogEnabled,
   type AdminSupplierCatalogProduct,
   type AdminSupplierMarginOption,
 } from "@/lib/admin/supplier-catalog-actions";
@@ -546,6 +547,46 @@ export function AdminSupplierCatalogPanel() {
     }
   }
 
+  async function handlePublicCatalogToggle(supplierId: string, enabled: boolean) {
+    setBusySupplierId(supplierId);
+    setError(null);
+    setMessage(null);
+    try {
+      const result = await setSupplierPublicCatalogEnabled({
+        supplierUserId: supplierId,
+        enabled,
+      });
+      if (result.error) {
+        setError(result.error);
+        return;
+      }
+      if (result.products && result.suppliers) {
+        hydrate(result.products, result.suppliers);
+      } else {
+        setSuppliers((current) =>
+          current.map((supplier) =>
+            supplier.id === supplierId
+              ? {
+                  ...supplier,
+                  showPublicCatalog: result.showPublicCatalog === true,
+                  publicCatalogSlug: result.publicCatalogSlug ?? null,
+                }
+              : supplier,
+          ),
+        );
+      }
+      setMessage(
+        enabled
+          ? result.publicCatalogPath
+            ? `Vitrina pública habilitada: ${result.publicCatalogPath}`
+            : "Vitrina pública habilitada."
+          : "Vitrina pública deshabilitada.",
+      );
+    } finally {
+      setBusySupplierId(null);
+    }
+  }
+
   async function handleApplyPercent(supplierId: string) {
     const percent = parsePercentAmount(headerPercent[supplierId], {
       min: 0,
@@ -701,6 +742,37 @@ export function AdminSupplierCatalogPanel() {
                       }
                       onChange={(checked) =>
                         void handleCatalogToggle(supplier.id, checked)
+                      }
+                    />
+                  </div>
+                  <div className="flex items-center gap-2 border-l border-zinc-200 pl-3 dark:border-zinc-800">
+                    <div className="text-right">
+                      <p className="text-xs font-medium text-zinc-800 dark:text-zinc-200">
+                        Vitrina pública habilitada
+                      </p>
+                      {supplier.showPublicCatalog && supplier.publicCatalogSlug ? (
+                        <a
+                          href={`/vitrina/${supplier.publicCatalogSlug}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1 text-[11px] text-emerald-700 hover:underline dark:text-emerald-400"
+                        >
+                          Abrir enlace
+                          <ExternalLink className="h-3 w-3" aria-hidden="true" />
+                        </a>
+                      ) : (
+                        <p className="text-[11px] text-zinc-500">
+                          Accesible por su enlace
+                        </p>
+                      )}
+                    </div>
+                    <SettingsSwitch
+                      id={`supplier-public-catalog-${supplier.id}`}
+                      checked={supplier.showPublicCatalog === true}
+                      disabled={supplierBusy || busy}
+                      label={`Vitrina pública habilitada de ${supplier.name}`}
+                      onChange={(checked) =>
+                        void handlePublicCatalogToggle(supplier.id, checked)
                       }
                     />
                   </div>

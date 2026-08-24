@@ -10,6 +10,8 @@ export interface AdminSupplierDirectoryRow {
   whatsappUrl: string | null;
   location: string | null;
   activeProductCount: number;
+  showPublicCatalog: boolean;
+  publicCatalogSlug: string | null;
 }
 
 function inferLocationFromPhone(phone: string): string | null {
@@ -67,13 +69,28 @@ export async function getAdminSuppliers(
 
   const { data: profiles, error } = await admin
     .from("supplier_profiles")
-    .select("user_id, company_name, contact_name, email, phone, created_at")
+    .select(
+      "user_id, company_name, contact_name, email, phone, created_at, show_public_catalog, public_catalog_slug",
+    )
     .order("created_at", { ascending: false })
     .limit(cappedLimit);
 
-  if (error) throw new Error(error.message);
-
-  const rows = profiles ?? [];
+  let rows: Array<Record<string, unknown>> = (profiles as Array<
+    Record<string, unknown>
+  > | null) ?? [];
+  if (error) {
+    const missingPublicCatalog =
+      error.message.includes("show_public_catalog") ||
+      error.message.includes("public_catalog_slug");
+    if (!missingPublicCatalog) throw new Error(error.message);
+    const fallback = await admin
+      .from("supplier_profiles")
+      .select("user_id, company_name, contact_name, email, phone, created_at")
+      .order("created_at", { ascending: false })
+      .limit(cappedLimit);
+    if (fallback.error) throw new Error(fallback.error.message);
+    rows = (fallback.data as Array<Record<string, unknown>> | null) ?? [];
+  }
   const supplierIds = rows
     .map((row) => String(row.user_id ?? ""))
     .filter(Boolean);
@@ -91,6 +108,12 @@ export async function getAdminSuppliers(
       whatsappUrl: phone ? buildWhatsAppUrl(phone) : null,
       location: inferLocationFromPhone(phone),
       activeProductCount: productCounts.get(userId) ?? 0,
+      showPublicCatalog: row.show_public_catalog === true,
+      publicCatalogSlug:
+        typeof row.public_catalog_slug === "string" &&
+        row.public_catalog_slug.trim()
+          ? row.public_catalog_slug.trim().toLowerCase()
+          : null,
     };
   });
 }
