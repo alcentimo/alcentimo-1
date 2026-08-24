@@ -8,7 +8,10 @@ import { roundExchangeRate } from "@/lib/format";
 import type { CatalogListItem, ExchangeRate } from "@/lib/database.types";
 import { sortCatalogProducts } from "@/lib/catalog/catalog-browse";
 import { parseCatalogGalleryImages } from "@/lib/products/product-gallery-types";
-import { listDropshipLinkedCatalogEntriesForStoreSlug } from "@/lib/dropship/linked-catalog";
+import {
+  listDropshipLinkedCatalogEntriesForStoreId,
+  listDropshipLinkedCatalogEntriesForStoreSlug,
+} from "@/lib/dropship/linked-catalog";
 import { applySupplierCategoriesToCatalogItems } from "@/lib/catalog/apply-supplier-categories";
 import { withPublicCatalogCache } from "@/lib/catalog/public-catalog-cache";
 import {
@@ -25,6 +28,8 @@ export interface CatalogPageData {
 
 export interface GetCatalogOptions {
   storeSlug: string;
+  /** Evita un segundo lookup por slug; la vitrina ya resolvió la tienda. */
+  storeId?: string;
   limit?: number;
   offset?: number;
   categorySlug?: string;
@@ -194,6 +199,7 @@ function catalogProductsCacheKey(options: GetCatalogOptions): string[] {
     : "";
   return [
     options.storeSlug.trim().toLowerCase(),
+    options.storeId?.trim() ?? "",
     String(options.limit ?? ""),
     String(options.offset ?? 0),
     options.categorySlug?.trim().toLowerCase() ?? "",
@@ -204,11 +210,15 @@ function catalogProductsCacheKey(options: GetCatalogOptions): string[] {
   ];
 }
 
+/** PostgREST `.in()` por GET se rompe con muchos UUID (vitrina vacía tras carga masiva). */
+const CATALOG_PRODUCT_IN_CHUNK = 80;
+
 async function loadCatalogProductsUncached(
   options: GetCatalogOptions,
 ): Promise<CatalogPageData> {
   const {
     storeSlug,
+    storeId,
     limit = 24,
     offset = 0,
     categorySlug,
@@ -218,8 +228,9 @@ async function loadCatalogProductsUncached(
     productIds,
   } = options;
   const normalizedSlug = storeSlug.trim().toLowerCase();
-  const linkedEntries =
-    await listDropshipLinkedCatalogEntriesForStoreSlug(normalizedSlug);
+  const linkedEntries = storeId?.trim()
+    ? await listDropshipLinkedCatalogEntriesForStoreId(storeId.trim())
+    : await listDropshipLinkedCatalogEntriesForStoreSlug(normalizedSlug);
   const linkedProductIds = linkedEntries.map((entry) => entry.productId);
 
   if (linkedProductIds.length === 0) {
@@ -254,6 +265,7 @@ async function loadCatalogProductsUncached(
   // Paginación solo en listados; las hidrataciones por IDs traen el set completo.
   const paginated = limit != null && productIds == null;
   const searchOr = buildInventorySearchOrFilter(search ?? "") || null;
+  const useInFilter = allowedProductIds.length <= CATALOG_PRODUCT_IN_CHUNK;
 
   const baseQueryOptions: Omit<CatalogProductsQueryOptions, "select" | "mode"> =
     {
@@ -261,7 +273,7 @@ async function loadCatalogProductsUncached(
       paginated,
       offset,
       limit,
-      productIds: allowedProductIds,
+      productIds: useInFilter ? allowedProductIds : undefined,
       searchOr,
       minPriceUsd: minPriceUsd ?? null,
       maxPriceUsd: maxPriceUsd ?? null,
@@ -312,6 +324,11 @@ async function loadCatalogProductsUncached(
     linkedEntries,
   );
 
+  if (!useInFilter) {
+    const allowed = new Set(allowedProductIds);
+    products = products.filter((product) => allowed.has(product.product_id));
+  }
+
   const supplierGalleryByProductId = await resolveSupplierGalleryForProductIds(
     products.map((product) => product.product_id),
   );
@@ -350,7 +367,7 @@ export async function getCatalogProducts(
 
   const normalizedSlug = options.storeSlug.trim().toLowerCase();
   return withPublicCatalogCache(
-    ["public-catalog-products-v1", ...catalogProductsCacheKey(options)],
+    ["public-catalog-products-v2", ...catalogProductsCacheKey(options)],
     { slug: normalizedSlug },
     () => loadCatalogProductsUncached({ ...options, storeSlug: normalizedSlug }),
   );

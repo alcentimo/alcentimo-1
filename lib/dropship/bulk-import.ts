@@ -277,6 +277,30 @@ async function softDeleteProducts(
     .in("id", productIds);
 }
 
+/** Publica en la vitrina: activos, no borrados y anclados a la tienda. */
+async function publishImportedProducts(
+  admin: SupabaseClient,
+  storeId: string,
+  productIds: string[],
+) {
+  if (productIds.length === 0) return;
+  await admin
+    .from("products")
+    .update({
+      store_id: storeId,
+      is_active: true,
+      is_deleted: false,
+      updated_at: new Date().toISOString(),
+    })
+    .in("id", productIds);
+
+  await admin
+    .from("product_variants")
+    .update({ is_active: true })
+    .in("product_id", productIds)
+    .eq("is_default", true);
+}
+
 /**
  * Importa en lote los productos mayoristas activos a la tienda del dropshipper.
  * `category` limita a una categoría del hub (electrónica, otros, …).
@@ -634,6 +658,8 @@ export async function importSupplierProductsBulkToStore(input?: {
         }
       }
 
+      await publishImportedProducts(admin, auth.store.id, productIds);
+
       importedSupplierIds.push(...prepared.map((item) => item.supplier.id));
     }
 
@@ -642,6 +668,7 @@ export async function importSupplierProductsBulkToStore(input?: {
     revalidatePath("/dashboard/inventario");
     revalidatePath("/dashboard");
     revalidatePath(`/c/${auth.store.slug}`);
+    revalidatePath(`/tienda/${auth.store.slug}`);
     revalidatePublicCatalogCache({
       slug: auth.store.slug,
       storeId: auth.store.id,

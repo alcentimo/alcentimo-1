@@ -82,6 +82,7 @@ async function loadPublicCatalogPageDataUncached(
 
   const catalogData = await getCatalogProducts({
     storeSlug: store.slug,
+    storeId: store.id,
     limit: CATALOG_INITIAL_FETCH,
     offset: 0,
     categorySlug: selectedCategorySlug ?? undefined,
@@ -122,7 +123,7 @@ export async function getPublicCatalogPageData(
   const categoryFilter = Boolean(options?.categoryFilter);
 
   return withPublicCatalogCache(
-    ["public-catalog-page-v2", slug, categorySlug, String(categoryFilter)],
+    ["public-catalog-page-v3", slug, categorySlug, String(categoryFilter)],
     { slug, storeId: store.id },
     () =>
       loadPublicCatalogPageDataUncached(slug, {
