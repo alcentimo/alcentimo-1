@@ -576,7 +576,8 @@ export function AdminSupplierCatalogPanel() {
         return;
       }
       const savedEnabled = result.showPublicCatalog === true;
-      const savedSlug = result.publicCatalogSlug ?? previous?.publicCatalogSlug ?? null;
+      const savedSlug =
+        result.publicCatalogSlug ?? previous?.publicCatalogSlug ?? null;
       if (result.products && result.suppliers) {
         hydrate(
           result.products,
