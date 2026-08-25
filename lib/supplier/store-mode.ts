@@ -20,6 +20,7 @@ export function isMissingStoreModeSchema(message: string): boolean {
   );
 }
 
+/** Persistencia exclusiva del panel admin. El proveedor no puede cambiar este flag. */
 export async function persistSupplierStoreModeEnabled(input: {
   supplierUserId: string;
   enabled: boolean;
