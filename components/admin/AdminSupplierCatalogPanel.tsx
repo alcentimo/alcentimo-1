@@ -12,6 +12,7 @@ import {
   setAdminSupplierWholesalePrice,
   setSupplierCatalogPublication,
   setSupplierPublicCatalogEnabled,
+  setSupplierStoreModeEnabled,
   type AdminSupplierCatalogProduct,
   type AdminSupplierMarginOption,
 } from "@/lib/admin/supplier-catalog-actions";
@@ -629,6 +630,69 @@ export function AdminSupplierCatalogPanel() {
     }
   }
 
+  async function handleStoreModeToggle(supplierId: string, enabled: boolean) {
+    const previous = suppliers.find((item) => item.id === supplierId);
+    setBusySupplierId(supplierId);
+    setError(null);
+    setMessage(null);
+    setSuppliers((current) =>
+      current.map((supplier) =>
+        supplier.id === supplierId
+          ? { ...supplier, storeModeEnabled: enabled }
+          : supplier,
+      ),
+    );
+    try {
+      const result = await setSupplierStoreModeEnabled({
+        supplierUserId: supplierId,
+        enabled: enabled ? "true" : "false",
+      });
+      if (result.error) {
+        if (previous) {
+          setSuppliers((current) =>
+            current.map((supplier) =>
+              supplier.id === supplierId ? previous : supplier,
+            ),
+          );
+        }
+        setError(result.error);
+        return;
+      }
+      const savedEnabled = result.storeModeEnabled === true;
+      if (result.products && result.suppliers) {
+        hydrate(result.products, result.suppliers);
+      } else {
+        setSuppliers((current) =>
+          current.map((supplier) =>
+            supplier.id === supplierId
+              ? { ...supplier, storeModeEnabled: savedEnabled }
+              : supplier,
+          ),
+        );
+      }
+      setMessage(
+        savedEnabled
+          ? "Modo tienda / dropshipper activado. El proveedor puede usar /dashboard."
+          : "Modo tienda / dropshipper desactivado.",
+      );
+    } catch (err) {
+      if (previous) {
+        setSuppliers((current) =>
+          current.map((supplier) =>
+            supplier.id === supplierId ? previous : supplier,
+          ),
+        );
+      }
+      setError(
+        err instanceof Error
+          ? err.message
+          : "No se pudo guardar el modo tienda.",
+      );
+    } finally {
+      setBusySupplierId(null);
+    }
+  }
+
   async function handleApplyPercent(supplierId: string) {
     const percent = parsePercentAmount(headerPercent[supplierId], {
       min: 0,
@@ -815,6 +879,25 @@ export function AdminSupplierCatalogPanel() {
                       label={`Vitrina pública habilitada de ${supplier.name}`}
                       onChange={(checked) =>
                         void handlePublicCatalogToggle(supplier.id, checked)
+                      }
+                    />
+                  </div>
+                  <div className="flex items-center gap-2 border-l border-zinc-200 pl-3 dark:border-zinc-800">
+                    <div className="text-right">
+                      <p className="text-xs font-medium text-zinc-800 dark:text-zinc-200">
+                        Modo tienda / dropshipper
+                      </p>
+                      <p className="text-[11px] text-zinc-500">
+                        Panel /dashboard además del hub
+                      </p>
+                    </div>
+                    <SettingsSwitch
+                      id={`supplier-store-mode-${supplier.id}`}
+                      checked={supplier.storeModeEnabled === true}
+                      disabled={supplierBusy || busy}
+                      label={`Modo tienda de ${supplier.name}`}
+                      onChange={(checked) =>
+                        void handleStoreModeToggle(supplier.id, checked)
                       }
                     />
                   </div>

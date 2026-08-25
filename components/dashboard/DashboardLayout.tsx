@@ -44,6 +44,7 @@ interface DashboardLayoutProps {
   storeRole?: DashboardStoreRole | null;
   canUpgradeToBusiness?: boolean;
   accountSnapshot?: AccountSnapshot | null;
+  showSupplierHubLink?: boolean;
   navVariant?: DashboardNavVariant | null;
   homeHref?: string;
   logoutHref?: string;
@@ -68,6 +69,7 @@ function DashboardShell({
   isSupportAdmin = false,
   storeRole = null,
   accountSnapshot = null,
+  showSupplierHubLink = false,
   navVariant = "merchant",
   homeHref = DASHBOARD_HOME_HREF,
   logoutHref = DASHBOARD_LOGIN_HREF,
@@ -178,6 +180,7 @@ function DashboardShell({
         onPrefetchAccountSettings={prefetchAccountSettings}
         accountSettingsActive={accountSheetOpen || Boolean(accountQueryParam)}
         isSupportAdmin={isSupportAdmin}
+        showSupplierHubLink={showSupplierHubLink}
         storeRole={storeRole}
         navVariant={navVariant}
         homeHref={homeHref}

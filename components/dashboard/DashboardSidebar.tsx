@@ -8,6 +8,7 @@ import {
   LogOut,
   PanelLeftClose,
   PanelLeftOpen,
+  Warehouse,
   X,
 } from "lucide-react";
 import { SupportModal } from "@/components/dashboard/SupportModal";
@@ -44,6 +45,7 @@ interface DashboardSidebarProps {
   onPrefetchAccountSettings?: () => void;
   accountSettingsActive?: boolean;
   isSupportAdmin?: boolean;
+  showSupplierHubLink?: boolean;
   storeRole?: DashboardStoreRole | null;
   navVariant?: DashboardNavVariant | null;
   homeHref?: string;
@@ -155,6 +157,7 @@ export function DashboardSidebar({
   onPrefetchAccountSettings,
   accountSettingsActive = false,
   isSupportAdmin = false,
+  showSupplierHubLink = false,
   storeRole = null,
   navVariant = "merchant",
   homeHref = DASHBOARD_HOME_HREF,
@@ -375,6 +378,33 @@ export function DashboardSidebar({
               onOpenAccountSettings={onOpenAccountSettings}
               onPrefetchAccountSettings={onPrefetchAccountSettings}
             />
+
+            {showSupplierHubLink ? (
+              <Link
+                href="/proveedor/dashboard/hub"
+                prefetch={true}
+                className={navLinkClass(
+                  pathname.startsWith("/proveedor"),
+                  !drawerExpanded,
+                  mobileOpen && drawerExpanded,
+                )}
+                onClick={onCloseMobile}
+                onMouseEnter={() => prefetchRoute("/proveedor/dashboard/hub")}
+                onFocus={() => prefetchRoute("/proveedor/dashboard/hub")}
+                onTouchStart={() => prefetchRoute("/proveedor/dashboard/hub")}
+                title={drawerExpanded ? undefined : "Hub de proveedores"}
+                aria-current={
+                  pathname.startsWith("/proveedor") ? "page" : undefined
+                }
+              >
+                <Warehouse
+                  className="h-4 w-4 shrink-0"
+                  strokeWidth={1.75}
+                  aria-hidden="true"
+                />
+                {drawerExpanded && <span>Hub de proveedores</span>}
+              </Link>
+            ) : null}
 
             {isSupportAdmin ? (
               <Link

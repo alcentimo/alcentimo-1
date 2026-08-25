@@ -89,7 +89,6 @@ async function loadPublicCatalogPageDataUncached(
     limit: CATALOG_INITIAL_FETCH,
     offset: 0,
     categorySlug: selectedCategorySlug ?? undefined,
-    ownBrandOnly: settingsConfig.ownBrandStore === true,
   });
 
   const purchaseInfo = buildPublicPurchaseInfo(

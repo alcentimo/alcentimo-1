@@ -24,6 +24,7 @@ import { SUPPLIER_OWN_STORE_NAV_PREFIX } from "@/src/config/dashboard-nav";
 import { SUPPLIER_LOGIN_PATH } from "@/lib/landing/supplier-zone-href";
 
 export { lookupSupplierOwnStorefrontByUserId } from "@/lib/supplier/own-storefront-flag";
+export { lookupSupplierStoreModeByUserId } from "@/lib/supplier/own-storefront-flag";
 
 export async function userHasSupplierOwnStorefront(
   userId: string,
@@ -31,6 +32,14 @@ export async function userHasSupplierOwnStorefront(
   if (!userId.trim()) return false;
   const storefront = await getSupplierPublicStorefront(userId);
   return storefront?.showPublicCatalog === true;
+}
+
+export async function userHasSupplierStoreMode(
+  userId: string,
+): Promise<boolean> {
+  if (!userId.trim()) return false;
+  const storefront = await getSupplierPublicStorefront(userId);
+  return storefront?.storeModeEnabled === true;
 }
 
 export async function isOwnBrandStore(storeId: string): Promise<boolean> {
@@ -43,14 +52,14 @@ export async function isOwnBrandStore(storeId: string): Promise<boolean> {
 }
 
 /**
- * Crea o reutiliza la tienda del proveedor con vitrina pública.
- * El slug coincide con public_catalog_slug para reutilizar /c/{slug}.
+ * Crea o reutiliza la tienda merchant del proveedor (modo dropshipper).
+ * El slug coincide con public_catalog_slug cuando existe.
  */
 export async function ensureSupplierOwnStore(
   userId: string,
 ): Promise<Store | null> {
   const storefront = await getSupplierPublicStorefront(userId);
-  if (!storefront?.showPublicCatalog) return null;
+  if (!storefront?.storeModeEnabled) return null;
 
   const admin = createAdminClient();
   const supabase = await createClient();
@@ -118,12 +127,12 @@ export async function ensureSupplierOwnStore(
     current = defaultStoreSettingsConfig();
   }
   const merged = mergeStoreSettingsConfig(current, {
-    ownBrandStore: true,
+    ownBrandStore: false,
     shipping: storefront.shipping,
     payments: storefront.payments,
     dropshipPricing: {
       ...current.dropshipPricing,
-      enabled: false,
+      enabled: true,
     },
   });
 
@@ -211,14 +220,13 @@ export async function requireSupplierHubSession(input?: {
   }
 
   const storefront = await getSupplierPublicStorefront(user.id);
-  if (input?.requireOwnStorefront && !storefront?.showPublicCatalog) {
+  if (input?.requireOwnStorefront && !storefront?.storeModeEnabled) {
     redirect("/proveedor/dashboard");
   }
 
-  const store =
-    storefront?.showPublicCatalog === true
-      ? await ensureSupplierOwnStore(user.id)
-      : null;
+  const store = storefront?.storeModeEnabled
+    ? await ensureSupplierOwnStore(user.id)
+    : null;
 
   return { user: { id: user.id }, storefront, store };
 }

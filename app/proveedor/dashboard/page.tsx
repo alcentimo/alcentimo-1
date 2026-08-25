@@ -8,10 +8,7 @@ export default async function ProveedorDashboardIndexPage({
 }: {
   searchParams: Promise<{ tab?: string | string[] }>;
 }) {
-  const { storefront } = await requireSupplierHubSession();
-  if (storefront?.showPublicCatalog) {
-    redirect("/proveedor/dashboard/catalogo");
-  }
+  await requireSupplierHubSession();
 
   const params = await searchParams;
   const tabRaw = Array.isArray(params.tab) ? params.tab[0] : params.tab;

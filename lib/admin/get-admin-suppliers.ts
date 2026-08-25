@@ -11,6 +11,7 @@ export interface AdminSupplierDirectoryRow {
   location: string | null;
   activeProductCount: number;
   showPublicCatalog: boolean;
+  storeModeEnabled: boolean;
   publicCatalogSlug: string | null;
 }
 
@@ -70,7 +71,7 @@ export async function getAdminSuppliers(
   const { data: profiles, error } = await admin
     .from("supplier_profiles")
     .select(
-      "user_id, company_name, contact_name, email, phone, created_at, show_public_catalog, public_catalog_slug",
+      "user_id, company_name, contact_name, email, phone, created_at, show_public_catalog, public_catalog_slug, store_mode_enabled",
     )
     .order("created_at", { ascending: false })
     .limit(cappedLimit);
@@ -79,15 +80,28 @@ export async function getAdminSuppliers(
     Record<string, unknown>
   > | null) ?? [];
   if (error) {
+    const missingStoreMode = error.message.includes("store_mode_enabled");
     const missingPublicCatalog =
       error.message.includes("show_public_catalog") ||
       error.message.includes("public_catalog_slug");
-    if (!missingPublicCatalog) throw new Error(error.message);
-    const fallback = await admin
-      .from("supplier_profiles")
-      .select("user_id, company_name, contact_name, email, phone, created_at")
-      .order("created_at", { ascending: false })
-      .limit(cappedLimit);
+    if (!missingStoreMode && !missingPublicCatalog) {
+      throw new Error(error.message);
+    }
+    const fallback = missingPublicCatalog
+      ? await admin
+          .from("supplier_profiles")
+          .select(
+            "user_id, company_name, contact_name, email, phone, created_at",
+          )
+          .order("created_at", { ascending: false })
+          .limit(cappedLimit)
+      : await admin
+          .from("supplier_profiles")
+          .select(
+            "user_id, company_name, contact_name, email, phone, created_at, show_public_catalog, public_catalog_slug",
+          )
+          .order("created_at", { ascending: false })
+          .limit(cappedLimit);
     if (fallback.error) throw new Error(fallback.error.message);
     rows = (fallback.data as Array<Record<string, unknown>> | null) ?? [];
   }
@@ -109,6 +123,7 @@ export async function getAdminSuppliers(
       location: inferLocationFromPhone(phone),
       activeProductCount: productCounts.get(userId) ?? 0,
       showPublicCatalog: row.show_public_catalog === true,
+      storeModeEnabled: row.store_mode_enabled === true,
       publicCatalogSlug:
         typeof row.public_catalog_slug === "string" &&
         row.public_catalog_slug.trim()

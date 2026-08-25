@@ -38,9 +38,6 @@ export default async function ProveedorHubPage({
   }
 
   const storefront = await getSupplierPublicStorefront(user.id);
-  if (storefront?.showPublicCatalog) {
-    redirect("/proveedor/dashboard/catalogo");
-  }
 
   const params = await searchParams;
   const tabRaw = Array.isArray(params.tab) ? params.tab[0] : params.tab;
@@ -71,6 +68,7 @@ export default async function ProveedorHubPage({
       creditedBalanceUsd={payoutsResult.creditedBalanceUsd ?? 0}
       payoutsError={payoutsResult.error ?? null}
       initialTab={initialTab}
+      storeModeEnabled={storefront?.storeModeEnabled === true}
     />
   );
 }

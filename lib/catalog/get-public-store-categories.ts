@@ -14,14 +14,6 @@ async function loadPublicStoreCategoriesUncached(
   storeId: string,
 ): Promise<CatalogCategoryOption[]> {
   const ownCategories = await listOwnBrandStoreCategories(storeId);
-  if (ownCategories.length > 0) {
-    return ownCategories.map((item, index) => ({
-      slug: item.slug,
-      name: item.name,
-      sortOrder: index,
-    }));
-  }
-
   const entries = await listDropshipLinkedCatalogEntriesForStoreId(storeId, {
     publicOnly: true,
   });
@@ -29,14 +21,25 @@ async function loadPublicStoreCategoriesUncached(
   const present = new Set(
     entries.map((entry) => normalizeSupplierProductCategory(entry.supplierCategory)),
   );
+  for (const item of ownCategories) {
+    present.add(normalizeSupplierProductCategory(item.slug));
+  }
 
-  return SUPPLIER_PRODUCT_CATEGORIES.filter((item) => present.has(item.value)).map(
-    (item, index) => ({
-      slug: item.value,
-      name: supplierCategoryLabel(item.value),
-      sortOrder: index,
-    }),
-  );
+  const fromSupplier = SUPPLIER_PRODUCT_CATEGORIES.filter((item) =>
+    present.has(item.value),
+  ).map((item, index) => ({
+    slug: item.value,
+    name: supplierCategoryLabel(item.value),
+    sortOrder: index,
+  }));
+
+  if (fromSupplier.length > 0) return fromSupplier;
+
+  return ownCategories.map((item, index) => ({
+    slug: item.slug,
+    name: item.name,
+    sortOrder: index,
+  }));
 }
 
 /**
@@ -49,7 +52,7 @@ export async function getPublicStoreCategories(
   const id = storeId.trim();
   if (!id) return [];
   return withPublicCatalogCache(
-    ["public-store-categories-v3", id],
+    ["public-store-categories-v4", id],
     { storeId: id },
     () => loadPublicStoreCategoriesUncached(id),
   );
