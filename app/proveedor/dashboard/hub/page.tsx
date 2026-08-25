@@ -10,7 +10,6 @@ import { listSupplierOrders } from "@/lib/supplier/order-actions";
 import { getSupplierPaymentConfig } from "@/lib/supplier/payment-actions";
 import { defaultSupplierPaymentConfig } from "@/lib/supplier/payment-types";
 import { listMySupplierPayoutObligations } from "@/lib/dropship/get-supplier-payouts";
-import { getSupplierPublicStorefront } from "@/lib/supplier/get-storefront";
 
 export const dynamic = "force-dynamic";
 
@@ -36,8 +35,6 @@ export default async function ProveedorHubPage({
   if (!access.ok) {
     redirect(`/proveedor/registro?error=${access.reason ?? "denied"}`);
   }
-
-  const storefront = await getSupplierPublicStorefront(user.id);
 
   const params = await searchParams;
   const tabRaw = Array.isArray(params.tab) ? params.tab[0] : params.tab;
@@ -68,7 +65,6 @@ export default async function ProveedorHubPage({
       creditedBalanceUsd={payoutsResult.creditedBalanceUsd ?? 0}
       payoutsError={payoutsResult.error ?? null}
       initialTab={initialTab}
-      storeModeEnabled={storefront?.storeModeEnabled === true}
     />
   );
 }

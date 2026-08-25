@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
-import { LogOut } from "lucide-react";
+import { LogOut, Store } from "lucide-react";
 import { cn } from "@/lib/cn";
 import { createClient } from "@/lib/supabase/client";
 import { SUPPLIER_LOGIN_PATH } from "@/lib/landing/supplier-zone-href";
@@ -110,9 +110,10 @@ export function SupplierChrome({
             {showMerchantStoreLink ? (
               <Link
                 href="/dashboard/catalogo"
-                className="supplier-hub-nav-link"
+                className="supplier-hub-store-cta"
               >
-                Panel de tienda
+                <Store className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+                Ir a mi tienda
               </Link>
             ) : null}
             {showStorefrontSettings ? (

@@ -180,7 +180,12 @@ export function AdminSuppliersDirectoryPanel({
                 <th className="admin-stores-th">Ubicación</th>
                 <th className="admin-stores-th admin-stores-th-num">Productos</th>
                 <th className="admin-stores-th">Vitrina pública habilitada</th>
-                <th className="admin-stores-th">Modo tienda / dropshipper</th>
+                <th className="admin-stores-th">
+                  Tienda / dropshipper
+                  <span className="mt-0.5 block text-[10px] font-normal normal-case tracking-normal text-zinc-400">
+                    Control admin persistente
+                  </span>
+                </th>
               </tr>
             </thead>
             <tbody>
