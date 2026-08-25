@@ -1,70 +1,45 @@
 import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
-import { SupplierDashboard } from "@/components/supplier/SupplierDashboard";
-import {
-  resolveSupplierAccess,
-  resolveSupplierAuthEmail,
-} from "@/lib/supplier/access";
-import { listSupplierProducts } from "@/lib/supplier/actions";
-import { listSupplierOrders } from "@/lib/supplier/order-actions";
-import { getSupplierPaymentConfig } from "@/lib/supplier/payment-actions";
-import { defaultSupplierPaymentConfig } from "@/lib/supplier/payment-types";
-import { listMySupplierPayoutObligations } from "@/lib/dropship/get-supplier-payouts";
+import { DashboardPageHeader } from "@/components/dashboard/DashboardPageHeader";
+import { SupplierProductsPanel } from "@/components/supplier/SupplierProductsPanel";
+import { loadSupplierHubDashboard } from "@/lib/supplier/load-hub-dashboard";
+import { requireSupplierHubPageUser } from "@/lib/supplier/require-hub-page";
 
 export const dynamic = "force-dynamic";
 
-export default async function ProveedorHubPage({
+export default async function ProveedorHubInventarioPage({
   searchParams,
 }: {
   searchParams: Promise<{ tab?: string | string[] }>;
 }) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    redirect("/proveedor/login");
-  }
-
-  const access = await resolveSupplierAccess({
-    email: resolveSupplierAuthEmail(user),
-    userId: user.id,
-    user,
-  });
-  if (!access.ok) {
-    redirect(`/proveedor/registro?error=${access.reason ?? "denied"}`);
-  }
+  await requireSupplierHubPageUser();
 
   const params = await searchParams;
   const tabRaw = Array.isArray(params.tab) ? params.tab[0] : params.tab;
-  const initialTab =
-    tabRaw === "pedidos" || tabRaw === "pagos" || tabRaw === "historial"
-      ? tabRaw
-      : "productos";
+  if (tabRaw === "pedidos") {
+    redirect("/proveedor/dashboard/hub/pedidos");
+  }
+  if (tabRaw === "pagos") {
+    redirect("/proveedor/dashboard/hub/pagos");
+  }
+  if (tabRaw === "historial") {
+    redirect("/proveedor/dashboard/hub/analitica");
+  }
 
-  const [listedProducts, listedOrders, paymentConfigResult, payoutsResult] =
-    await Promise.all([
-      listSupplierProducts(),
-      listSupplierOrders(),
-      getSupplierPaymentConfig(),
-      listMySupplierPayoutObligations(),
-    ]);
+  const data = await loadSupplierHubDashboard();
 
   return (
-    <SupplierDashboard
-      initialProducts={listedProducts.products ?? []}
-      initialOrders={listedOrders.orders ?? []}
-      initialPaymentConfig={
-        paymentConfigResult.config ?? defaultSupplierPaymentConfig()
-      }
-      productsError={listedProducts.error ?? null}
-      ordersError={listedOrders.error ?? null}
-      paymentConfigError={paymentConfigResult.error ?? null}
-      payouts={payoutsResult.payouts ?? []}
-      creditedBalanceUsd={payoutsResult.creditedBalanceUsd ?? 0}
-      payoutsError={payoutsResult.error ?? null}
-      initialTab={initialTab}
-    />
+    <div className="mx-auto w-full max-w-6xl space-y-6">
+      <DashboardPageHeader
+        sectionLabel="Suministro"
+        title="Inventario"
+        description="Carga productos, stock y precios mayoristas para que Alcéntimo te compre."
+      />
+      {data.productsError ? (
+        <p className="supplier-hub-alert">
+          No se pudieron cargar los productos.
+        </p>
+      ) : null}
+      <SupplierProductsPanel initialProducts={data.products} />
+    </div>
   );
 }

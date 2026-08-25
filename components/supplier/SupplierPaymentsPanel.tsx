@@ -91,10 +91,6 @@ export function SupplierPaymentsPanel({
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="supplier-hub-heading">Pagos</h1>
-      </div>
-
       {error ? (
         <p className="text-sm text-red-600" role="alert">
           {error}

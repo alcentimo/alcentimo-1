@@ -608,8 +608,10 @@ export function SupplierProductsPanel({
       <section className="supplier-hub-card">
         <div className="supplier-hub-card-header">
           <div>
-            <p className="supplier-hub-section-label">Inventario</p>
-            <h1 className="supplier-hub-heading">Cargar producto</h1>
+            <h2 className="supplier-hub-heading">Cargar producto</h2>
+            <p className="supplier-hub-subheading">
+              Título, categoría, stock y precio mayorista.
+            </p>
           </div>
         </div>
 

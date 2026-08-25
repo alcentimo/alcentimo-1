@@ -144,7 +144,7 @@ export async function notifySuppliersOfDispatchOrders(
     }
   }
 
-  const dashboardUrl = `${getPublicSiteUrl()}/proveedor/dashboard?tab=pedidos`;
+  const dashboardUrl = `${getPublicSiteUrl()}/proveedor/dashboard/hub/pedidos`;
   const now = new Date().toISOString();
 
   for (const payload of pending) {

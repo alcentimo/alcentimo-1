@@ -2,11 +2,13 @@ import {
   Banknote,
   BarChart3,
   Bot,
+  Boxes,
   ClipboardList,
   Settings2,
   Store,
   // UserCog, // Equipo oculto por ahora (no se usa en menú de tiendas)
   Users,
+  Wallet,
   type LucideIcon,
 } from "lucide-react";
 import {
@@ -104,9 +106,56 @@ export function isDashboardNavItemActive(
   return item.match?.(pathname) ?? pathname === item.href;
 }
 
-export type DashboardNavVariant = "merchant" | "supplier_own_store";
+export type DashboardNavVariant =
+  | "merchant"
+  | "supplier_own_store"
+  | "supplier_hub";
 
 export const SUPPLIER_OWN_STORE_NAV_PREFIX = "/proveedor/dashboard";
+export const SUPPLIER_HUB_NAV_PREFIX = "/proveedor/dashboard/hub";
+
+export const SUPPLIER_HUB_NAV_ITEMS: DashboardNavItem[] = [
+  {
+    href: SUPPLIER_HUB_NAV_PREFIX,
+    label: "Inventario",
+    description: "Carga y stock que Alcéntimo compra a tu fábrica",
+    icon: Boxes,
+    match: (pathname) =>
+      pathname === SUPPLIER_HUB_NAV_PREFIX ||
+      pathname === `${SUPPLIER_HUB_NAV_PREFIX}/`,
+  },
+  {
+    href: `${SUPPLIER_HUB_NAV_PREFIX}/pedidos`,
+    label: "Pedidos Mayoristas",
+    description: "Órdenes de compra y recolección de Alcéntimo",
+    icon: ClipboardList,
+    match: (pathname) => pathname.startsWith(`${SUPPLIER_HUB_NAV_PREFIX}/pedidos`),
+  },
+  {
+    href: `${SUPPLIER_HUB_NAV_PREFIX}/pagos`,
+    label: "Pagos",
+    description: "Liquidaciones y cuenta para cobrar",
+    icon: Wallet,
+    match: (pathname) => pathname.startsWith(`${SUPPLIER_HUB_NAV_PREFIX}/pagos`),
+  },
+  {
+    href: `${SUPPLIER_HUB_NAV_PREFIX}/analitica`,
+    label: "Analítica",
+    description: "Historial de ventas mayoristas",
+    icon: BarChart3,
+    match: (pathname) =>
+      pathname.startsWith(`${SUPPLIER_HUB_NAV_PREFIX}/analitica`),
+  },
+  {
+    href: `${SUPPLIER_HUB_NAV_PREFIX}/configuracion`,
+    label: "Configuración",
+    description: "Vitrina, marca y ajustes del proveedor",
+    icon: Settings2,
+    match: (pathname) =>
+      pathname.startsWith(`${SUPPLIER_HUB_NAV_PREFIX}/configuracion`) ||
+      pathname.startsWith("/proveedor/dashboard/ajustes"),
+  },
+];
 
 export function remapDashboardHrefForVariant(
   href: string,
@@ -135,6 +184,10 @@ export function getDashboardNavItems(options?: {
 }): DashboardNavItem[] {
   const role = options?.storeRole ?? null;
   const variant = options?.variant ?? "merchant";
+  if (variant === "supplier_hub") {
+    return SUPPLIER_HUB_NAV_ITEMS;
+  }
+
   const source = !role
     ? DASHBOARD_NAV_ITEMS.filter((item) =>
         canAccessDashboardPath("owner", item.href),

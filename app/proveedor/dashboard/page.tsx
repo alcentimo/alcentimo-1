@@ -12,9 +12,14 @@ export default async function ProveedorDashboardIndexPage({
 
   const params = await searchParams;
   const tabRaw = Array.isArray(params.tab) ? params.tab[0] : params.tab;
-  const query =
-    tabRaw === "pedidos" || tabRaw === "pagos" || tabRaw === "historial"
-      ? `?tab=${tabRaw}`
-      : "";
-  redirect(`/proveedor/dashboard/hub${query}`);
+  if (tabRaw === "pedidos") {
+    redirect("/proveedor/dashboard/hub/pedidos");
+  }
+  if (tabRaw === "pagos") {
+    redirect("/proveedor/dashboard/hub/pagos");
+  }
+  if (tabRaw === "historial") {
+    redirect("/proveedor/dashboard/hub/analitica");
+  }
+  redirect("/proveedor/dashboard/hub");
 }

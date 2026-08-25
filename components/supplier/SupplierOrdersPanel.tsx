@@ -99,8 +99,6 @@ export function SupplierOrdersPanel({
 
   return (
     <div className="space-y-5">
-      <h1 className="supplier-hub-heading">Órdenes de compra</h1>
-
       {error ? (
         <p className="text-sm text-red-600" role="alert">
           {error}
