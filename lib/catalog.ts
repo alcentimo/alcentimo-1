@@ -1,3 +1,5 @@
+import "server-only";
+
 import { cache } from "react";
 import { getSupabaseAnonClient } from "@/lib/supabase";
 import { getPublicServerClient } from "@/lib/supabase/public-server";
@@ -15,7 +17,7 @@ import {
 } from "@/lib/dropship/linked-catalog";
 import { applySupplierCategoriesToCatalogItems } from "@/lib/catalog/apply-supplier-categories";
 import { withPublicCatalogCache } from "@/lib/catalog/public-catalog-cache";
-import { listOwnBrandCatalogProductIds } from "@/lib/supplier/own-store-sync";
+import { listOwnBrandCatalogProductIds } from "@/lib/supplier/own-store-ids";
 import {
   applySupplierGalleryToCatalogItems,
   resolveSupplierGalleryForProductIds,

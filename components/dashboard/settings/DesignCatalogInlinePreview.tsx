@@ -2,7 +2,7 @@
 
 import { useMemo } from "react";
 import type { CatalogListItem, Store } from "@/lib/database.types";
-import type { CatalogPreviewSettings } from "@/lib/catalog/get-public-catalog-page-data";
+import type { CatalogPreviewSettings } from "@/lib/catalog/catalog-preview-types";
 import {
   getReferenceCatalogForStore,
   useSmartPreviewRubro,

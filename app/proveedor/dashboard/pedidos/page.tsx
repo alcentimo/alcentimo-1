@@ -8,7 +8,7 @@ import { defaultStoreSettingsConfig } from "@/lib/store-settings/defaults";
 import { PedidosSection } from "@/components/dashboard/orders/PedidosSection";
 import { requireSupplierHubSession } from "@/lib/supplier/own-store";
 import { filterOwnBrandStorefrontOrders } from "@/lib/supplier/own-store-orders";
-import { listOwnBrandCatalogProductIds } from "@/lib/supplier/own-store-sync";
+import { listOwnBrandCatalogProductIds } from "@/lib/supplier/own-store-ids";
 
 export const dynamic = "force-dynamic";
 

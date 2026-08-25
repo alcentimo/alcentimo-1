@@ -19,7 +19,7 @@ import {
 } from "@/lib/support/admin-access";
 import { isAuthEmailVerified } from "@/lib/auth/email-verified";
 import { resolveSupplierAccess, shouldForceSupplierPostAuthRedirect } from "@/lib/supplier/access";
-import { lookupSupplierOwnStorefrontByUserId } from "@/lib/supplier/own-store";
+import { lookupSupplierOwnStorefrontByUserId } from "@/lib/supplier/own-storefront-flag";
 import {
   canAccessDashboardPath,
   DASHBOARD_INVITATION_PATH,

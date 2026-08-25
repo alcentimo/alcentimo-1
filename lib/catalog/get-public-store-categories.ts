@@ -1,6 +1,8 @@
+import "server-only";
+
 import type { CatalogCategoryOption } from "@/lib/catalog/extract-categories";
 import { listDropshipLinkedCatalogEntriesForStoreId } from "@/lib/dropship/linked-catalog";
-import { listOwnBrandStoreCategories } from "@/lib/supplier/own-store-sync";
+import { listOwnBrandStoreCategories } from "@/lib/supplier/own-store-ids";
 import { withPublicCatalogCache } from "@/lib/catalog/public-catalog-cache";
 import {
   SUPPLIER_PRODUCT_CATEGORIES,

@@ -1,6 +1,5 @@
 import "server-only";
 
-import sharp from "sharp";
 import {
   BANNER_MAX_OUTPUT_BYTES,
   BANNER_WEBP_QUALITY,
@@ -21,6 +20,10 @@ import {
 } from "@/lib/orders/payment-proof-policy";
 
 export { formatFileSize };
+
+async function loadSharp() {
+  return (await import("sharp")).default;
+}
 
 /** Calidad mínima absoluta: por debajo aparecen artefactos visibles. */
 const MIN_QUALITY = 70;
@@ -49,6 +52,7 @@ async function encodeWebp(
   maxDimension: number,
   quality: number,
 ): Promise<{ buffer: Buffer; width: number; height: number }> {
+  const sharp = await loadSharp();
   const buffer = await sharp(input, { animated: false })
     .rotate()
     .resize({
@@ -181,6 +185,7 @@ async function encodeBannerWebp(
   maxHeight: number,
   quality: number,
 ): Promise<{ buffer: Buffer; width: number; height: number }> {
+  const sharp = await loadSharp();
   const buffer = await sharp(input, { animated: false })
     .rotate()
     .resize({

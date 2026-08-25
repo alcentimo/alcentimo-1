@@ -1,5 +1,5 @@
 import type { CatalogListItem, Store } from "@/lib/database.types";
-import type { CatalogPreviewSettings } from "@/lib/catalog/get-public-catalog-page-data";
+import type { CatalogPreviewSettings } from "@/lib/catalog/catalog-preview-types";
 import { getReferenceCatalogForStore } from "@/lib/catalog/rubro-preview-products";
 import { defaultStoreSettingsConfig } from "@/lib/store-settings/defaults";
 import { buildPublicPurchaseInfo } from "@/lib/store-settings/purchase-info";

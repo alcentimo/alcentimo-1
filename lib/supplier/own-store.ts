@@ -1,3 +1,5 @@
+import "server-only";
+
 import { redirect } from "next/navigation";
 import type { Store } from "@/lib/database.types";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -12,7 +14,6 @@ import { getStoreSettingsConfig } from "@/lib/store-settings/get-store-settings"
 import { getUserStore } from "@/lib/stores";
 import { scheduleStoreSubdomainProvision } from "@/lib/domains/provision-store-subdomain";
 import { syncStoreProductCategories } from "@/lib/products/rubro-categories";
-import { parsePublicCatalogEnabled } from "@/lib/catalog/supplier-public-catalog-flag";
 import { getSupplierPublicStorefront } from "@/lib/supplier/get-storefront";
 import {
   resolveSupplierAccess,
@@ -21,6 +22,8 @@ import {
 import { syncSupplierOwnStoreCatalog } from "@/lib/supplier/own-store-sync";
 import { SUPPLIER_OWN_STORE_NAV_PREFIX } from "@/src/config/dashboard-nav";
 import { SUPPLIER_LOGIN_PATH } from "@/lib/landing/supplier-zone-href";
+
+export { lookupSupplierOwnStorefrontByUserId } from "@/lib/supplier/own-storefront-flag";
 
 export async function userHasSupplierOwnStorefront(
   userId: string,
@@ -218,24 +221,4 @@ export async function requireSupplierHubSession(input?: {
       : null;
 
   return { user: { id: user.id }, storefront, store };
-}
-
-export async function lookupSupplierOwnStorefrontByUserId(
-  userId: string,
-): Promise<boolean> {
-  try {
-    const admin = createAdminClient();
-    const { data, error } = await admin
-      .from("supplier_profiles")
-      .select("show_public_catalog")
-      .eq("user_id", userId)
-      .eq("status", "active")
-      .maybeSingle();
-    if (error) return false;
-    return parsePublicCatalogEnabled(
-      (data as { show_public_catalog?: unknown } | null)?.show_public_catalog,
-    );
-  } catch {
-    return false;
-  }
 }

@@ -1,3 +1,5 @@
+import "server-only";
+
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Store } from "@/lib/database.types";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -12,8 +14,10 @@ import { allocateUniqueProductSlug } from "@/lib/products/allocate-product-slug"
 import { syncProductVariants } from "@/lib/products/sync-variants";
 import { getDefaultLocationId } from "@/lib/locations/sync-stock";
 import { DEFAULT_LOW_STOCK_THRESHOLD } from "@/lib/inventory/stock-status";
-import { supplierImageUrls } from "@/lib/supplier/product-images";
-import { listSupplierProductImages } from "@/lib/supplier/product-images";
+import {
+  mapSupplierProductImages,
+  supplierImageUrls,
+} from "@/lib/supplier/product-gallery";
 import { normalizeSupplierProductCategory } from "@/lib/supplier/categories";
 import {
   normalizeSupplierProductVariants,
@@ -26,8 +30,15 @@ import {
 } from "@/lib/supplier/wholesale-price";
 import type { ProductVariantJson } from "@/lib/products/variants";
 import { revalidatePath } from "next/cache";
+import {
+  SUPPLIER_OWN_PRODUCT_METADATA_KEY,
+} from "@/lib/supplier/own-store-ids";
 
-export const SUPPLIER_OWN_PRODUCT_METADATA_KEY = "supplierOwnProductId";
+export {
+  SUPPLIER_OWN_PRODUCT_METADATA_KEY,
+  listOwnBrandCatalogProductIds,
+  listOwnBrandStoreCategories,
+} from "@/lib/supplier/own-store-ids";
 
 export function resolveOwnStoreRetailUsd(row: Record<string, unknown>): number {
   return (
@@ -50,60 +61,37 @@ function catalogVariantsFromSupplier(
   }));
 }
 
-export async function listOwnBrandCatalogProductIds(
-  storeId: string,
-): Promise<string[]> {
-  const admin = createAdminClient();
-  const { data, error } = await admin
-    .from("products")
-    .select("id, metadata")
-    .eq("store_id", storeId)
-    .eq("is_deleted", false)
-    .eq("is_active", true);
+async function listOwnStoreProductImages(
+  client: SupabaseClient,
+  productIds: string[],
+) {
+  const result = new Map<string, ReturnType<typeof mapSupplierProductImages>>();
+  const uniqueIds = [...new Set(productIds.filter(Boolean))];
+  if (uniqueIds.length === 0) return result;
 
-  if (error || !data) return [];
+  const { data, error } = await client
+    .from("supplier_product_images")
+    .select("id, supplier_product_id, image_url, sort_order, is_primary")
+    .in("supplier_product_id", uniqueIds)
+    .order("sort_order", { ascending: true });
 
-  return (data as Array<{ id: string; metadata: unknown }>)
-    .filter((row) => {
-      const metadata =
-        row.metadata && typeof row.metadata === "object" && !Array.isArray(row.metadata)
-          ? (row.metadata as Record<string, unknown>)
-          : {};
-      return typeof metadata[SUPPLIER_OWN_PRODUCT_METADATA_KEY] === "string";
-    })
-    .map((row) => row.id);
-}
-
-export async function listOwnBrandStoreCategories(
-  storeId: string,
-): Promise<Array<{ slug: string; name: string }>> {
-  const admin = createAdminClient();
-  const { data, error } = await admin
-    .from("products")
-    .select("metadata, categories(slug, name)")
-    .eq("store_id", storeId)
-    .eq("is_deleted", false)
-    .eq("is_active", true);
-  if (error || !data) return [];
-
-  const seen = new Map<string, string>();
-  for (const row of data as Array<{
-    metadata: unknown;
-    categories: { slug?: string; name?: string } | { slug?: string; name?: string }[] | null;
-  }>) {
-    const metadata =
-      row.metadata && typeof row.metadata === "object" && !Array.isArray(row.metadata)
-        ? (row.metadata as Record<string, unknown>)
-        : {};
-    if (typeof metadata[SUPPLIER_OWN_PRODUCT_METADATA_KEY] !== "string") continue;
-    const relation = Array.isArray(row.categories)
-      ? row.categories[0]
-      : row.categories;
-    const slug = relation?.slug?.trim();
-    const name = relation?.name?.trim();
-    if (slug && name && !seen.has(slug)) seen.set(slug, name);
+  if (error) {
+    console.warn("[own-store-sync] images", error.message);
+    return result;
   }
-  return [...seen.entries()].map(([slug, name]) => ({ slug, name }));
+
+  const grouped = new Map<string, Record<string, unknown>[]>();
+  for (const row of (data as Record<string, unknown>[] | null) ?? []) {
+    const productId = String(row.supplier_product_id ?? "");
+    if (!productId) continue;
+    const list = grouped.get(productId) ?? [];
+    list.push(row);
+    grouped.set(productId, list);
+  }
+  for (const [productId, rows] of grouped) {
+    result.set(productId, mapSupplierProductImages(rows));
+  }
+  return result;
 }
 
 export async function syncSupplierOwnStoreCatalog(input: {
@@ -163,7 +151,7 @@ export async function syncSupplierOwnStoreCatalog(input: {
     (categoryRows as { id: string; name: string; slug: string }[] | null) ?? [],
   );
   const defaultLocationId = await getDefaultLocationId(admin, store.id);
-  const galleryByProduct = await listSupplierProductImages(
+  const galleryByProduct = await listOwnStoreProductImages(
     admin,
     rows.map((row) => String(row.id)),
   );

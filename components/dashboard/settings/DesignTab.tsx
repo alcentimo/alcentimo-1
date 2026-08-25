@@ -32,7 +32,7 @@ import { StorePublicLinkBar } from "@/components/dashboard/settings/StorePublicL
 import { saveCatalogDesignSettings } from "@/lib/settings/actions";
 import { resolveCatalogDesign } from "@/lib/store-settings/catalog-theme";
 import { getRubroPalette } from "@/lib/store-settings/rubro-palettes";
-import type { CatalogPreviewSettings } from "@/lib/catalog/get-public-catalog-page-data";
+import type { CatalogPreviewSettings } from "@/lib/catalog/catalog-preview-types";
 import type { CatalogListItem, Store } from "@/lib/database.types";
 import type {
   CatalogDesignSettings,

@@ -45,7 +45,7 @@ import { shouldShowProductLimitBanner } from "@/src/config/plans";
 import { ProductLimitBanner } from "@/components/dashboard/ProductLimitBanner";
 import { TrialLimitDialog } from "@/components/dashboard/plans/TrialLimitDialog";
 import { ProTrialClaimModal } from "@/components/dashboard/plans/ProTrialClaimModal";
-import type { CatalogPreviewSettings } from "@/lib/catalog/get-public-catalog-page-data";
+import type { CatalogPreviewSettings } from "@/lib/catalog/catalog-preview-types";
 import type { PublishedProductResult } from "@/components/dashboard/QuickProductForm";
 import {
   buildOptimisticCatalogItem,

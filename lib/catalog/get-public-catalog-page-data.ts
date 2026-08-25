@@ -1,3 +1,5 @@
+import "server-only";
+
 import { unstable_noStore as noStore } from "next/cache";
 import type { Store } from "@/lib/database.types";
 import { getCatalogProducts } from "@/lib/catalog";
@@ -10,6 +12,7 @@ import type { CatalogCategoryOption } from "@/lib/catalog/extract-categories";
 import { getPublicStoreCategories } from "@/lib/catalog/get-public-store-categories";
 import type { PublicPurchaseInfo } from "@/lib/store-settings/purchase-info";
 import type { CatalogPageData } from "@/lib/catalog";
+import type { CatalogPreviewSettings } from "@/lib/catalog/catalog-preview-types";
 import { getPublicStoreSettingsConfig } from "@/lib/store-settings/get-public-store-settings";
 import { getStoreSettingsConfig } from "@/lib/store-settings/get-store-settings";
 import { fetchPublicPlatformSettings } from "@/lib/platform/get-platform-settings";
@@ -134,11 +137,7 @@ export async function getPublicCatalogPageData(
   );
 }
 
-export interface CatalogPreviewSettings {
-  purchaseInfo: PublicPurchaseInfo;
-  catalogDesign: CatalogDesignSettings;
-  catalogCurrency: CatalogCurrencySettings;
-}
+export type { CatalogPreviewSettings } from "@/lib/catalog/catalog-preview-types";
 
 /** Ajustes visuales del catálogo para la vista previa del dashboard. */
 export async function getCatalogPreviewSettings(

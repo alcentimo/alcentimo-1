@@ -1,3 +1,5 @@
+import "server-only";
+
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { formatFileSize } from "@/lib/format-file-size";
 import {
@@ -23,11 +25,19 @@ import {
 } from "@/lib/store-logo/constants";
 import { processStoreLogoFile } from "@/lib/store-logo/process-logo";
 import { processPlatformLogoFile } from "@/lib/platform/process-platform-logo";
+import {
+  PLATFORM_ASSETS_BUCKET,
+  PRODUCT_IMAGES_BUCKET,
+  STORE_ASSETS_BUCKET,
+  STORE_LOGOS_BUCKET,
+} from "@/lib/storage-buckets";
 
-export const PRODUCT_IMAGES_BUCKET = "product-images";
-export const STORE_ASSETS_BUCKET = "store-assets";
-export const STORE_LOGOS_BUCKET = "store-logos";
-export const PLATFORM_ASSETS_BUCKET = "platform-assets";
+export {
+  PLATFORM_ASSETS_BUCKET,
+  PRODUCT_IMAGES_BUCKET,
+  STORE_ASSETS_BUCKET,
+  STORE_LOGOS_BUCKET,
+} from "@/lib/storage-buckets";
 
 const MAX_INPUT_SIZE = PRODUCT_IMAGE_MAX_INPUT_BYTES;
 const MAX_QR_INPUT_SIZE = 2 * 1024 * 1024; // 2 MB para QR
