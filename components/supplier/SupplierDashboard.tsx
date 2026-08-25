@@ -49,8 +49,8 @@ export function SupplierDashboard({
     startTransition(() => {
       const href =
         next === "productos"
-          ? "/proveedor/dashboard"
-          : `/proveedor/dashboard?tab=${next}`;
+          ? "/proveedor/dashboard/hub"
+          : `/proveedor/dashboard/hub?tab=${next}`;
       router.replace(href, { scroll: false });
     });
   }

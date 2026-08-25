@@ -11,6 +11,7 @@ import { InventoryListSkeleton } from "@/components/dashboard/InventoryListSkele
 import { DashboardPageHeader } from "@/components/dashboard/DashboardPageHeader";
 import { CatalogPublicLinkMenu } from "@/components/dashboard/CatalogPublicLinkMenu";
 import { ensureDefaultMerchantStore } from "@/lib/stores/ensure-default-merchant-store";
+import { userHasSupplierOwnStorefront } from "@/lib/supplier/own-store";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
@@ -28,6 +29,10 @@ export default async function CatalogoPage({
 
   if (!session) {
     redirect("/dashboard/login?next=/dashboard/catalogo");
+  }
+
+  if (await userHasSupplierOwnStorefront(session.authUser.id)) {
+    redirect("/proveedor/dashboard/catalogo");
   }
 
   if (params.tab === "ajustes") {

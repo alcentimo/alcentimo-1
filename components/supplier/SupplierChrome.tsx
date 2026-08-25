@@ -70,7 +70,7 @@ export function SupplierChrome({
               </span>
             ) : null}
             <Link
-              href="/proveedor/dashboard"
+              href="/proveedor/dashboard/hub"
               className={cn(
                 "supplier-hub-nav-link",
                 onProductos && "supplier-hub-nav-link-active",
@@ -79,7 +79,7 @@ export function SupplierChrome({
               Productos
             </Link>
             <Link
-              href="/proveedor/dashboard?tab=pedidos"
+              href="/proveedor/dashboard/hub?tab=pedidos"
               className={cn(
                 "supplier-hub-nav-link",
                 onPedidos && "supplier-hub-nav-link-active",
@@ -88,7 +88,7 @@ export function SupplierChrome({
               Pedidos
             </Link>
             <Link
-              href="/proveedor/dashboard?tab=pagos"
+              href="/proveedor/dashboard/hub?tab=pagos"
               className={cn(
                 "supplier-hub-nav-link",
                 onPagos && "supplier-hub-nav-link-active",
@@ -97,7 +97,7 @@ export function SupplierChrome({
               Pagos
             </Link>
             <Link
-              href="/proveedor/dashboard?tab=historial"
+              href="/proveedor/dashboard/hub?tab=historial"
               className={cn(
                 "supplier-hub-nav-link",
                 onHistorial && "supplier-hub-nav-link-active",

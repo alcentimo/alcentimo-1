@@ -15,6 +15,7 @@ import {
 } from "@/lib/dropship/linked-catalog";
 import { applySupplierCategoriesToCatalogItems } from "@/lib/catalog/apply-supplier-categories";
 import { withPublicCatalogCache } from "@/lib/catalog/public-catalog-cache";
+import { listOwnBrandCatalogProductIds } from "@/lib/supplier/own-store-sync";
 import {
   applySupplierGalleryToCatalogItems,
   resolveSupplierGalleryForProductIds,
@@ -42,6 +43,8 @@ export interface GetCatalogOptions {
   maxPriceUsd?: number | null;
   /** Restringe a IDs concretos (p. ej. hidratar carrito). */
   productIds?: string[];
+  /** Vitrina de marca propia: solo productos del inventario del proveedor. */
+  ownBrandOnly?: boolean;
 }
 
 /** Orden estándar del catálogo público: con stock primero, agotados al final. */
@@ -214,6 +217,7 @@ function catalogProductsCacheKey(options: GetCatalogOptions): string[] {
     options.minPriceUsd == null ? "" : String(options.minPriceUsd),
     options.maxPriceUsd == null ? "" : String(options.maxPriceUsd),
     productIds,
+    options.ownBrandOnly ? "own-brand" : "",
   ];
 }
 
@@ -235,10 +239,28 @@ async function loadCatalogProductsUncached(
     productIds,
   } = options;
   const normalizedSlug = storeSlug.trim().toLowerCase();
-  const linkedEntries = storeId?.trim()
-    ? await listDropshipLinkedCatalogEntriesForStoreId(storeId.trim())
-    : await listDropshipLinkedCatalogEntriesForStoreSlug(normalizedSlug);
+  const linkedEntries = options.ownBrandOnly
+    ? (
+        storeId?.trim()
+          ? await listOwnBrandCatalogProductIds(storeId.trim())
+          : []
+      ).map((productId) => ({
+        productId,
+        supplierCategory: "otros" as const,
+      }))
+    : storeId?.trim()
+      ? await listDropshipLinkedCatalogEntriesForStoreId(storeId.trim())
+      : await listDropshipLinkedCatalogEntriesForStoreSlug(normalizedSlug);
   const linkedProductIds = linkedEntries.map((entry) => entry.productId);
+
+  if (options.ownBrandOnly && linkedProductIds.length === 0 && !productIds?.length) {
+    return {
+      products: [],
+      exchangeRate: await getCurrentExchangeRate(),
+      totalCount: 0,
+      hasMore: false,
+    };
+  }
 
   const requestedCategory = categorySlug?.trim().toLowerCase() ?? "";
   const categoryProductIds = requestedCategory

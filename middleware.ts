@@ -19,6 +19,7 @@ import {
 } from "@/lib/support/admin-access";
 import { isAuthEmailVerified } from "@/lib/auth/email-verified";
 import { resolveSupplierAccess, shouldForceSupplierPostAuthRedirect } from "@/lib/supplier/access";
+import { lookupSupplierOwnStorefrontByUserId } from "@/lib/supplier/own-store";
 import {
   canAccessDashboardPath,
   DASHBOARD_INVITATION_PATH,
@@ -91,6 +92,17 @@ function applySubdomainCatalogRewrite(
   });
 
   return rewriteResponse;
+}
+
+function mapMerchantDashboardToSupplierOwnStore(pathname: string): string {
+  if (pathname === DASHBOARD_PREFIX || pathname === `${DASHBOARD_PREFIX}/`) {
+    return `${PROVEEDOR_PREFIX}/dashboard/catalogo`;
+  }
+  const rest = pathname.slice(DASHBOARD_PREFIX.length);
+  if (!rest || rest === "/") {
+    return `${PROVEEDOR_PREFIX}/dashboard/catalogo`;
+  }
+  return `${PROVEEDOR_PREFIX}/dashboard${rest}`;
 }
 
 export async function middleware(request: NextRequest) {
@@ -332,6 +344,32 @@ export async function middleware(request: NextRequest) {
   const catalogPathMatch = pathname.match(/^\/c\/([^/]+)/);
   const catalogSlug = effectiveStoreSlug ?? catalogPathMatch?.[1];
 
+  const vitrinaMatch = pathname.match(/^\/vitrina\/([^/]+)(\/.*)?$/);
+  if (vitrinaMatch) {
+    const vitrinaSlug = decodeURIComponent(vitrinaMatch[1] ?? "")
+      .trim()
+      .toLowerCase();
+    if (vitrinaSlug) {
+      const ownStore = await resolveActiveStoreBySlug(supabase, vitrinaSlug);
+      if (ownStore) {
+        const rewriteUrl = request.nextUrl.clone();
+        rewriteUrl.pathname = `/c/${vitrinaSlug}`;
+        const rest = vitrinaMatch[2] ?? "";
+        if (rest.startsWith("/producto/")) {
+          const productId = rest.slice("/producto/".length).split("/")[0];
+          if (productId) {
+            rewriteUrl.searchParams.set("product", productId);
+          }
+        }
+        const rewriteResponse = NextResponse.rewrite(rewriteUrl);
+        supabaseResponse.cookies.getAll().forEach((cookie) => {
+          rewriteResponse.cookies.set(cookie);
+        });
+        return rewriteResponse;
+      }
+    }
+  }
+
   if (catalogSlug) {
     const storeSlug = decodeURIComponent(catalogSlug).trim().toLowerCase();
     const visitorCookieName = getCatalogVisitorCookieName(storeSlug);
@@ -454,6 +492,16 @@ export async function middleware(request: NextRequest) {
   }
 
   if (isMercadoOcultoRoute) {
+    if (
+      authenticatedUser &&
+      (await lookupSupplierOwnStorefrontByUserId(authenticatedUser.id))
+    ) {
+      const ownStoreUrl = request.nextUrl.clone();
+      ownStoreUrl.pathname = `${PROVEEDOR_PREFIX}/dashboard/catalogo`;
+      ownStoreUrl.search = "";
+      return NextResponse.redirect(ownStoreUrl);
+    }
+
     // Vitrina pública (estilo MercadoLibre): catálogo, ficha y carrito sin sesión.
     if (isMercadoPublicBrowsePath(pathname)) {
       return supabaseResponse;
@@ -598,6 +646,13 @@ export async function middleware(request: NextRequest) {
     if (authenticatedUser && !isLoginPage && !isResetPasswordFlow) {
       if (isInvitationPage) {
         return supabaseResponse;
+      }
+
+      if (await lookupSupplierOwnStorefrontByUserId(authenticatedUser.id)) {
+        const supplierUrl = request.nextUrl.clone();
+        supplierUrl.pathname = mapMerchantDashboardToSupplierOwnStore(pathname);
+        supplierUrl.search = request.nextUrl.search;
+        return NextResponse.redirect(supplierUrl);
       }
 
       const hasMerchantStore = await userHasMerchantStore(
