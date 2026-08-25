@@ -89,11 +89,14 @@ export function SupplierStorefrontSettingsPanel({
       ?.label ?? "Ajustes";
 
   function openTab(id: StorefrontTabId) {
-    router.replace(`/proveedor/dashboard/ajustes?tab=${id}`, { scroll: false });
+    router.replace(
+      `/proveedor/dashboard/hub/configuracion?tab=${id}`,
+      { scroll: false },
+    );
   }
 
   function backToMobileMenu() {
-    router.replace("/proveedor/dashboard/ajustes", { scroll: false });
+    router.replace("/proveedor/dashboard/hub/configuracion", { scroll: false });
   }
 
   return (

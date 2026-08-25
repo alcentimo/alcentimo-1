@@ -13225,7 +13225,7 @@ button.catalog-profile-footer-link {
 }
 
 .supplier-hub-card {
-  @apply rounded-2xl border border-emerald-200/70 bg-white p-5 shadow-[0_8px_30px_rgba(5,150,105,0.06)] sm:p-6 dark:border-emerald-900/40 dark:bg-zinc-950 dark:shadow-none;
+  @apply rounded-2xl border border-zinc-200/80 bg-white p-5 shadow-sm sm:p-6 dark:border-zinc-800 dark:bg-zinc-950;
 }
 
 .supplier-hub-card-header {
@@ -13241,15 +13241,15 @@ button.catalog-profile-footer-link {
 }
 
 .supplier-hub-section-label {
-  @apply text-xs font-semibold uppercase tracking-[0.12em] text-emerald-700 dark:text-emerald-400;
+  @apply text-xs font-semibold uppercase tracking-[0.12em] text-zinc-500 dark:text-zinc-400;
 }
 
 .supplier-hub-empty {
-  @apply rounded-2xl border border-dashed border-emerald-200/80 bg-emerald-50/40 px-4 py-10 text-center text-sm text-zinc-500 dark:border-emerald-900/40 dark:bg-emerald-950/20 dark:text-zinc-400;
+  @apply rounded-2xl border border-dashed border-zinc-200 bg-zinc-50/60 px-4 py-10 text-center text-sm text-zinc-500 dark:border-zinc-800 dark:bg-zinc-900/20 dark:text-zinc-400;
 }
 
 .supplier-hub-empty-icon {
-  @apply mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-100 text-emerald-800 dark:bg-emerald-950/80 dark:text-emerald-300;
+  @apply mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-zinc-100 text-zinc-700 dark:bg-zinc-900 dark:text-zinc-300;
 }
 
 .supplier-hub-empty-title {
@@ -13261,19 +13261,19 @@ button.catalog-profile-footer-link {
 }
 
 .supplier-hub-list {
-  @apply overflow-hidden rounded-2xl border border-emerald-200/70 bg-white dark:border-emerald-900/40 dark:bg-zinc-950;
+  @apply overflow-hidden rounded-2xl border border-zinc-200/80 bg-white dark:border-zinc-800 dark:bg-zinc-950;
 }
 
 .supplier-hub-list-item {
-  @apply flex flex-col gap-3 border-b border-emerald-50 p-4 last:border-b-0 sm:flex-row sm:items-center dark:border-emerald-950/40;
+  @apply flex flex-col gap-3 border-b border-zinc-100 p-4 last:border-b-0 sm:flex-row sm:items-center dark:border-zinc-800;
 }
 
 .supplier-hub-list-item-active {
-  @apply bg-emerald-50/70 dark:bg-emerald-950/30;
+  @apply bg-zinc-50 dark:bg-zinc-900/50;
 }
 
 .supplier-hub-soft-panel {
-  @apply rounded-xl border border-emerald-100 bg-emerald-50/50 p-3 dark:border-emerald-900/40 dark:bg-emerald-950/25;
+  @apply rounded-xl border border-zinc-200 bg-zinc-50/80 p-3 dark:border-zinc-800 dark:bg-zinc-900/40;
 }
 
 .supplier-hub-status-pendiente {
@@ -13289,15 +13289,15 @@ button.catalog-profile-footer-link {
 }
 
 .supplier-hub-order-row {
-  @apply flex w-full flex-col gap-1 border-b border-emerald-50 px-4 py-3 text-left transition last:border-b-0 hover:bg-emerald-50/60 dark:border-emerald-950/40 dark:hover:bg-emerald-950/25;
+  @apply flex w-full flex-col gap-1 border-b border-zinc-100 px-4 py-3 text-left transition last:border-b-0 hover:bg-zinc-50 dark:border-zinc-800 dark:hover:bg-zinc-900/40;
 }
 
 .supplier-hub-order-row-active {
-  @apply bg-emerald-50/80 dark:bg-emerald-950/35;
+  @apply bg-zinc-50 dark:bg-zinc-900/50;
 }
 
 .supplier-hub-orders-toolbar {
-  @apply flex flex-col gap-3 rounded-2xl border border-emerald-100/90 bg-white/95 p-3 shadow-[0_6px_20px_rgba(5,150,105,0.04)] dark:border-emerald-900/40 dark:bg-zinc-950 sm:flex-row sm:items-center sm:justify-between sm:gap-4 sm:p-3.5;
+  @apply flex flex-col gap-3 rounded-2xl border border-zinc-200/80 bg-white p-3 shadow-sm dark:border-zinc-800 dark:bg-zinc-950 sm:flex-row sm:items-center sm:justify-between sm:gap-4 sm:p-3.5;
 }
 
 .supplier-hub-orders-filters {
@@ -13341,11 +13341,11 @@ button.catalog-profile-footer-link {
 }
 
 .supplier-hub-metric {
-  @apply flex items-center gap-3 rounded-2xl border border-emerald-200/70 bg-white/95 px-3.5 py-3 shadow-[0_6px_20px_rgba(5,150,105,0.05)] dark:border-emerald-900/40 dark:bg-zinc-950;
+  @apply flex items-center gap-3 rounded-2xl border border-zinc-200/80 bg-white px-3.5 py-3 shadow-sm dark:border-zinc-800 dark:bg-zinc-950;
 }
 
 .supplier-hub-metric-icon {
-  @apply flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300;
+  @apply flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-zinc-100 text-zinc-700 dark:bg-zinc-900 dark:text-zinc-300;
 }
 
 .supplier-hub-metric-label {

@@ -93,8 +93,6 @@ export function SupplierSalesHistoryPanel({
 
   return (
     <div className="space-y-5">
-      <h1 className="supplier-hub-heading">Historial de ventas</h1>
-
       <div className="supplier-hub-metrics !grid-cols-2 lg:!grid-cols-2">
         <div className="supplier-hub-metric">
           <span className="supplier-hub-metric-icon" aria-hidden="true">

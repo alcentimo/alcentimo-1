@@ -8,6 +8,7 @@ import {
   LogOut,
   PanelLeftClose,
   PanelLeftOpen,
+  Store,
   Warehouse,
   X,
 } from "lucide-react";
@@ -46,6 +47,7 @@ interface DashboardSidebarProps {
   accountSettingsActive?: boolean;
   isSupportAdmin?: boolean;
   showSupplierHubLink?: boolean;
+  showMerchantStoreLink?: boolean;
   storeRole?: DashboardStoreRole | null;
   navVariant?: DashboardNavVariant | null;
   homeHref?: string;
@@ -158,6 +160,7 @@ export function DashboardSidebar({
   accountSettingsActive = false,
   isSupportAdmin = false,
   showSupplierHubLink = false,
+  showMerchantStoreLink = false,
   storeRole = null,
   navVariant = "merchant",
   homeHref = DASHBOARD_HOME_HREF,
@@ -331,7 +334,8 @@ export function DashboardSidebar({
               active={isDashboardNavItemActive(pathname, item)}
               collapsed={!drawerExpanded}
               badgeCount={
-                item.href === "/dashboard/pedidos"
+                item.href === "/dashboard/pedidos" ||
+                item.href === "/proveedor/dashboard/hub/pedidos"
                   ? Math.max(0, pendingOrdersCount)
                   : 0
               }
@@ -378,6 +382,30 @@ export function DashboardSidebar({
               onOpenAccountSettings={onOpenAccountSettings}
               onPrefetchAccountSettings={onPrefetchAccountSettings}
             />
+
+            {showMerchantStoreLink ? (
+              <Link
+                href="/dashboard/catalogo"
+                prefetch={true}
+                className={navLinkClass(
+                  false,
+                  !drawerExpanded,
+                  mobileOpen && drawerExpanded,
+                )}
+                onClick={onCloseMobile}
+                onMouseEnter={() => prefetchRoute("/dashboard/catalogo")}
+                onFocus={() => prefetchRoute("/dashboard/catalogo")}
+                onTouchStart={() => prefetchRoute("/dashboard/catalogo")}
+                title={drawerExpanded ? undefined : "Ir a mi tienda"}
+              >
+                <Store
+                  className="h-4 w-4 shrink-0"
+                  strokeWidth={1.75}
+                  aria-hidden="true"
+                />
+                {drawerExpanded && <span>Ir a mi tienda</span>}
+              </Link>
+            ) : null}
 
             {showSupplierHubLink ? (
               <Link
