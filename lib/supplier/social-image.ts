@@ -1,12 +1,15 @@
 import "server-only";
 
-import sharp from "sharp";
 import { formatFileSize } from "@/lib/format-file-size";
 import {
   PRODUCT_IMAGE_MAX_DIMENSION,
   PRODUCT_IMAGE_MAX_OUTPUT_BYTES,
   PRODUCT_IMAGE_WEBP_QUALITY,
 } from "@/lib/product-image";
+
+async function loadSharp() {
+  return (await import("sharp")).default;
+}
 
 /** Cuadrado listo para Instagram feed / Facebook / WhatsApp. */
 export const SOCIAL_PRODUCT_IMAGE_SIZE = 1080;
@@ -54,6 +57,7 @@ export async function optimizeSupplierProductImage(
 ): Promise<SupplierImageOptimizationResult> {
   const source = toBuffer(input);
   const originalSize = source.length;
+  const sharp = await loadSharp();
 
   let socialQuality = SOCIAL_PRODUCT_IMAGE_JPEG_QUALITY;
   let socialBuffer = await sharp(source, { animated: false })
@@ -224,6 +228,7 @@ export async function renderSocialSquareJpegFromImage(
   input: Buffer | ArrayBuffer,
 ): Promise<{ buffer: Buffer; width: number; height: number }> {
   const source = toBuffer(input);
+  const sharp = await loadSharp();
   let quality = SOCIAL_PRODUCT_IMAGE_JPEG_QUALITY;
   let buffer = await sharp(source, { animated: false })
     .rotate()

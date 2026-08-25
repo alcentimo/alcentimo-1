@@ -17,6 +17,7 @@ import type { SettingsActionResult } from "@/lib/settings/actions";
 import { supplierPublicCatalogPath } from "@/lib/catalog/supplier-public-catalog";
 import { getSupplierPublicStorefront } from "@/lib/supplier/get-storefront";
 import { requireSupplierHubUser } from "@/lib/supplier/require-session";
+import { ensureSupplierOwnStore } from "@/lib/supplier/own-store";
 import {
   defaultSupplierStorefrontConfig,
   normalizeSupplierStorefrontConfig,
@@ -27,10 +28,14 @@ function supplierLogoOwnerId(userId: string): string {
   return `supplier-${userId}`;
 }
 
-function revalidateStorefront(slug: string | null) {
+function revalidateStorefront(slug: string | null, userId?: string) {
   revalidatePath("/proveedor/dashboard");
   revalidatePath("/proveedor/dashboard/ajustes");
+  revalidatePath("/proveedor/dashboard/catalogo");
   if (slug) revalidatePath(supplierPublicCatalogPath(slug));
+  if (userId) {
+    void ensureSupplierOwnStore(userId);
+  }
 }
 
 async function requireEnabledStorefront(): Promise<
@@ -80,7 +85,7 @@ export async function saveSupplierStorefrontIdentity(input: {
     .eq("user_id", gate.user.id);
 
   if (error) return { error: error.message };
-  revalidateStorefront(gate.storefront.publicCatalogSlug);
+  revalidateStorefront(gate.storefront.publicCatalogSlug, gate.user.id);
   return { success: true };
 }
 
@@ -107,7 +112,7 @@ export async function saveSupplierStorefrontShipping(
     .eq("user_id", gate.user.id);
 
   if (error) return { error: error.message };
-  revalidateStorefront(current.publicCatalogSlug);
+  revalidateStorefront(current.publicCatalogSlug, gate.user.id);
   return { success: true };
 }
 
@@ -147,7 +152,7 @@ export async function saveSupplierStorefrontPayments(
     .eq("user_id", gate.user.id);
 
   if (error) return { error: error.message };
-  revalidateStorefront(current.publicCatalogSlug);
+  revalidateStorefront(current.publicCatalogSlug, gate.user.id);
   return { success: true };
 }
 
@@ -181,7 +186,7 @@ export async function uploadSupplierStorefrontLogo(
     .eq("user_id", gate.user.id);
 
   if (error) return { error: error.message };
-  revalidateStorefront(gate.storefront.publicCatalogSlug);
+  revalidateStorefront(gate.storefront.publicCatalogSlug, gate.user.id);
   return { url: upload.url, warning: upload.warning };
 }
 
@@ -205,7 +210,7 @@ export async function clearSupplierStorefrontLogo(): Promise<SettingsActionResul
     .eq("user_id", gate.user.id);
 
   if (error) return { error: error.message };
-  revalidateStorefront(gate.storefront.publicCatalogSlug);
+  revalidateStorefront(gate.storefront.publicCatalogSlug, gate.user.id);
   return { success: true };
 }
 

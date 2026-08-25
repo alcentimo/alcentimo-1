@@ -15,6 +15,7 @@ interface CatalogPanelProps {
   productLimitContext?: StoreProductLimitContext | null;
   showWelcomeFromUrl?: boolean;
   inventorySuggestions?: InventoryAiSuggestionRow[];
+  ownBrandStore?: boolean;
 }
 
 /**
@@ -26,6 +27,7 @@ export function CatalogPanel({
   productLimitContext = null,
   showWelcomeFromUrl = false,
   inventorySuggestions = [],
+  ownBrandStore = false,
 }: CatalogPanelProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -87,11 +89,24 @@ export function CatalogPanel({
         variant="compact"
       />
 
-      <AvailableProductsPanel
-        onImported={() => {
-          router.refresh();
-        }}
-      />
+      {ownBrandStore ? (
+        <p className="rounded-xl border border-zinc-200 bg-white px-4 py-6 text-sm text-zinc-600 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-300">
+          Esta cuenta vende solo productos propios. Gestiona el inventario en{" "}
+          <a
+            className="font-medium text-emerald-700 underline"
+            href="/proveedor/dashboard/catalogo"
+          >
+            Productos Propios
+          </a>
+          . El catálogo mayorista de terceros no está disponible.
+        </p>
+      ) : (
+        <AvailableProductsPanel
+          onImported={() => {
+            router.refresh();
+          }}
+        />
+      )}
     </>
   );
 }

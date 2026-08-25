@@ -1,5 +1,8 @@
+import "server-only";
+
 import type { CatalogCategoryOption } from "@/lib/catalog/extract-categories";
 import { listDropshipLinkedCatalogEntriesForStoreId } from "@/lib/dropship/linked-catalog";
+import { listOwnBrandStoreCategories } from "@/lib/supplier/own-store-ids";
 import { withPublicCatalogCache } from "@/lib/catalog/public-catalog-cache";
 import {
   SUPPLIER_PRODUCT_CATEGORIES,
@@ -10,6 +13,15 @@ import {
 async function loadPublicStoreCategoriesUncached(
   storeId: string,
 ): Promise<CatalogCategoryOption[]> {
+  const ownCategories = await listOwnBrandStoreCategories(storeId);
+  if (ownCategories.length > 0) {
+    return ownCategories.map((item, index) => ({
+      slug: item.slug,
+      name: item.name,
+      sortOrder: index,
+    }));
+  }
+
   const entries = await listDropshipLinkedCatalogEntriesForStoreId(storeId, {
     publicOnly: true,
   });

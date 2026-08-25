@@ -2,7 +2,7 @@
 
 import { useMemo } from "react";
 import type { CatalogListItem, ExchangeRate, Store } from "@/lib/database.types";
-import type { CatalogPreviewSettings } from "@/lib/catalog/get-public-catalog-page-data";
+import type { CatalogPreviewSettings } from "@/lib/catalog/catalog-preview-types";
 import { CartProvider } from "@/components/catalog-transactional/CartProvider";
 import { PromotionProvider } from "@/components/catalog-transactional/PromotionProvider";
 import { TransactionalCatalog } from "@/components/catalog-transactional/TransactionalCatalog";

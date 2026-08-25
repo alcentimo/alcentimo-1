@@ -1,12 +1,15 @@
 import "server-only";
 
-import sharp from "sharp";
 import { STORE_LOGO_RECOMMENDED_SIZE } from "@/lib/store-logo/constants";
 import {
   validateStoreLogoDimensions,
   validateStoreLogoFileSize,
   validateStoreLogoMimeType,
 } from "@/lib/store-logo/validate";
+
+async function loadSharp() {
+  return (await import("sharp")).default;
+}
 
 export type StoreLogoOutputFormat = "png" | "gif";
 
@@ -51,6 +54,7 @@ export async function processStoreLogoBuffer(
   let width = 0;
   let height = 0;
   let format: string | undefined;
+  const sharp = await loadSharp();
 
   try {
     const metadata = await sharp(input, { animated: true }).metadata();

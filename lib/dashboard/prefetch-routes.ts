@@ -16,6 +16,12 @@ const ROUTE_PREFIXES: Array<{ prefix: string; route: DashboardPrefetchRoute }> =
   { prefix: "/dashboard/analiticas", route: "analiticas" },
   { prefix: "/dashboard/ajustes", route: "ajustes" },
   { prefix: "/dashboard/liquidacion", route: "liquidacion" },
+  { prefix: "/proveedor/dashboard/catalogo", route: "catalogo" },
+  { prefix: "/proveedor/dashboard/pedidos", route: "pedidos" },
+  { prefix: "/proveedor/dashboard/clientes", route: "clientes" },
+  { prefix: "/proveedor/dashboard/analiticas", route: "analiticas" },
+  { prefix: "/proveedor/dashboard/ajustes", route: "ajustes" },
+  { prefix: "/proveedor/dashboard/liquidacion", route: "liquidacion" },
 ];
 
 /** Resuelve un href del menú lateral a la clave de prefetch, si aplica. */

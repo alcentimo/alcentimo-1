@@ -104,17 +104,72 @@ export function isDashboardNavItemActive(
   return item.match?.(pathname) ?? pathname === item.href;
 }
 
+export type DashboardNavVariant = "merchant" | "supplier_own_store";
+
+export const SUPPLIER_OWN_STORE_NAV_PREFIX = "/proveedor/dashboard";
+
+export function remapDashboardHrefForVariant(
+  href: string,
+  variant?: DashboardNavVariant | null,
+): string {
+  if (variant !== "supplier_own_store") return href;
+  if (href === "/dashboard" || href.startsWith("/dashboard/")) {
+    return `${SUPPLIER_OWN_STORE_NAV_PREFIX}${href.slice("/dashboard".length)}`;
+  }
+  return href;
+}
+
+function toMerchantDashboardPath(pathname: string): string {
+  if (pathname === SUPPLIER_OWN_STORE_NAV_PREFIX) {
+    return "/dashboard";
+  }
+  if (pathname.startsWith(`${SUPPLIER_OWN_STORE_NAV_PREFIX}/`)) {
+    return `/dashboard${pathname.slice(SUPPLIER_OWN_STORE_NAV_PREFIX.length)}`;
+  }
+  return pathname;
+}
+
 export function getDashboardNavItems(options?: {
   storeRole?: DashboardStoreRole | null;
+  variant?: DashboardNavVariant | null;
 }): DashboardNavItem[] {
   const role = options?.storeRole ?? null;
-  if (!role) {
-    return DASHBOARD_NAV_ITEMS.filter((item) =>
-      canAccessDashboardPath("owner", item.href),
-    );
+  const variant = options?.variant ?? "merchant";
+  const source = !role
+    ? DASHBOARD_NAV_ITEMS.filter((item) =>
+        canAccessDashboardPath("owner", item.href),
+      )
+    : DASHBOARD_NAV_ITEMS.filter((item) =>
+        canAccessDashboardPath(role, item.href),
+      );
+
+  if (variant !== "supplier_own_store") {
+    return source;
   }
 
-  return DASHBOARD_NAV_ITEMS.filter((item) =>
-    canAccessDashboardPath(role, item.href),
-  );
+  return source.map((item) => {
+    const href = remapDashboardHrefForVariant(item.href, variant);
+    const isCatalog = item.href === "/dashboard/catalogo";
+    return {
+      ...item,
+      href,
+      label: isCatalog ? "Productos Propios" : item.label,
+      description: isCatalog
+        ? "Mercancía de tu inventario, sin catálogo de terceros"
+        : item.description,
+      match: (pathname: string) => {
+        if (isCatalog) {
+          return (
+            pathname === SUPPLIER_OWN_STORE_NAV_PREFIX ||
+            pathname.startsWith(`${SUPPLIER_OWN_STORE_NAV_PREFIX}/catalogo`) ||
+            pathname.startsWith(`${SUPPLIER_OWN_STORE_NAV_PREFIX}/inventario`) ||
+            pathname.startsWith(`${SUPPLIER_OWN_STORE_NAV_PREFIX}/productos`)
+          );
+        }
+        return item.match
+          ? item.match(toMerchantDashboardPath(pathname))
+          : pathname === href;
+      },
+    };
+  });
 }

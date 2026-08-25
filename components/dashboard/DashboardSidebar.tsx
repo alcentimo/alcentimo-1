@@ -16,6 +16,7 @@ import {
   getDashboardNavItems,
   isDashboardNavItemActive,
   type DashboardNavItem,
+  type DashboardNavVariant,
 } from "@/src/config/dashboard-nav";
 import { cn } from "@/lib/cn";
 import { useLocale } from "@/components/providers/UiPreferencesProvider";
@@ -44,6 +45,8 @@ interface DashboardSidebarProps {
   accountSettingsActive?: boolean;
   isSupportAdmin?: boolean;
   storeRole?: DashboardStoreRole | null;
+  navVariant?: DashboardNavVariant | null;
+  homeHref?: string;
 }
 
 function navLinkClass(
@@ -153,11 +156,13 @@ export function DashboardSidebar({
   accountSettingsActive = false,
   isSupportAdmin = false,
   storeRole = null,
+  navVariant = "merchant",
+  homeHref = DASHBOARD_HOME_HREF,
 }: DashboardSidebarProps) {
   const [collapsed, setCollapsed] = useState(false);
   const [supportOpen, setSupportOpen] = useState(false);
   const [supportKey, setSupportKey] = useState(0);
-  const navItems = getDashboardNavItems({ storeRole });
+  const navItems = getDashboardNavItems({ storeRole, variant: navVariant });
   const { t, navLabel } = useLocale();
   const { prefetchRoute } = useDashboardRoutePrefetch();
 
@@ -233,7 +238,7 @@ export function DashboardSidebar({
         )}
       >
         <Link
-          href={DASHBOARD_HOME_HREF}
+          href={homeHref}
           className={cn(
             "dashboard-sidebar-brand inline-flex min-w-0 items-center border-0 bg-transparent shadow-none outline-none",
             drawerExpanded ? "flex-1" : "justify-center",

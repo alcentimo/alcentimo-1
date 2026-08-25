@@ -37,6 +37,7 @@ import {
 } from "@/lib/supplier/wholesale-price";
 import { MERCADO_CATALOG_CACHE_TAG } from "@/lib/mercado-oculto/catalog-cache";
 import { revalidateAllPublicCatalogCaches } from "@/lib/catalog/public-catalog-cache";
+import { mirrorSupplierProductToOwnStore } from "@/lib/supplier/own-store";
 
 function bustMercadoCatalogCache() {
   revalidateTag(MERCADO_CATALOG_CACHE_TAG, "max");
@@ -328,7 +329,9 @@ export async function createSupplierProduct(
   });
 
   revalidatePath("/proveedor/dashboard");
+  revalidatePath("/proveedor/dashboard/catalogo");
   bustMercadoCatalogCache();
+  void mirrorSupplierProductToOwnStore(auth.user.id, created.id);
   return { product: created };
 }
 
@@ -414,9 +417,11 @@ export async function updateSupplierProduct(
   await mirrorSupplierStockToLinkedStores(admin, updated.id, updated.stock);
 
   revalidatePath("/proveedor/dashboard");
+  revalidatePath("/proveedor/dashboard/catalogo");
   revalidatePath("/dashboard/catalogo");
   revalidatePath("/dashboard/inventario");
   bustMercadoCatalogCache();
+  void mirrorSupplierProductToOwnStore(auth.user.id, updated.id);
   return { product: updated };
 }
 
@@ -443,6 +448,8 @@ export async function archiveSupplierProduct(
   if (error) return { error: error.message };
 
   revalidatePath("/proveedor/dashboard");
+  revalidatePath("/proveedor/dashboard/catalogo");
   bustMercadoCatalogCache();
+  void mirrorSupplierProductToOwnStore(auth.user.id, id);
   return {};
 }

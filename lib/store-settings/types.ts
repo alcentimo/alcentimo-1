@@ -137,6 +137,11 @@ export interface StoreSettingsConfig {
    * Por defecto `true` en tiendas nuevas.
    */
   aiAssistantEnabled: boolean;
+  /**
+   * Tienda propia de un proveedor con vitrina pública.
+   * El panel no importa catálogo mayorista de terceros.
+   */
+  ownBrandStore: boolean;
 }
 
 export const MAX_WHATSAPP_PHONES = 3;

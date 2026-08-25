@@ -238,6 +238,7 @@ export function defaultStoreSettingsConfig(): StoreSettingsConfig {
       checkoutType: "both",
     },
     aiAssistantEnabled: true,
+    ownBrandStore: false,
   };
 }
 
@@ -526,6 +527,12 @@ export function normalizeStoreSettingsConfig(raw: unknown): StoreSettingsConfig 
         : typeof raw.ai_assistant_enabled === "boolean"
           ? raw.ai_assistant_enabled
           : defaults.aiAssistantEnabled,
+    ownBrandStore:
+      typeof raw.ownBrandStore === "boolean"
+        ? raw.ownBrandStore
+        : typeof raw.own_brand_store === "boolean"
+          ? raw.own_brand_store
+          : defaults.ownBrandStore,
   };
 }
 
@@ -646,5 +653,9 @@ export function mergeStoreSettingsConfig(
       typeof patch.aiAssistantEnabled === "boolean"
         ? patch.aiAssistantEnabled
         : base.aiAssistantEnabled,
+    ownBrandStore:
+      typeof patch.ownBrandStore === "boolean"
+        ? patch.ownBrandStore
+        : base.ownBrandStore,
   };
 }

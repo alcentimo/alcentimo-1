@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Eye, MonitorSmartphone, Smartphone } from "lucide-react";
 import type { CatalogListItem, Store } from "@/lib/database.types";
-import type { CatalogPreviewSettings } from "@/lib/catalog/get-public-catalog-page-data";
+import type { CatalogPreviewSettings } from "@/lib/catalog/catalog-preview-types";
 import { CatalogLivePreview } from "@/components/dashboard/CatalogLivePreview";
 import { SettingsSwitch } from "@/components/ui/SettingsSwitch";
 import {

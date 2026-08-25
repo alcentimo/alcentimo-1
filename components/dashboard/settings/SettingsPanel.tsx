@@ -26,7 +26,7 @@ import {
   SettingsMobileNav,
 } from "@/components/dashboard/settings/SettingsMobileNav";
 import type { CouponProductOption } from "@/components/dashboard/settings/CouponProductPicker";
-import type { CatalogPreviewSettings } from "@/lib/catalog/get-public-catalog-page-data";
+import type { CatalogPreviewSettings } from "@/lib/catalog/catalog-preview-types";
 import type { Store } from "@/lib/database.types";
 import type { StoreSettingsConfig } from "@/lib/store-settings/types";
 import type { Coupon } from "@/lib/coupons/types";

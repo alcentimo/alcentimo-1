@@ -1,6 +1,8 @@
+import "server-only";
+
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { formatFileSize } from "@/lib/format-file-size";
-import { PRODUCT_IMAGES_BUCKET } from "@/lib/storage";
+import { PRODUCT_IMAGES_BUCKET } from "@/lib/storage-buckets";
 import { PRODUCT_IMAGE_MAX_INPUT_BYTES } from "@/lib/product-image";
 import {
   SOCIAL_PRODUCT_IMAGE_FILE_SUFFIX,

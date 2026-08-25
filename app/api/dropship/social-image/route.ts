@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { PRODUCT_IMAGES_BUCKET } from "@/lib/storage";
+import { PRODUCT_IMAGES_BUCKET } from "@/lib/storage-buckets";
 import {
   SOCIAL_PRODUCT_IMAGE_FILE_SUFFIX,
   SOCIAL_PRODUCT_IMAGE_SIZE,

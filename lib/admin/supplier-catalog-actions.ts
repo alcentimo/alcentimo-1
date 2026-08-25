@@ -991,6 +991,19 @@ export async function setSupplierPublicCatalogEnabled(input: {
   revalidatePath("/admin/dashboard");
   revalidatePath("/proveedor/dashboard");
   revalidatePath("/proveedor/dashboard/ajustes");
+  revalidatePath("/proveedor/dashboard/catalogo");
+
+  if (savedEnabled) {
+    try {
+      const { ensureSupplierOwnStore } = await import("@/lib/supplier/own-store");
+      await ensureSupplierOwnStore(supplierUserId);
+    } catch (caught) {
+      console.warn(
+        "[setSupplierPublicCatalogEnabled] own-store",
+        caught instanceof Error ? caught.message : caught,
+      );
+    }
+  }
 
   const listed = await listAdminSupplierCatalogProducts();
   const publicCatalogPath = savedSlug

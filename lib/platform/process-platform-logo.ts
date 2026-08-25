@@ -1,6 +1,8 @@
 import "server-only";
 
-import sharp from "sharp";
+async function loadSharp() {
+  return (await import("sharp")).default;
+}
 
 export interface ProcessedPlatformLogoAssets {
   logoBuffer: Buffer;
@@ -23,6 +25,7 @@ async function buildPwaIcons(input: Buffer): Promise<
   | { ok: false; error: string }
 > {
   try {
+    const sharp = await loadSharp();
     const icon512 = await sharp(input, { animated: false, density: 300 })
       .rotate()
       .resize(512, 512, {
@@ -51,6 +54,7 @@ async function compressPlatformLogoRaster(input: Buffer): Promise<
   | { ok: false; error: string }
 > {
   try {
+    const sharp = await loadSharp();
     const buffer = await sharp(input, { animated: false })
       .rotate()
       .resize(640, 160, {

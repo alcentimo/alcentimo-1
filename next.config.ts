@@ -83,6 +83,15 @@ const nextConfig: NextConfig = {
   turbopack: {},
   poweredByHeader: false,
   serverExternalPackages: ["sharp", "resend"],
+  webpack: (config, { isServer }) => {
+    if (!isServer) {
+      config.resolve.alias = {
+        ...config.resolve.alias,
+        sharp: false,
+      };
+    }
+    return config;
+  },
   // Disponible en middleware (Edge) tras el build en Vercel.
   env: {
     SUPPORT_ADMIN_EMAILS: process.env.SUPPORT_ADMIN_EMAILS ?? "",

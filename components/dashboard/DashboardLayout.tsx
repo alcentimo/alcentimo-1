@@ -16,6 +16,7 @@ import type { DashboardStoreRole } from "@/lib/team/permissions";
 import type { AccountSnapshot } from "@/lib/account/types";
 import type { SubscriptionStatus } from "@/lib/plans/plan-activation";
 import type { ProTrialPhase } from "@/lib/plans/trial";
+import type { DashboardNavVariant } from "@/src/config/dashboard-nav";
 import {
   BRAND_LOGO_HEIGHT,
   BRAND_LOGO_PATH,
@@ -23,6 +24,7 @@ import {
 } from "@/lib/brand/assets";
 
 const DASHBOARD_HOME_HREF = "/dashboard/catalogo";
+const DASHBOARD_LOGIN_HREF = "/dashboard/login";
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
@@ -42,6 +44,9 @@ interface DashboardLayoutProps {
   storeRole?: DashboardStoreRole | null;
   canUpgradeToBusiness?: boolean;
   accountSnapshot?: AccountSnapshot | null;
+  navVariant?: DashboardNavVariant | null;
+  homeHref?: string;
+  logoutHref?: string;
 }
 
 /** Rutas de auth sin chrome del panel (login, invitación, recuperar clave). */
@@ -63,6 +68,9 @@ function DashboardShell({
   isSupportAdmin = false,
   storeRole = null,
   accountSnapshot = null,
+  navVariant = "merchant",
+  homeHref = DASHBOARD_HOME_HREF,
+  logoutHref = DASHBOARD_LOGIN_HREF,
 }: DashboardLayoutProps) {
   const router = useRouter();
   const pathname = usePathname();
@@ -143,7 +151,7 @@ function DashboardShell({
   async function handleLogout() {
     const supabase = createClient();
     await supabase.auth.signOut();
-    router.push("/dashboard/login");
+    router.push(logoutHref);
     router.refresh();
   }
 
@@ -171,6 +179,8 @@ function DashboardShell({
         accountSettingsActive={accountSheetOpen || Boolean(accountQueryParam)}
         isSupportAdmin={isSupportAdmin}
         storeRole={storeRole}
+        navVariant={navVariant}
+        homeHref={homeHref}
       />
 
       <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
@@ -186,7 +196,7 @@ function DashboardShell({
             </button>
 
             <Link
-              href={DASHBOARD_HOME_HREF}
+              href={homeHref}
               className="dashboard-header-brand inline-flex min-w-0 flex-1 items-center border-0 bg-transparent shadow-none outline-none lg:hidden"
               aria-label="Alcentimo"
             >

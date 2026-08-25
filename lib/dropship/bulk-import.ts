@@ -128,6 +128,14 @@ async function requireDropshipStore() {
   });
   if (!feature.ok) return { error: feature.error } as const;
 
+  const settings = await getStoreSettingsConfig(auth.store.id);
+  if (settings.ownBrandStore) {
+    return {
+      error:
+        "Esta tienda vende solo productos propios. El catálogo mayorista no está disponible.",
+    } as const;
+  }
+
   return { auth, supabase } as const;
 }
 
