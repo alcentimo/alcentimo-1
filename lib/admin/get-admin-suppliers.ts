@@ -9,6 +9,8 @@ export interface AdminSupplierDirectoryRow {
   phone: string;
   whatsappUrl: string | null;
   location: string | null;
+  warehouseAddress: string;
+  pickupHours: string;
   activeProductCount: number;
   showPublicCatalog: boolean;
   storeModeEnabled: boolean;
@@ -71,7 +73,7 @@ export async function getAdminSuppliers(
   const { data: profiles, error } = await admin
     .from("supplier_profiles")
     .select(
-      "user_id, company_name, contact_name, email, phone, created_at, show_public_catalog, public_catalog_slug, store_mode_enabled",
+      "user_id, company_name, contact_name, email, phone, created_at, show_public_catalog, public_catalog_slug, store_mode_enabled, warehouse_address, pickup_hours",
     )
     .order("created_at", { ascending: false })
     .limit(cappedLimit);
@@ -80,11 +82,14 @@ export async function getAdminSuppliers(
     Record<string, unknown>
   > | null) ?? [];
   if (error) {
+    const missingPickup =
+      error.message.includes("warehouse_address") ||
+      error.message.includes("pickup_hours");
     const missingStoreMode = error.message.includes("store_mode_enabled");
     const missingPublicCatalog =
       error.message.includes("show_public_catalog") ||
       error.message.includes("public_catalog_slug");
-    if (!missingStoreMode && !missingPublicCatalog) {
+    if (!missingStoreMode && !missingPublicCatalog && !missingPickup) {
       throw new Error(error.message);
     }
     const fallback = missingPublicCatalog
@@ -121,6 +126,8 @@ export async function getAdminSuppliers(
       phone,
       whatsappUrl: phone ? buildWhatsAppUrl(phone) : null,
       location: inferLocationFromPhone(phone),
+      warehouseAddress: String(row.warehouse_address ?? "").trim(),
+      pickupHours: String(row.pickup_hours ?? "").trim(),
       activeProductCount: productCounts.get(userId) ?? 0,
       showPublicCatalog: row.show_public_catalog === true,
       storeModeEnabled: row.store_mode_enabled === true,

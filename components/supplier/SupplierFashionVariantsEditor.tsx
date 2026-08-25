@@ -309,8 +309,8 @@ export function SupplierFashionVariantsEditor({
               {differentiated
                 ? "Cada combinación usa su propio precio."
                 : uniformPrice > 0
-                  ? `Costo aplicado a todas: $${uniformPrice.toFixed(2)}`
-                  : "Indica el costo (USD) arriba; se copiará a todas las combinaciones."}
+                  ? `Precio mayorista / costo base aplicado a todas: $${uniformPrice.toFixed(2)}`
+                  : "Indica el precio mayorista / costo base (USD) arriba; se copiará a todas las combinaciones."}
             </p>
             <button
               type="button"
@@ -382,7 +382,7 @@ export function SupplierFashionVariantsEditor({
                       htmlFor={`${idPrefix}-price-${sku.id}`}
                       className="label-field"
                     >
-                      Precio USD *
+                      Precio mayorista / costo base USD *
                     </label>
                     <input
                       id={`${idPrefix}-price-${sku.id}`}

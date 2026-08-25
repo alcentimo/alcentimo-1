@@ -36,9 +36,9 @@ export function buildSupplierPaymentWhatsAppMessage(options: {
   );
 
   const lines = [
-    `Alcéntimo te compró estos productos. Aparta el stock; logística de Alcéntimo pasará a retirarlo.`,
+    `Alcéntimo te compró estos productos. Un dropshipper los vendió: apártalos y márcalos listos para recolección.`,
     "",
-    `📦 Apartar stock #${code}`,
+    `📦 Pedido mayorista #${code}`,
     `Estado de liquidación: ${SUPPLIER_ORDER_PAYMENT_STATUS_LABELS[options.order.paymentStatus]}`,
     `Método: ${methodLabel}`,
     options.order.paymentReference?.trim()

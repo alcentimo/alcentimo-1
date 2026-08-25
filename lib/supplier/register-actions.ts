@@ -12,6 +12,7 @@ import {
   type SupplierProductCategory,
 } from "@/lib/supplier/categories";
 import { hashSupplierPassword } from "@/lib/supplier/password";
+import { validateSupplierPickupFields } from "@/lib/supplier/profile-types";
 
 /** Metadata que marca la sesión como mayorista (no cliente de tienda). */
 const SUPPLIER_AUTH_METADATA = {
@@ -61,6 +62,8 @@ export interface SupplierRegisterInput {
   password: string;
   phone: string;
   productCategory: string;
+  warehouseAddress: string;
+  pickupHours: string;
   acceptedLegalTerms: boolean;
 }
 
@@ -73,6 +76,8 @@ function validateSupplierRegisterInput(input: SupplierRegisterInput):
       password: string;
       phone: string;
       productCategory: SupplierProductCategory;
+      warehouseAddress: string;
+      pickupHours: string;
     }
   | { ok: false; error: string } {
   if (!input.acceptedLegalTerms) {
@@ -117,6 +122,12 @@ function validateSupplierRegisterInput(input: SupplierRegisterInput):
     return { ok: false, error: "Selecciona una categoría de productos." };
   }
 
+  const pickup = validateSupplierPickupFields({
+    warehouseAddress: input.warehouseAddress,
+    pickupHours: input.pickupHours,
+  });
+  if (!pickup.ok) return pickup;
+
   return {
     ok: true,
     companyName: companyName.slice(0, 120),
@@ -125,6 +136,8 @@ function validateSupplierRegisterInput(input: SupplierRegisterInput):
     password: input.password,
     phone: phone.slice(0, 40),
     productCategory: input.productCategory,
+    warehouseAddress: pickup.warehouseAddress,
+    pickupHours: pickup.pickupHours,
   };
 }
 
@@ -164,6 +177,8 @@ async function upsertSupplierProfile(input: {
   email: string;
   phone: string;
   productCategory: SupplierProductCategory;
+  warehouseAddress: string;
+  pickupHours: string;
   passwordHash: string;
 }): Promise<{ ok: true } | { ok: false; error: string }> {
   const admin = createAdminClient();
@@ -176,6 +191,8 @@ async function upsertSupplierProfile(input: {
       email: input.email,
       phone: input.phone,
       product_category: input.productCategory,
+      warehouse_address: input.warehouseAddress,
+      pickup_hours: input.pickupHours,
       password_hash: input.passwordHash,
       status: "active",
       updated_at: new Date().toISOString(),
@@ -184,6 +201,26 @@ async function upsertSupplierProfile(input: {
   );
 
   if (error) {
+    const missingPickupColumns =
+      error.message.includes("warehouse_address") ||
+      error.message.includes("pickup_hours");
+    if (missingPickupColumns) {
+      const retry = await (admin as any).from("supplier_profiles").upsert(
+        {
+          user_id: input.userId,
+          company_name: input.companyName,
+          contact_name: input.contactName,
+          email: input.email,
+          phone: input.phone,
+          product_category: input.productCategory,
+          password_hash: input.passwordHash,
+          status: "active",
+          updated_at: new Date().toISOString(),
+        },
+        { onConflict: "user_id" },
+      );
+      if (!retry.error) return { ok: true };
+    }
     console.error("[supplier-register-profile]", error.message);
     if (
       error.message.toLowerCase().includes("unique") ||
@@ -223,6 +260,8 @@ export async function registerSupplierAction(
     password,
     phone,
     productCategory,
+    warehouseAddress,
+    pickupHours,
   } = validated;
 
   try {
@@ -256,6 +295,8 @@ export async function registerSupplierAction(
       email,
       phone,
       productCategory,
+      warehouseAddress,
+      pickupHours,
       passwordHash: hashSupplierPassword(password),
     });
 

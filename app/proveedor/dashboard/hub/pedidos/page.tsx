@@ -14,7 +14,7 @@ export default async function ProveedorHubPedidosPage() {
       <DashboardPageHeader
         sectionLabel="Suministro"
         title="Pedidos Mayoristas"
-        description="Aparta stock y prepara la recolección cuando Alcéntimo te compre inventario."
+        description="El pedido entra cuando el dropshipper vende. Márcalo listo para recolección; Alcéntimo confirma el retiro."
       />
       {data.ordersError ? (
         <p className="supplier-hub-alert">
