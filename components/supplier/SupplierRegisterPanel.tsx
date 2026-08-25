@@ -18,6 +18,8 @@ export function SupplierRegisterPanel() {
   const [password, setPassword] = useState("");
   const [phone, setPhone] = useState("");
   const [productCategory, setProductCategory] = useState<string>("electronica");
+  const [warehouseAddress, setWarehouseAddress] = useState("");
+  const [pickupHours, setPickupHours] = useState("");
   const [acceptedLegalTerms, setAcceptedLegalTerms] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -44,6 +46,8 @@ export function SupplierRegisterPanel() {
         password,
         phone,
         productCategory,
+        warehouseAddress,
+        pickupHours,
         acceptedLegalTerms,
       });
 
@@ -216,6 +220,45 @@ export function SupplierRegisterPanel() {
               </option>
             ))}
           </select>
+        </div>
+
+        <div>
+          <label htmlFor="supplier_warehouse_address" className="label-field">
+            Dirección física de almacén/tienda
+          </label>
+          <textarea
+            id="supplier_warehouse_address"
+            name="warehouseAddress"
+            required
+            value={warehouseAddress}
+            onChange={(event) =>
+              setWarehouseAddress(event.target.value.slice(0, 400))
+            }
+            className="input-field min-h-[4.5rem] resize-y"
+            placeholder="Calle, número, urbanización, ciudad"
+            disabled={loading}
+          />
+          <p className="mt-1 text-[11px] text-zinc-500">
+            Alcéntimo va a retirar el producto en esta dirección. No es una
+            vitrina pública.
+          </p>
+        </div>
+
+        <div>
+          <label htmlFor="supplier_pickup_hours" className="label-field">
+            Horarios de retiro
+          </label>
+          <input
+            id="supplier_pickup_hours"
+            name="pickupHours"
+            type="text"
+            required
+            value={pickupHours}
+            onChange={(event) => setPickupHours(event.target.value.slice(0, 200))}
+            className="input-field"
+            placeholder="Lun–Vie 8:00–16:00"
+            disabled={loading}
+          />
         </div>
 
         <label className="flex items-start gap-2 text-sm text-zinc-600 dark:text-zinc-300">

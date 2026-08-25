@@ -329,7 +329,7 @@ function ProductFields({
           </div>
           <div>
             <label htmlFor={`${idPrefix}-price`} className="label-field">
-              Costo (USD)
+              Precio Mayorista / Costo base (USD)
             </label>
             <div className="relative mt-1.5">
               <span className="pointer-events-none absolute inset-y-0 left-3 flex items-center text-sm text-zinc-400">
@@ -348,6 +348,10 @@ function ProductFields({
                 disabled={pending}
               />
             </div>
+            <p className="mt-1 text-[11px] leading-relaxed text-zinc-500">
+              Lo que Alcéntimo te paga por unidad. No es el precio de venta al
+              público del dropshipper.
+            </p>
           </div>
         </div>
       </div>
@@ -610,7 +614,7 @@ export function SupplierProductsPanel({
           <div>
             <h2 className="supplier-hub-heading">Cargar producto</h2>
             <p className="supplier-hub-subheading">
-              Título, categoría, stock y precio mayorista.
+              Título, categoría, stock y precio mayorista / costo base.
             </p>
           </div>
         </div>
@@ -809,8 +813,8 @@ export function SupplierProductsPanel({
             <p className="supplier-hub-section-label">Edición</p>
             <DialogTitle>Editar producto</DialogTitle>
             <DialogDescription>
-              Actualiza fotos, categoría, variantes, stock o precio. Las órdenes
-              ya emitidas conservan el costo anterior.
+              Actualiza fotos, categoría, variantes, stock o precio mayorista /
+              costo base. Las órdenes ya emitidas conservan el costo anterior.
             </DialogDescription>
           </DialogHeader>
 

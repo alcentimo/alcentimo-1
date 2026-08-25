@@ -38,8 +38,8 @@ export function buildDispatchOrderText(details: DispatchOrderDetails): string {
   ].filter(Boolean);
 
   const lines = [
-    `Alcéntimo · Apartar stock #${details.orderCode}`,
-    "Alcéntimo te compra estos productos. Apártalos; el personal de logística de Alcéntimo pasará a retirarlos.",
+    `Alcéntimo · Pedido mayorista #${details.orderCode}`,
+    "Un dropshipper vendió estos productos. Apártalos y márcalos listos para recolección; Alcéntimo o su transporte pasará a retirarlos.",
     "",
     "📦 Productos a apartar:",
     ...productLines,

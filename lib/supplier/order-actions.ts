@@ -9,6 +9,7 @@ import {
 } from "@/lib/supplier/access";
 import {
   isSupplierOrderStatus,
+  supplierCanSetOrderStatus,
   type CreateSupplierOrderItemInput,
   type SupplierOrder,
   type SupplierOrderItem,
@@ -439,10 +440,35 @@ export async function updateSupplierOrderDispatch(input: {
   if (!isSupplierOrderStatus(input.status)) {
     return { error: "Estatus de despacho inválido." };
   }
+  if (!supplierCanSetOrderStatus(input.status)) {
+    return {
+      error:
+        "Solo Alcéntimo o su transporte puede marcar el pedido como retirado.",
+    };
+  }
 
   const tracking = (input.trackingNumber ?? "").trim().slice(0, 80);
 
   const admin = createAdminClient();
+  const { data: currentRow, error: currentError } = await admin
+    .from("supplier_orders")
+    .select("status")
+    .eq("id", orderId)
+    .eq("supplier_user_id", supplierUserId)
+    .maybeSingle();
+
+  if (currentError) return { error: currentError.message };
+  if (!currentRow) return { error: "Pedido no encontrado." };
+  const currentStatus = String(
+    (currentRow as Record<string, unknown>).status ?? "",
+  );
+  if (currentStatus === "despachado") {
+    return {
+      error:
+        "Este pedido ya fue retirado por Alcéntimo. No puedes cambiar el estado.",
+    };
+  }
+
   const { error: updateError } = await admin
     .from("supplier_orders")
     .update({

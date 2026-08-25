@@ -1,43 +1,34 @@
 import { DashboardPageHeader } from "@/components/dashboard/DashboardPageHeader";
-import { SupplierStorefrontSettingsPanel } from "@/components/supplier/SupplierStorefrontSettingsPanel";
+import { SupplierHubProfilePanel } from "@/components/supplier/SupplierHubProfilePanel";
 import { SupplierEmptyState } from "@/components/supplier/SupplierEmptyState";
 import { Settings2 } from "lucide-react";
-import { getSupplierPublicStorefront } from "@/lib/supplier/get-storefront";
+import { getSupplierHubProfile } from "@/lib/supplier/profile-actions";
 import { requireSupplierHubPageUser } from "@/lib/supplier/require-hub-page";
 
 export const dynamic = "force-dynamic";
 
-export default async function ProveedorHubConfiguracionPage({
-  searchParams,
-}: {
-  searchParams: Promise<{ tab?: string }>;
-}) {
-  const user = await requireSupplierHubPageUser();
-  const { tab } = await searchParams;
-  const storefront = await getSupplierPublicStorefront(user.id);
+export default async function ProveedorHubConfiguracionPage() {
+  await requireSupplierHubPageUser();
+  const profileResult = await getSupplierHubProfile();
 
   return (
     <div className="settings-page-shell mx-auto max-w-6xl space-y-6 md:space-y-8">
       <DashboardPageHeader
         sectionLabel="Suministro"
         title="Configuración"
-        description={
-          storefront
-            ? `Marca, envíos y pagos de tu catálogo · ${storefront.tradeName}.`
-            : "Ajustes de tu cuenta de proveedor en Alcéntimo."
-        }
+        description="Perfil mayorista y dirección de recogida para Alcéntimo. Este panel no gestiona vitrinas al detal."
       />
-      {storefront ? (
-        <SupplierStorefrontSettingsPanel
-          storefront={storefront}
-          initialTab={tab}
-        />
-      ) : (
+      {profileResult.error || !profileResult.profile ? (
         <SupplierEmptyState
           icon={Settings2}
-          title="Sin vitrina pública aún"
-          description="Cuando Alcéntimo active tu catálogo público, aquí podrás editar marca, envíos y pagos. Tu perfil y sesión se gestionan desde el menú de cuenta."
+          title="No se pudo cargar el perfil"
+          description={
+            profileResult.error ??
+            "Vuelve a iniciar sesión para editar la dirección de almacén y los horarios de retiro."
+          }
         />
+      ) : (
+        <SupplierHubProfilePanel initialProfile={profileResult.profile} />
       )}
     </div>
   );

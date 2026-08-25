@@ -1,7 +1,7 @@
 export const HUB_COLLECTION_CARRIER = "acopio_alcentimo";
 export const HUB_COLLECTION_BUYER_NAME = "Recolección Alcéntimo";
 export const HUB_COLLECTION_NOTES =
-  "Orden de compra de Alcéntimo. Aparta el stock; el personal de logística de Alcéntimo pasará a retirarlo. No despaches ni cobres al cliente ni al dropshipper.";
+  "Pedido mayorista: un dropshipper vendió este producto. Apártalo y márcalo listo para recolección. Alcéntimo o su transporte lo retira en tu almacén. No despaches ni cobres al cliente ni al dropshipper.";
 
 export function isHubCollectionCarrier(
   shippingCarrier: string | null | undefined,

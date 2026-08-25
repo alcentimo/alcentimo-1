@@ -47,6 +47,20 @@ const AdminSuppliersDirectoryPanel = dynamic(
   },
 );
 
+const AdminSupplierPickupPanel = dynamic(
+  () =>
+    import("@/components/admin/AdminSupplierPickupPanel").then((m) => ({
+      default: m.AdminSupplierPickupPanel,
+    })),
+  {
+    loading: () => (
+      <p className="text-sm text-zinc-500 dark:text-zinc-400">
+        Cargando recolección B2B…
+      </p>
+    ),
+  },
+);
+
 const AdminSupplierCatalogPanel = dynamic(
   () =>
     import("@/components/admin/AdminSupplierCatalogPanel").then((m) => ({
@@ -192,6 +206,7 @@ export function AdminDashboardTabs({
 
       {supplierPanelMounted ? (
         <div hidden={activeTab !== "proveedor"}>
+          <AdminSupplierPickupPanel />
           <AdminSupplierCatalogPanel />
         </div>
       ) : null}

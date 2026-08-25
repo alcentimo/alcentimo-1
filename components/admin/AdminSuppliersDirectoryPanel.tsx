@@ -177,7 +177,7 @@ export function AdminSuppliersDirectoryPanel({
                 <th className="admin-stores-th">Nombre</th>
                 <th className="admin-stores-th">Correo</th>
                 <th className="admin-stores-th">Teléfono</th>
-                <th className="admin-stores-th">Ubicación</th>
+                <th className="admin-stores-th">Ubicación / recogida</th>
                 <th className="admin-stores-th admin-stores-th-num">Productos</th>
                 <th className="admin-stores-th">Vitrina pública habilitada</th>
                 <th className="admin-stores-th">
@@ -219,7 +219,16 @@ export function AdminSuppliersDirectoryPanel({
                     )}
                   </td>
                   <td className="admin-stores-td admin-stores-td-muted">
-                    {row.location || "—"}
+                    {row.warehouseAddress ? (
+                      <div>
+                        <div>{row.warehouseAddress}</div>
+                        {row.pickupHours ? (
+                          <div className="mt-0.5 text-[11px]">{row.pickupHours}</div>
+                        ) : null}
+                      </div>
+                    ) : (
+                      row.location || "Sin dirección de almacén"
+                    )}
                   </td>
                   <td className="admin-stores-td admin-stores-td-num">
                     {row.activeProductCount.toLocaleString("es-VE")}

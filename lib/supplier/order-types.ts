@@ -11,10 +11,22 @@ export type SupplierOrderStatus = (typeof SUPPLIER_ORDER_STATUSES)[number];
 
 export const SUPPLIER_ORDER_STATUS_LABELS: Record<SupplierOrderStatus, string> =
   {
-    pendiente: "Apartar stock",
+    pendiente: "Vendido por dropshipper",
     preparando: "Listo para recolección",
-    despachado: "Recolectado por Alcéntimo",
+    despachado: "Retirado / Entregado al delivery de Alcéntimo",
   };
+
+/** Estados que el mayorista puede marcar en el hub. El retiro lo confirma Alcéntimo. */
+export const SUPPLIER_HUB_SETTABLE_STATUSES = [
+  "pendiente",
+  "preparando",
+] as const satisfies readonly SupplierOrderStatus[];
+
+export function supplierCanSetOrderStatus(
+  status: SupplierOrderStatus,
+): boolean {
+  return status === "pendiente" || status === "preparando";
+}
 
 export function isSupplierOrderStatus(
   value: unknown,

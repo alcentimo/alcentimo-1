@@ -8,7 +8,7 @@ import { cn } from "@/lib/cn";
 import type { SupplierProduct } from "@/lib/supplier/actions";
 import { updateSupplierOrderDispatch } from "@/lib/supplier/order-actions";
 import {
-  SUPPLIER_ORDER_STATUSES,
+  SUPPLIER_HUB_SETTABLE_STATUSES,
   SUPPLIER_ORDER_STATUS_LABELS,
   type SupplierOrder,
   type SupplierOrderStatus,
@@ -23,9 +23,9 @@ type SupplierOrderFilterId = "all" | SupplierOrderStatus;
 
 const FILTER_TABS: { id: SupplierOrderFilterId; label: string }[] = [
   { id: "all", label: "Todos" },
-  { id: "pendiente", label: "Apartar stock" },
+  { id: "pendiente", label: "Vendidos por dropshipper" },
   { id: "preparando", label: "Listos para recolección" },
-  { id: "despachado", label: "Recolectados" },
+  { id: "despachado", label: "Retirados" },
 ];
 
 function statusBadgeClass(status: SupplierOrderStatus): string {
@@ -109,7 +109,7 @@ export function SupplierOrdersPanel({
         <SupplierEmptyState
           icon={ShoppingBag}
           title="Sin órdenes de compra"
-          description="Cuando Alcéntimo te compre stock, las órdenes aparecerán aquí para apartar y preparar la recolección."
+          description="Cuando un dropshipper venda tu producto, el pedido entra aquí. Márcalo listo para recolección; Alcéntimo confirma el retiro."
         />
       ) : (
         <>
@@ -176,9 +176,9 @@ export function SupplierOrdersPanel({
                         <td className="px-4 py-3 align-middle">
                           <div className="flex items-center gap-2">
                             <select
-                              className="input-field !mt-0 min-w-[11rem] !py-2 text-xs"
+                              className="input-field !mt-0 min-w-[14rem] !py-2 text-xs"
                               value={order.status}
-                              disabled={saving}
+                              disabled={saving || order.status === "despachado"}
                               aria-label={`Estado de ${summarizeProducts(order)}`}
                               onChange={(event) =>
                                 handleStatusChange(
@@ -187,11 +187,17 @@ export function SupplierOrdersPanel({
                                 )
                               }
                             >
-                              {SUPPLIER_ORDER_STATUSES.map((status) => (
-                                <option key={status} value={status}>
-                                  {SUPPLIER_ORDER_STATUS_LABELS[status]}
+                              {order.status === "despachado" ? (
+                                <option value="despachado">
+                                  {SUPPLIER_ORDER_STATUS_LABELS.despachado}
                                 </option>
-                              ))}
+                              ) : (
+                                SUPPLIER_HUB_SETTABLE_STATUSES.map((status) => (
+                                  <option key={status} value={status}>
+                                    {SUPPLIER_ORDER_STATUS_LABELS[status]}
+                                  </option>
+                                ))
+                              )}
                             </select>
                             {saving ? (
                               <Loader2

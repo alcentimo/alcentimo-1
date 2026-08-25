@@ -149,7 +149,7 @@ export const SUPPLIER_HUB_NAV_ITEMS: DashboardNavItem[] = [
   {
     href: `${SUPPLIER_HUB_NAV_PREFIX}/configuracion`,
     label: "Configuración",
-    description: "Vitrina, marca y ajustes del proveedor",
+    description: "Perfil, almacén y horarios de retiro",
     icon: Settings2,
     match: (pathname) =>
       pathname.startsWith(`${SUPPLIER_HUB_NAV_PREFIX}/configuracion`) ||

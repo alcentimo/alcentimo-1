@@ -61,7 +61,8 @@ function buildDispatchHtml(details: DispatchOrderDetails): string {
       <p style="margin:0 0 12px;font-size:14px;color:#52525b;">Alcéntimo · Centro de acopio</p>
       <h1 style="margin:0 0 12px;font-size:22px;">Orden de compra #${escapeHtml(details.orderCode)}</h1>
       <p style="margin:0 0 16px;">
-        Alcéntimo te compra estos productos. Apártalos; el personal de
+        Alcéntimo te compra estos productos (un dropshipper ya los vendió).
+        Apártalos y márcalos listos para recolección; el personal de
         logística de Alcéntimo pasará a retirarlos.
       </p>
       <h2 style="margin:20px 0 8px;font-size:16px;">Productos a apartar</h2>
