@@ -11,6 +11,7 @@ import { SUPPLIER_LOGIN_PATH } from "@/lib/landing/supplier-zone-href";
 interface SupplierChromeProps {
   email: string | null;
   showStorefrontSettings?: boolean;
+  showMerchantStoreLink?: boolean;
   children: React.ReactNode;
 }
 
@@ -18,6 +19,7 @@ interface SupplierChromeProps {
 export function SupplierChrome({
   email,
   showStorefrontSettings = false,
+  showMerchantStoreLink = false,
   children,
 }: SupplierChromeProps) {
   const pathname = usePathname();
@@ -105,6 +107,14 @@ export function SupplierChrome({
             >
               Historial
             </Link>
+            {showMerchantStoreLink ? (
+              <Link
+                href="/dashboard/catalogo"
+                className="supplier-hub-nav-link"
+              >
+                Panel de tienda
+              </Link>
+            ) : null}
             {showStorefrontSettings ? (
               <Link
                 href="/proveedor/dashboard/ajustes"

@@ -3,7 +3,10 @@
 import { useMemo, useState } from "react";
 import { ChevronLeft, ChevronRight, ExternalLink, Search } from "lucide-react";
 import type { AdminSupplierDirectoryRow } from "@/lib/admin/get-admin-suppliers";
-import { setSupplierPublicCatalogEnabled } from "@/lib/admin/supplier-catalog-actions";
+import {
+  setSupplierPublicCatalogEnabled,
+  setSupplierStoreModeEnabled,
+} from "@/lib/admin/supplier-catalog-actions";
 import { SettingsSwitch } from "@/components/ui/SettingsSwitch";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/cn";
@@ -94,6 +97,55 @@ export function AdminSuppliersDirectoryPanel({
     }
   }
 
+  async function handleStoreModeToggle(
+    row: AdminSupplierDirectoryRow,
+    enabled: boolean,
+  ) {
+    setBusyUserId(row.userId);
+    setError(null);
+    setSuppliers((current) =>
+      current.map((item) =>
+        item.userId === row.userId
+          ? { ...item, storeModeEnabled: enabled }
+          : item,
+      ),
+    );
+    try {
+      const result = await setSupplierStoreModeEnabled({
+        supplierUserId: row.userId,
+        enabled: enabled ? "true" : "false",
+      });
+      if (result.error) {
+        setSuppliers((current) =>
+          current.map((item) => (item.userId === row.userId ? row : item)),
+        );
+        setError(result.error);
+        return;
+      }
+      setSuppliers((current) =>
+        current.map((item) =>
+          item.userId === row.userId
+            ? {
+                ...item,
+                storeModeEnabled: result.storeModeEnabled === true,
+              }
+            : item,
+        ),
+      );
+    } catch (err) {
+      setSuppliers((current) =>
+        current.map((item) => (item.userId === row.userId ? row : item)),
+      );
+      setError(
+        err instanceof Error
+          ? err.message
+          : "No se pudo guardar el modo tienda.",
+      );
+    } finally {
+      setBusyUserId(null);
+    }
+  }
+
   return (
     <div className="admin-stores-panel space-y-4">
       <div className="admin-stores-search">
@@ -128,6 +180,7 @@ export function AdminSuppliersDirectoryPanel({
                 <th className="admin-stores-th">Ubicación</th>
                 <th className="admin-stores-th admin-stores-th-num">Productos</th>
                 <th className="admin-stores-th">Vitrina pública habilitada</th>
+                <th className="admin-stores-th">Modo tienda / dropshipper</th>
               </tr>
             </thead>
             <tbody>
@@ -192,11 +245,29 @@ export function AdminSuppliersDirectoryPanel({
                       )}
                     </div>
                   </td>
+                  <td className="admin-stores-td">
+                    <div className="flex items-center gap-2">
+                      <SettingsSwitch
+                        id={`directory-store-mode-${row.userId}`}
+                        checked={row.storeModeEnabled === true}
+                        disabled={busyUserId === row.userId}
+                        label={`Modo tienda de ${row.companyName}`}
+                        onChange={(checked) =>
+                          void handleStoreModeToggle(row, checked)
+                        }
+                      />
+                      {row.storeModeEnabled ? (
+                        <span className="admin-stores-td-muted">Activo</span>
+                      ) : (
+                        <span className="admin-stores-td-muted">Apagado</span>
+                      )}
+                    </div>
+                  </td>
                 </tr>
               ))}
               {filtered.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="admin-stores-empty-state">
+                    <td colSpan={7} className="admin-stores-empty-state">
                     No hay proveedores con esa búsqueda.
                   </td>
                 </tr>

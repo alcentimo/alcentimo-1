@@ -12,6 +12,11 @@ import {
 } from "@/lib/catalog/supplier-public-catalog";
 import { parsePublicCatalogEnabled } from "@/lib/catalog/supplier-public-catalog-flag";
 import { revalidateAllPublicCatalogCaches } from "@/lib/catalog/public-catalog-cache";
+import { getSupplierPublicStorefront } from "@/lib/supplier/get-storefront";
+import {
+  applySupplierStoreModeSideEffects,
+  persistSupplierStoreModeEnabled,
+} from "@/lib/supplier/store-mode";
 import {
   normalizeSupplierProductCategory,
   type SupplierProductCategory,
@@ -64,6 +69,7 @@ export type AdminSupplierMarginOption = {
   globalMarginPercent: number | null;
   catalogVisible: boolean;
   showPublicCatalog: boolean;
+  storeModeEnabled: boolean;
   publicCatalogSlug: string | null;
 };
 
@@ -203,14 +209,24 @@ async function loadCatalogVisibility(
 async function loadPublicCatalogFlags(
   admin: ReturnType<typeof createAdminClient>,
   userIds: string[],
-): Promise<Map<string, { enabled: boolean; slug: string | null }>> {
-  const flags = new Map<string, { enabled: boolean; slug: string | null }>();
+): Promise<
+  Map<
+    string,
+    { enabled: boolean; storeModeEnabled: boolean; slug: string | null }
+  >
+> {
+  const flags = new Map<
+    string,
+    { enabled: boolean; storeModeEnabled: boolean; slug: string | null }
+  >();
   const ids = [...new Set(userIds.filter(Boolean))];
   if (ids.length === 0) return flags;
 
   const { data, error } = await admin
     .from("supplier_profiles")
-    .select("user_id, show_public_catalog, public_catalog_slug")
+    .select(
+      "user_id, show_public_catalog, public_catalog_slug, store_mode_enabled",
+    )
     .in("user_id", ids);
   if (error) return flags;
 
@@ -218,11 +234,13 @@ async function loadPublicCatalogFlags(
     user_id?: string;
     show_public_catalog?: unknown;
     public_catalog_slug?: unknown;
+    store_mode_enabled?: unknown;
   }> | null) ?? []) {
     const id = typeof row.user_id === "string" ? row.user_id : "";
     if (!id) continue;
     flags.set(id, {
       enabled: row.show_public_catalog === true,
+      storeModeEnabled: row.store_mode_enabled === true,
       slug:
         typeof row.public_catalog_slug === "string" &&
         row.public_catalog_slug.trim()
@@ -237,7 +255,10 @@ function buildSupplierOptions(
   products: AdminSupplierCatalogProduct[],
   marginBySupplier: Map<string, number>,
   visibilityBySupplier: Map<string, boolean>,
-  publicCatalogBySupplier: Map<string, { enabled: boolean; slug: string | null }>,
+  publicCatalogBySupplier: Map<
+    string,
+    { enabled: boolean; storeModeEnabled: boolean; slug: string | null }
+  >,
 ): AdminSupplierMarginOption[] {
   const grouped = new Map<
     string,
@@ -263,6 +284,8 @@ function buildSupplierOptions(
       globalMarginPercent: marginBySupplier.get(id) ?? null,
       catalogVisible: visibilityBySupplier.get(id) === true,
       showPublicCatalog: publicCatalogBySupplier.get(id)?.enabled === true,
+      storeModeEnabled:
+        publicCatalogBySupplier.get(id)?.storeModeEnabled === true,
       publicCatalogSlug: publicCatalogBySupplier.get(id)?.slug ?? null,
     }))
     .sort((a, b) => a.name.localeCompare(b.name, "es"));
@@ -995,8 +1018,13 @@ export async function setSupplierPublicCatalogEnabled(input: {
 
   if (savedEnabled) {
     try {
-      const { ensureSupplierOwnStore } = await import("@/lib/supplier/own-store");
-      await ensureSupplierOwnStore(supplierUserId);
+      const storefront = await getSupplierPublicStorefront(supplierUserId);
+      if (storefront?.storeModeEnabled) {
+        const { ensureSupplierOwnStore } = await import(
+          "@/lib/supplier/own-store"
+        );
+        await ensureSupplierOwnStore(supplierUserId);
+      }
     } catch (caught) {
       console.warn(
         "[setSupplierPublicCatalogEnabled] own-store",
@@ -1031,6 +1059,57 @@ export async function setSupplierPublicCatalogEnabled(input: {
     showPublicCatalog: savedEnabled,
     publicCatalogSlug: savedSlug,
     publicCatalogPath,
+    products: listed.products ?? [],
+    suppliers,
+  };
+}
+
+export async function setSupplierStoreModeEnabled(input: {
+  supplierUserId: string;
+  enabled: boolean | string | number;
+}): Promise<
+  ActionResult<{
+    storeModeEnabled: boolean;
+    products: AdminSupplierCatalogProduct[];
+    suppliers: AdminSupplierMarginOption[];
+  }>
+> {
+  const auth = await requireSupportAdmin();
+  if (!auth.ok) return { error: auth.error };
+
+  const supplierUserId = String(input.supplierUserId ?? "").trim();
+  if (!supplierUserId) return { error: "Selecciona un proveedor." };
+  const enabled = parsePublicCatalogEnabled(input.enabled);
+
+  const persisted = await persistSupplierStoreModeEnabled({
+    supplierUserId,
+    enabled,
+  });
+  if (persisted.error) return { error: persisted.error };
+
+  await applySupplierStoreModeSideEffects({
+    supplierUserId,
+    enabled: persisted.storeModeEnabled,
+  });
+
+  revalidatePath("/admin/dashboard");
+  revalidatePath("/proveedor/dashboard");
+  revalidatePath("/proveedor/dashboard/hub");
+  revalidatePath("/dashboard/catalogo");
+
+  const listed = await listAdminSupplierCatalogProducts();
+  const suppliers = (listed.suppliers ?? []).map((supplier) =>
+    supplier.id === supplierUserId
+      ? { ...supplier, storeModeEnabled: persisted.storeModeEnabled }
+      : supplier,
+  );
+
+  if (listed.error) {
+    return { storeModeEnabled: persisted.storeModeEnabled };
+  }
+
+  return {
+    storeModeEnabled: persisted.storeModeEnabled,
     products: listed.products ?? [],
     suppliers,
   };
@@ -1127,6 +1206,7 @@ export async function setSupplierGlobalMarginRule(input: {
         globalMarginPercent: marginPercent,
         catalogVisible: false,
         showPublicCatalog: false,
+        storeModeEnabled: false,
         publicCatalogSlug: null,
       },
     };
@@ -1157,6 +1237,8 @@ export async function setSupplierGlobalMarginRule(input: {
       globalMarginPercent: marginPercent,
       catalogVisible: visibility.get(supplierUserId) === true,
       showPublicCatalog: publicFlags.get(supplierUserId)?.enabled === true,
+      storeModeEnabled:
+        publicFlags.get(supplierUserId)?.storeModeEnabled === true,
       publicCatalogSlug: publicFlags.get(supplierUserId)?.slug ?? null,
     },
   };

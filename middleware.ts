@@ -19,7 +19,7 @@ import {
 } from "@/lib/support/admin-access";
 import { isAuthEmailVerified } from "@/lib/auth/email-verified";
 import { resolveSupplierAccess, shouldForceSupplierPostAuthRedirect } from "@/lib/supplier/access";
-import { lookupSupplierOwnStorefrontByUserId } from "@/lib/supplier/own-storefront-flag";
+import { lookupSupplierStoreModeByUserId } from "@/lib/supplier/own-storefront-flag";
 import {
   canAccessDashboardPath,
   DASHBOARD_INVITATION_PATH,
@@ -92,17 +92,6 @@ function applySubdomainCatalogRewrite(
   });
 
   return rewriteResponse;
-}
-
-function mapMerchantDashboardToSupplierOwnStore(pathname: string): string {
-  if (pathname === DASHBOARD_PREFIX || pathname === `${DASHBOARD_PREFIX}/`) {
-    return `${PROVEEDOR_PREFIX}/dashboard/catalogo`;
-  }
-  const rest = pathname.slice(DASHBOARD_PREFIX.length);
-  if (!rest || rest === "/") {
-    return `${PROVEEDOR_PREFIX}/dashboard/catalogo`;
-  }
-  return `${PROVEEDOR_PREFIX}/dashboard${rest}`;
 }
 
 export async function middleware(request: NextRequest) {
@@ -492,16 +481,6 @@ export async function middleware(request: NextRequest) {
   }
 
   if (isMercadoOcultoRoute) {
-    if (
-      authenticatedUser &&
-      (await lookupSupplierOwnStorefrontByUserId(authenticatedUser.id))
-    ) {
-      const ownStoreUrl = request.nextUrl.clone();
-      ownStoreUrl.pathname = `${PROVEEDOR_PREFIX}/dashboard/catalogo`;
-      ownStoreUrl.search = "";
-      return NextResponse.redirect(ownStoreUrl);
-    }
-
     // Vitrina pública (estilo MercadoLibre): catálogo, ficha y carrito sin sesión.
     if (isMercadoPublicBrowsePath(pathname)) {
       return supabaseResponse;
@@ -648,10 +627,16 @@ export async function middleware(request: NextRequest) {
         return supabaseResponse;
       }
 
-      if (await lookupSupplierOwnStorefrontByUserId(authenticatedUser.id)) {
+      const forceSupplierWithoutStoreMode =
+        (await shouldForceSupplierPostAuthRedirect({
+          email: resolveAuthEmail(authenticatedUser),
+          userId: authenticatedUser.id,
+        })) && !(await lookupSupplierStoreModeByUserId(authenticatedUser.id));
+
+      if (forceSupplierWithoutStoreMode) {
         const supplierUrl = request.nextUrl.clone();
-        supplierUrl.pathname = mapMerchantDashboardToSupplierOwnStore(pathname);
-        supplierUrl.search = request.nextUrl.search;
+        supplierUrl.pathname = SUPPLIER_POST_AUTH_PATH;
+        supplierUrl.search = "";
         return NextResponse.redirect(supplierUrl);
       }
 

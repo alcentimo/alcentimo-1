@@ -30,6 +30,7 @@ import type { Profile } from "@/lib/database.types";
 import type { UserWithPlan } from "@/lib/auth/get-user-profile";
 import { scheduleStoreSubdomainProvision } from "@/lib/domains/provision-store-subdomain";
 import { getPendingOrdersCount } from "@/lib/orders/get-pending-orders-count";
+import { shouldForceSupplierPostAuthRedirect } from "@/lib/supplier/access";
 
 const SHELL_QUERY_TIMEOUT_MS = 8_000;
 
@@ -55,6 +56,7 @@ export type DashboardShellData =
       canUpgradeToBusiness: boolean;
       interfacePreferences: InterfacePreferencesSettings;
       accountSnapshot: AccountSnapshot;
+      isSupplier: boolean;
     }
   | { ok: false; error: string };
 
@@ -158,6 +160,10 @@ export async function fetchDashboardShellData(): Promise<DashboardShellData> {
     const exchangeRate = exchangeRateRow?.rate ?? null;
     const exchangeRateUpdatedAt = exchangeRateRow?.created_at ?? null;
     const ownerFlag = store ? isStoreOwner(store, authUser.id) : false;
+    const isSupplier = await shouldForceSupplierPostAuthRedirect({
+      email: authUser.email,
+      userId: authUser.id,
+    });
 
     return {
       ok: true,
@@ -183,6 +189,7 @@ export async function fetchDashboardShellData(): Promise<DashboardShellData> {
       canUpgradeToBusiness:
         normalizeDbPlan(authUser.profile?.plan ?? authUser.rawPlan) === "PRO",
       interfacePreferences: settingsConfig.interfacePreferences,
+      isSupplier,
       accountSnapshot: buildAccountSnapshot({
         authUser,
         store,

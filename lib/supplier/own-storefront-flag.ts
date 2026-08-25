@@ -22,3 +22,25 @@ export async function lookupSupplierOwnStorefrontByUserId(
     return false;
   }
 }
+
+/** Lectura ligera: el proveedor puede usar el panel /dashboard de dropshipper. */
+export async function lookupSupplierStoreModeByUserId(
+  userId: string,
+): Promise<boolean> {
+  if (!userId.trim()) return false;
+  try {
+    const admin = createAdminClient();
+    const { data, error } = await admin
+      .from("supplier_profiles")
+      .select("store_mode_enabled")
+      .eq("user_id", userId)
+      .eq("status", "active")
+      .maybeSingle();
+    if (error) return false;
+    return parsePublicCatalogEnabled(
+      (data as { store_mode_enabled?: unknown } | null)?.store_mode_enabled,
+    );
+  } catch {
+    return false;
+  }
+}

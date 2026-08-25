@@ -7,7 +7,7 @@ import {
 } from "@/lib/supplier/storefront-types";
 
 const STOREFRONT_SELECT =
-  "user_id, company_name, trade_name, logo_url, public_description, status, show_public_catalog, public_catalog_slug, storefront_config";
+  "user_id, company_name, trade_name, logo_url, public_description, status, show_public_catalog, public_catalog_slug, store_mode_enabled, storefront_config";
 
 const STOREFRONT_SELECT_FALLBACK =
   "user_id, company_name, status, show_public_catalog, public_catalog_slug";
@@ -37,6 +37,7 @@ function mapStorefront(
     description,
     logoUrl,
     showPublicCatalog: parsePublicCatalogEnabled(row.show_public_catalog),
+    storeModeEnabled: parsePublicCatalogEnabled(row.store_mode_enabled),
     publicCatalogSlug: slug,
     shipping: config.shipping,
     payments: config.payments,
@@ -60,8 +61,9 @@ async function loadProfileRow(
   const err = full.error?.message ?? "";
   const missingColumns =
     Boolean(err) &&
-    (err.includes("show_public_catalog") ||
+    (      err.includes("show_public_catalog") ||
       err.includes("public_catalog_slug") ||
+      err.includes("store_mode_enabled") ||
       err.includes("trade_name") ||
       err.includes("storefront_config") ||
       err.includes("public_description") ||
@@ -94,6 +96,7 @@ export async function getSupplierPublicStorefront(
       description: "",
       logoUrl: null,
       showPublicCatalog: false,
+      storeModeEnabled: false,
       publicCatalogSlug: null,
       ...defaultSupplierStorefrontConfig(),
     }

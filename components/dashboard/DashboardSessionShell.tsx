@@ -111,6 +111,7 @@ export function DashboardSessionShell({ children }: { children: ReactNode }) {
             storeRole={shell?.storeRole ?? null}
             canUpgradeToBusiness={shell?.canUpgradeToBusiness ?? false}
             accountSnapshot={accountSnapshot}
+            showSupplierHubLink={shell?.isSupplier ?? false}
           >
             {shellError && !shell && !isAuthPath ? (
               <div

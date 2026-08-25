@@ -1,4 +1,6 @@
 import { createAdminClient } from "@/lib/supabase/admin";
+import { normalizeSupplierProductCategory } from "@/lib/supplier/categories";
+import type { DropshipLinkedCatalogEntry } from "@/lib/dropship/linked-catalog";
 
 export const SUPPLIER_OWN_PRODUCT_METADATA_KEY = "supplierOwnProductId";
 
@@ -29,6 +31,40 @@ export async function listOwnBrandCatalogProductIds(
   return (data as Array<{ id: string; metadata: unknown }>)
     .filter((row) => ownProductIdFromMetadata(row.metadata))
     .map((row) => row.id);
+}
+
+export async function listOwnBrandCatalogEntries(
+  storeId: string,
+): Promise<DropshipLinkedCatalogEntry[]> {
+  const admin = createAdminClient();
+  const { data, error } = await admin
+    .from("products")
+    .select("id, metadata, categories(slug)")
+    .eq("store_id", storeId)
+    .eq("is_deleted", false)
+    .eq("is_active", true);
+  if (error || !data) return [];
+
+  return (
+    data as Array<{
+      id: string;
+      metadata: unknown;
+      categories:
+        | { slug?: string }
+        | { slug?: string }[]
+        | null;
+    }>
+  )
+    .filter((row) => ownProductIdFromMetadata(row.metadata))
+    .map((row) => {
+      const relation = Array.isArray(row.categories)
+        ? row.categories[0]
+        : row.categories;
+      return {
+        productId: row.id,
+        supplierCategory: normalizeSupplierProductCategory(relation?.slug),
+      };
+    });
 }
 
 export async function listOwnBrandStoreCategories(

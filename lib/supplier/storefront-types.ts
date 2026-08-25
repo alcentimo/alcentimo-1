@@ -50,6 +50,7 @@ export type SupplierPublicStorefront = {
   description: string;
   logoUrl: string | null;
   showPublicCatalog: boolean;
+  storeModeEnabled: boolean;
   publicCatalogSlug: string | null;
   shipping: ShippingSettings;
   payments: PaymentsSettings;

@@ -34,7 +34,12 @@ function revalidateStorefront(slug: string | null, userId?: string) {
   revalidatePath("/proveedor/dashboard/catalogo");
   if (slug) revalidatePath(supplierPublicCatalogPath(slug));
   if (userId) {
-    void ensureSupplierOwnStore(userId);
+    void (async () => {
+      const storefront = await getSupplierPublicStorefront(userId);
+      if (storefront?.storeModeEnabled) {
+        await ensureSupplierOwnStore(userId);
+      }
+    })();
   }
 }
 
