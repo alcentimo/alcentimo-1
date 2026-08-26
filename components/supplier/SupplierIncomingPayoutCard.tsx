@@ -36,7 +36,8 @@ export function SupplierIncomingPayoutCard({
     [payout.businessDate],
   );
   const methodLabel = payout.paymentMethod
-    ? (getPaymentMethod(payout.paymentMethod)?.label ?? payout.paymentMethod)
+    ? (getPaymentMethod(payout.paymentMethod as never)?.label ??
+      payout.paymentMethod)
     : null;
 
   return (
