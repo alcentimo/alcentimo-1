@@ -96,14 +96,14 @@ export function DropshipSettlementsPanel({
       ),
   );
 
-  function toggleExpanded(id: string) {
+  const toggleExpanded = (id: string) => {
     setExpandedIds((current) => {
       const next = new Set(current);
       if (next.has(id)) next.delete(id);
       else next.add(id);
       return next;
     });
-  }
+  };
 
   const filtered = useMemo(
     () =>
@@ -214,7 +214,7 @@ export function DropshipSettlementsPanel({
 
   const approveTarget = settlements.find((item) => item.id === approveId);
 
-  function replacePayout(next: SupplierPayoutObligationView) {
+  const replacePayout = (next: SupplierPayoutObligationView) => {
     setSettlements((current) =>
       current.map((item) =>
         item.id === next.settlementId
@@ -227,9 +227,12 @@ export function DropshipSettlementsPanel({
           : item,
       ),
     );
-  }
+  };
 
-  function handleMarkPayoutPaid(payout: SupplierPayoutObligationView, form: HTMLFormElement) {
+  const handleMarkPayoutPaid = (
+    payout: SupplierPayoutObligationView,
+    form: HTMLFormElement,
+  ) => {
     const formData = new FormData(form);
     formData.set("payoutId", payout.id);
     setError(null);
@@ -248,15 +251,15 @@ export function DropshipSettlementsPanel({
       );
       form.reset();
     });
-  }
+  };
 
-  function replaceSettlement(next: DropshipSettlementRecord) {
+  const replaceSettlement = (next: DropshipSettlementRecord) => {
     setSettlements((current) =>
       current.map((item) => (item.id === next.id ? next : item)),
     );
-  }
+  };
 
-  function handleApprove() {
+  const handleApprove = () => {
     if (!approveId) return;
     setError(null);
     setSuccess(null);
@@ -276,9 +279,9 @@ export function DropshipSettlementsPanel({
         "Pago aprobado. Se dividió el monto en saldos (mayoristas y comisión Alcéntimo), se notificó a cada proveedor y se habilitó el despacho D+1 con el nombre de la tienda como remitente.",
       );
     });
-  }
+  };
 
-  function handleReject() {
+  const handleReject = () => {
     if (!rejectId) return;
     setError(null);
     setSuccess(null);
@@ -298,7 +301,7 @@ export function DropshipSettlementsPanel({
       setRejectNotes("");
       setSuccess("Reporte rechazado. El dropshipper puede volver a liquidar esas ventas.");
     });
-  }
+  };
 
   return (
     <div className="space-y-4">
