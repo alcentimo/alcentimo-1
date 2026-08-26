@@ -247,7 +247,7 @@ export function DropshipSettlementsPanel({
       }
       replacePayout(result.payout);
       setSuccess(
-        "Liquidación marcada como pagada. El proveedor ya puede ver el capture en Pagos.",
+        "Liquidación marcada como pagada. El proveedor ya puede ver el comprobante en Pedidos y pagos.",
       );
       form.reset();
     });

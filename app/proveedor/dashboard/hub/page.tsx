@@ -19,7 +19,7 @@ export default async function ProveedorHubInventarioPage({
     redirect("/proveedor/dashboard/hub/pedidos");
   }
   if (tabRaw === "pagos") {
-    redirect("/proveedor/dashboard/hub/pagos");
+    redirect("/proveedor/dashboard/hub/pedidos");
   }
   if (tabRaw === "historial") {
     redirect("/proveedor/dashboard/hub/analitica");

@@ -8,7 +8,6 @@ import {
   Store,
   // UserCog, // Equipo oculto por ahora (no se usa en menú de tiendas)
   Users,
-  Wallet,
   type LucideIcon,
 } from "lucide-react";
 import {
@@ -126,17 +125,12 @@ export const SUPPLIER_HUB_NAV_ITEMS: DashboardNavItem[] = [
   },
   {
     href: `${SUPPLIER_HUB_NAV_PREFIX}/pedidos`,
-    label: "Pedidos Mayoristas",
-    description: "Órdenes de compra y recolección de Alcéntimo",
+    label: "Pedidos y pagos",
+    description: "Compras de Alcéntimo: mercancía, pago y retiro",
     icon: ClipboardList,
-    match: (pathname) => pathname.startsWith(`${SUPPLIER_HUB_NAV_PREFIX}/pedidos`),
-  },
-  {
-    href: `${SUPPLIER_HUB_NAV_PREFIX}/pagos`,
-    label: "Pagos",
-    description: "Liquidaciones y cuenta para cobrar",
-    icon: Wallet,
-    match: (pathname) => pathname.startsWith(`${SUPPLIER_HUB_NAV_PREFIX}/pagos`),
+    match: (pathname) =>
+      pathname.startsWith(`${SUPPLIER_HUB_NAV_PREFIX}/pedidos`) ||
+      pathname.startsWith(`${SUPPLIER_HUB_NAV_PREFIX}/pagos`),
   },
   {
     href: `${SUPPLIER_HUB_NAV_PREFIX}/analitica`,
