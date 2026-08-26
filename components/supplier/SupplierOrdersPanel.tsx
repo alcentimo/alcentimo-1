@@ -23,7 +23,7 @@ type SupplierOrderFilterId = "all" | SupplierOrderStatus;
 
 const FILTER_TABS: { id: SupplierOrderFilterId; label: string }[] = [
   { id: "all", label: "Todos" },
-  { id: "pendiente", label: "Vendidos por dropshipper" },
+  { id: "pendiente", label: "Por preparar" },
   { id: "preparando", label: "Listos para recolección" },
   { id: "despachado", label: "Retirados" },
 ];
@@ -109,7 +109,7 @@ export function SupplierOrdersPanel({
         <SupplierEmptyState
           icon={ShoppingBag}
           title="Sin órdenes de compra"
-          description="Cuando un dropshipper venda tu producto, el pedido entra aquí. Márcalo listo para recolección; Alcéntimo confirma el retiro."
+          description="Cuando Alcéntimo te solicite surtimiento, el pedido entra aquí. Márcalo listo para recolección; Alcéntimo confirma el retiro."
         />
       ) : (
         <>

@@ -36,7 +36,7 @@ export function buildSupplierPaymentWhatsAppMessage(options: {
   );
 
   const lines = [
-    `Alcéntimo te compró estos productos. Un dropshipper los vendió: apártalos y márcalos listos para recolección.`,
+    `Alcéntimo te compró estos productos. Apártalos y márcalos listos para recolección.`,
     "",
     `📦 Pedido mayorista #${code}`,
     `Estado de liquidación: ${SUPPLIER_ORDER_PAYMENT_STATUS_LABELS[options.order.paymentStatus]}`,
@@ -49,7 +49,7 @@ export function buildSupplierPaymentWhatsAppMessage(options: {
     "🛒 Productos a apartar:",
     ...productLines,
     "",
-    "Alcéntimo te pagará la liquidación. No cobres al cliente ni al dropshipper.",
+    "Alcéntimo te pagará la liquidación. No cobres al cliente final.",
   ];
 
   return lines.filter((line): line is string => line != null).join("\n");

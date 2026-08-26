@@ -12,6 +12,7 @@ import {
   listLockedCatalogOrderIds,
   mapPayoutRow,
   mapSettlementRecord,
+  SUPPLIER_PAYOUT_SELECT,
 } from "@/lib/dropship/settlement-shared";
 import { groupSettlementShipments } from "@/lib/dropship/settlement-shipping";
 import { loadHydratedSettlementLines } from "@/lib/dropship/settlement-shipping-load";
@@ -58,9 +59,7 @@ export async function getDropshipDailySettlementSummary(): Promise<{
     if (existing?.status === "approved" || existing?.status === "reported") {
       const { data: payoutRows } = await client
         .from("supplier_payout_obligations")
-        .select(
-          "id, settlement_id, supplier_user_id, business_date, ship_on, amount_usd, order_count, line_count, status",
-        )
+        .select(SUPPLIER_PAYOUT_SELECT)
         .eq("settlement_id", existing.id);
       const lines = await loadHydratedSettlementLines(existing.id);
       existing.payouts = (

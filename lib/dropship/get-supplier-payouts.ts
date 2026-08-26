@@ -6,7 +6,12 @@ import {
   resolveSupplierAccess,
   resolveSupplierAuthEmail,
 } from "@/lib/supplier/access";
-import { mapPayoutRow } from "@/lib/dropship/settlement-shared";
+import {
+  mapPayoutRow,
+  isMissingPayoutProofColumnError,
+  SUPPLIER_PAYOUT_SELECT,
+  SUPPLIER_PAYOUT_SELECT_LEGACY,
+} from "@/lib/dropship/settlement-shared";
 import { getSupplierCreditedBalanceUsd } from "@/lib/dropship/settlement-ledger";
 import type { SupplierPayoutObligationView } from "@/lib/dropship/settlement-types";
 
@@ -32,14 +37,24 @@ export async function listMySupplierPayoutObligations(): Promise<{
 
   const admin = createAdminClient();
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data, error } = await (admin as any)
+  const client = admin as any;
+  let { data, error } = await client
     .from("supplier_payout_obligations")
-    .select(
-      "id, settlement_id, supplier_user_id, business_date, ship_on, amount_usd, order_count, line_count, status",
-    )
+    .select(SUPPLIER_PAYOUT_SELECT)
     .eq("supplier_user_id", user.id)
     .order("ship_on", { ascending: false })
     .limit(40);
+
+  if (error && isMissingPayoutProofColumnError(error.message)) {
+    const fallback = await client
+      .from("supplier_payout_obligations")
+      .select(SUPPLIER_PAYOUT_SELECT_LEGACY)
+      .eq("supplier_user_id", user.id)
+      .order("ship_on", { ascending: false })
+      .limit(40);
+    data = fallback.data;
+    error = fallback.error;
+  }
 
   if (error) return { error: error.message };
   const creditedBalanceUsd = await getSupplierCreditedBalanceUsd(user.id);

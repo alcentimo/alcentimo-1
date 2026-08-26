@@ -61,7 +61,7 @@ function buildDispatchHtml(details: DispatchOrderDetails): string {
       <p style="margin:0 0 12px;font-size:14px;color:#52525b;">Alcéntimo · Centro de acopio</p>
       <h1 style="margin:0 0 12px;font-size:22px;">Orden de compra #${escapeHtml(details.orderCode)}</h1>
       <p style="margin:0 0 16px;">
-        Alcéntimo te compra estos productos (un dropshipper ya los vendió).
+        Alcéntimo te compra estos productos.
         Apártalos y márcalos listos para recolección; el personal de
         logística de Alcéntimo pasará a retirarlos.
       </p>
@@ -70,7 +70,7 @@ function buildDispatchHtml(details: DispatchOrderDetails): string {
       <h2 style="margin:20px 0 8px;font-size:16px;">Referencia para retiro Alcéntimo</h2>
       <ul style="margin:0;padding-left:18px;">${destinationRows || "<li>Sin destino registrado</li>"}</ul>
       <p style="margin:16px 0 0;font-size:13px;color:#52525b;">
-        No despaches ni cobres al cliente ni al dropshipper. Alcéntimo retira
+        No despaches ni cobres al cliente final. Alcéntimo retira
         el stock y te paga la liquidación.
       </p>
       ${dashboardLink}
