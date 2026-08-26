@@ -249,10 +249,6 @@ export function DropshipSettlementsPanel({
       form.reset();
     });
   }
-    setSettlements((current) =>
-      current.map((item) => (item.id === next.id ? next : item)),
-    );
-  }
 
   function replaceSettlement(next: DropshipSettlementRecord) {
     setSettlements((current) =>
