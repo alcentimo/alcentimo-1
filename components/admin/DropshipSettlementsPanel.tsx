@@ -6,6 +6,7 @@ import { ChevronDown, ExternalLink } from "lucide-react";
 import { AdminCriticalConfirmDialog } from "@/components/admin/AdminCriticalConfirmDialog";
 import {
   approveDropshipDailySettlement,
+  markSupplierPayoutPaid,
   rejectDropshipDailySettlement,
 } from "@/lib/dropship/settlement-admin-actions";
 import { formatBusinessDateEs } from "@/lib/dropship/settlement-date";
@@ -14,10 +15,12 @@ import {
   SUPPLIER_PAYOUT_STATUS_LABELS,
   type DropshipSettlementRecord,
   type DropshipSettlementStatus,
+  type SupplierPayoutObligationView,
 } from "@/lib/dropship/settlement-types";
 import { formatUsd } from "@/lib/format";
 import { getPaymentMethod } from "@/src/config/payment-methods";
 import { SettlementCustomerShipments } from "@/components/dropship/SettlementCustomerShipments";
+import { SupplierPayoutProofPreview } from "@/components/supplier/SupplierPayoutProofPreview";
 import { cn } from "@/lib/cn";
 
 type SettlementFilter = "all" | "reported" | "approved" | "rejected";
@@ -79,6 +82,7 @@ export function DropshipSettlementsPanel({
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
+  const [payingId, setPayingId] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
   const [rejectId, setRejectId] = useState<string | null>(null);
   const [rejectNotes, setRejectNotes] = useState("");
@@ -92,14 +96,14 @@ export function DropshipSettlementsPanel({
       ),
   );
 
-  function toggleExpanded(id: string) {
+  const toggleExpanded = (id: string) => {
     setExpandedIds((current) => {
       const next = new Set(current);
       if (next.has(id)) next.delete(id);
       else next.add(id);
       return next;
     });
-  }
+  };
 
   const filtered = useMemo(
     () =>
@@ -210,13 +214,52 @@ export function DropshipSettlementsPanel({
 
   const approveTarget = settlements.find((item) => item.id === approveId);
 
-  function replaceSettlement(next: DropshipSettlementRecord) {
+  const replacePayout = (next: SupplierPayoutObligationView) => {
+    setSettlements((current) =>
+      current.map((item) =>
+        item.id === next.settlementId
+          ? {
+              ...item,
+              payouts: item.payouts.map((payout) =>
+                payout.id === next.id ? next : payout,
+              ),
+            }
+          : item,
+      ),
+    );
+  };
+
+  const handleMarkPayoutPaid = (
+    payout: SupplierPayoutObligationView,
+    form: HTMLFormElement,
+  ) => {
+    const formData = new FormData(form);
+    formData.set("payoutId", payout.id);
+    setError(null);
+    setSuccess(null);
+    setPayingId(payout.id);
+    startTransition(async () => {
+      const result = await markSupplierPayoutPaid(formData);
+      setPayingId(null);
+      if (result.error || !result.payout) {
+        setError(result.error ?? "No se pudo marcar el pago.");
+        return;
+      }
+      replacePayout(result.payout);
+      setSuccess(
+        "Liquidación marcada como pagada. El proveedor ya puede ver el capture en Pagos.",
+      );
+      form.reset();
+    });
+  };
+
+  const replaceSettlement = (next: DropshipSettlementRecord) => {
     setSettlements((current) =>
       current.map((item) => (item.id === next.id ? next : item)),
     );
-  }
+  };
 
-  function handleApprove() {
+  const handleApprove = () => {
     if (!approveId) return;
     setError(null);
     setSuccess(null);
@@ -236,9 +279,9 @@ export function DropshipSettlementsPanel({
         "Pago aprobado. Se dividió el monto en saldos (mayoristas y comisión Alcéntimo), se notificó a cada proveedor y se habilitó el despacho D+1 con el nombre de la tienda como remitente.",
       );
     });
-  }
+  };
 
-  function handleReject() {
+  const handleReject = () => {
     if (!rejectId) return;
     setError(null);
     setSuccess(null);
@@ -258,7 +301,7 @@ export function DropshipSettlementsPanel({
       setRejectNotes("");
       setSuccess("Reporte rechazado. El dropshipper puede volver a liquidar esas ventas.");
     });
-  }
+  };
 
   return (
     <div className="space-y-4">
@@ -602,15 +645,75 @@ export function DropshipSettlementsPanel({
                   </>
                 ) : null}
                 {settlement.payouts.length > 0 ? (
-                  <p className="mt-2 text-[11px] text-zinc-500">
-                    Obligaciones:{" "}
-                    {settlement.payouts
-                      .map(
-                        (payout) =>
-                          `${SUPPLIER_PAYOUT_STATUS_LABELS[payout.status]} ${formatBusinessDateEs(payout.shipOn)}`,
-                      )
-                      .join(" · ")}
-                  </p>
+                  <div className="mt-3 space-y-3 border-t border-zinc-200 pt-3 dark:border-zinc-800">
+                    <p className="font-semibold text-zinc-700 dark:text-zinc-200">
+                      Pago a cada mayorista
+                    </p>
+                    {settlement.payouts.map((payout) => (
+                      <div
+                        key={payout.id}
+                        className="rounded-lg border border-zinc-200 bg-white p-2.5 dark:border-zinc-800 dark:bg-zinc-950"
+                      >
+                        <div className="flex flex-wrap items-baseline justify-between gap-2">
+                          <p className="min-w-0 truncate text-zinc-800 dark:text-zinc-100">
+                            {payout.supplierName ||
+                              `Mayorista ${payout.supplierUserId.slice(0, 8).toUpperCase()}`}
+                            <span className="ml-1 text-zinc-500">
+                              · {formatUsd(payout.amountUsd)} ·{" "}
+                              {SUPPLIER_PAYOUT_STATUS_LABELS[payout.status]}
+                            </span>
+                          </p>
+                        </div>
+                        {payout.paymentProofUrl ? (
+                          <SupplierPayoutProofPreview
+                            url={payout.paymentProofUrl}
+                            className="mt-2"
+                          />
+                        ) : settlement.status === "approved" ? (
+                          <form
+                            className="mt-2 space-y-2"
+                            onSubmit={(event) => {
+                              event.preventDefault();
+                              handleMarkPayoutPaid(
+                                payout,
+                                event.currentTarget,
+                              );
+                            }}
+                          >
+                            <label className="label-field" htmlFor={`proof-${payout.id}`}>
+                              Capture del pago al proveedor
+                            </label>
+                            <input
+                              id={`proof-${payout.id}`}
+                              name="proofImage"
+                              type="file"
+                              accept="image/jpeg,image/png,image/webp,image/gif"
+                              required
+                              className="block w-full text-xs"
+                            />
+                            <input
+                              name="paymentReference"
+                              className="input-field !mt-0 !py-1.5 text-xs"
+                              placeholder="Referencia (opcional)"
+                            />
+                            <button
+                              type="submit"
+                              className="btn-brand !min-h-8 !text-xs"
+                              disabled={pending && payingId === payout.id}
+                            >
+                              {pending && payingId === payout.id
+                                ? "Guardando…"
+                                : "Marcar pagado y subir capture"}
+                            </button>
+                          </form>
+                        ) : (
+                          <p className="mt-1 text-[11px] text-zinc-500">
+                            Aprueba el cierre diario para poder pagar al mayorista.
+                          </p>
+                        )}
+                      </div>
+                    ))}
+                  </div>
                 ) : null}
                 {settlement.ledger.length > 0 ? (
                   <>

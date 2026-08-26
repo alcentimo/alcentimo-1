@@ -6,9 +6,14 @@ import { createClient } from "@/lib/supabase/server";
 import { isSupportAdmin, resolveAuthEmail } from "@/lib/support/is-support-admin";
 import { fulfillApprovedDailySettlement } from "@/lib/dropship/settlement-fulfillment";
 import {
+  isMissingPayoutProofColumnError,
   mapPayoutRow,
   mapSettlementRecord,
+  SUPPLIER_PAYOUT_SELECT,
+  SUPPLIER_PAYOUT_SELECT_LEGACY,
 } from "@/lib/dropship/settlement-shared";
+import { uploadDropshipSettlementProof } from "@/lib/dropship/settlement-storage";
+import type { SupplierPayoutObligationView } from "@/lib/dropship/settlement-types";
 import { listSettlementBalanceEntries } from "@/lib/dropship/settlement-ledger";
 import { loadShipmentsBySettlementIds } from "@/lib/dropship/settlement-shipping-load";
 import {
@@ -66,12 +71,20 @@ export async function listDropshipDailySettlements(options?: {
     await loadSupplierBreakdownsBySettlementIds(settlementIds);
 
   if (settlementIds.length > 0) {
-    const { data: payoutRows } = await client
+    let { data: payoutRows, error: payoutSelectError } = await client
       .from("supplier_payout_obligations")
-      .select(
-        "id, settlement_id, supplier_user_id, business_date, ship_on, amount_usd, order_count, line_count, status",
-      )
+      .select(SUPPLIER_PAYOUT_SELECT)
       .in("settlement_id", settlementIds);
+    if (
+      payoutSelectError &&
+      isMissingPayoutProofColumnError(payoutSelectError.message)
+    ) {
+      const fallback = await client
+        .from("supplier_payout_obligations")
+        .select(SUPPLIER_PAYOUT_SELECT_LEGACY)
+        .in("settlement_id", settlementIds);
+      payoutRows = fallback.data;
+    }
 
     for (const row of (payoutRows as Record<string, unknown>[] | null) ?? []) {
       const settlementId = String(row.settlement_id);
@@ -179,9 +192,7 @@ export async function approveDropshipDailySettlement(input: {
 
   const { data: payoutRows } = await client
     .from("supplier_payout_obligations")
-    .select(
-      "id, settlement_id, supplier_user_id, business_date, ship_on, amount_usd, order_count, line_count, status",
-    )
+    .select(SUPPLIER_PAYOUT_SELECT)
     .eq("settlement_id", settlementId);
 
   const ledgerBySettlement = await listSettlementBalanceEntries([settlementId]);
@@ -286,5 +297,63 @@ export async function rejectDropshipDailySettlement(input: {
       shipmentsBySettlement.get(settlementId) ?? [],
       withNamedSuppliers(suppliers, supplierNames),
     ),
+  };
+}
+
+export async function markSupplierPayoutPaid(
+  formData: FormData,
+): Promise<ActionResult<{ payout: SupplierPayoutObligationView }>> {
+  const auth = await requirePlatformAdmin();
+  if ("error" in auth) return { error: auth.error };
+
+  const payoutId = String(formData.get("payoutId") ?? "").trim();
+  const paymentMethod = String(formData.get("paymentMethod") ?? "").trim();
+  const paymentReference = String(formData.get("paymentReference") ?? "").trim();
+  const proofFile = formData.get("proofImage");
+  if (!payoutId) return { error: "Liquidación no válida." };
+  if (!(proofFile instanceof File) || proofFile.size === 0) {
+    return { error: "Adjunta el capture del pago al proveedor." };
+  }
+
+  const uploaded = await uploadDropshipSettlementProof(auth.user.id, proofFile);
+  if (uploaded.error || !uploaded.url) {
+    return { error: uploaded.error ?? "No se pudo subir el comprobante." };
+  }
+
+  const admin = createAdminClient();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const client = admin as any;
+  const now = new Date().toISOString();
+
+  const { data: updated, error } = await client
+    .from("supplier_payout_obligations")
+    .update({
+      status: "paid",
+      payment_proof_url: uploaded.url,
+      payment_method: paymentMethod || null,
+      payment_reference: paymentReference || null,
+      paid_at: now,
+      updated_at: now,
+    })
+    .eq("id", payoutId)
+    .select(SUPPLIER_PAYOUT_SELECT)
+    .single();
+
+  if (error || !updated) {
+    return {
+      error: error?.message?.includes("payment_proof_url")
+        ? "Falta aplicar la migración de comprobantes de liquidación."
+        : (error?.message ?? "No se pudo marcar la liquidación como pagada."),
+    };
+  }
+
+  revalidatePath("/admin/dashboard");
+  revalidatePath("/proveedor/dashboard");
+  revalidatePath("/proveedor/dashboard/hub/pagos");
+
+  const payout = mapPayoutRow(updated as Record<string, unknown>);
+  const names = await loadSupplierDisplayNames([payout.supplierUserId]);
+  return {
+    payout: applySupplierNamesToPayouts([payout], names)[0] ?? payout,
   };
 }

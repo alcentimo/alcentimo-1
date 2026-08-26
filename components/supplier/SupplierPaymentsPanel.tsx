@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { Loader2, Wallet } from "lucide-react";
 import { SupplierEmptyState } from "@/components/supplier/SupplierEmptyState";
+import { SupplierPayoutProofPreview } from "@/components/supplier/SupplierPayoutProofPreview";
 import { PaymentConfigField } from "@/components/payments/PaymentConfigField";
 import { PaymentMethodCard } from "@/components/payments/PaymentMethodCard";
 import { SettingsSwitch } from "@/components/ui/SettingsSwitch";
@@ -118,19 +119,35 @@ export function SupplierPaymentsPanel({
             {payouts.map((payout) => (
               <li
                 key={payout.id}
-                className="flex flex-wrap items-center justify-between gap-2 py-2.5 text-sm"
+                className="flex flex-col gap-2 py-3 text-sm"
               >
-                <div>
-                  <p className="font-medium tabular-nums text-zinc-900 dark:text-zinc-50">
-                    {formatUsd(payout.amountUsd)}
-                  </p>
-                  <p className="text-xs text-zinc-500">
-                    {formatBusinessDateEs(payout.businessDate)}
-                  </p>
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <div>
+                    <p className="font-medium tabular-nums text-zinc-900 dark:text-zinc-50">
+                      {formatUsd(payout.amountUsd)}
+                    </p>
+                    <p className="text-xs text-zinc-500">
+                      {formatBusinessDateEs(payout.businessDate)}
+                      {payout.paymentReference
+                        ? ` · Ref. ${payout.paymentReference}`
+                        : ""}
+                    </p>
+                  </div>
+                  <span className="rounded-full bg-zinc-100 px-2 py-0.5 text-[10px] font-semibold text-zinc-700 dark:bg-zinc-800 dark:text-zinc-200">
+                    {SUPPLIER_PAYOUT_STATUS_LABELS[payout.status]}
+                  </span>
                 </div>
-                <span className="rounded-full bg-zinc-100 px-2 py-0.5 text-[10px] font-semibold text-zinc-700 dark:bg-zinc-800 dark:text-zinc-200">
-                  {SUPPLIER_PAYOUT_STATUS_LABELS[payout.status]}
-                </span>
+                {payout.paymentProofUrl ? (
+                  <SupplierPayoutProofPreview url={payout.paymentProofUrl} />
+                ) : payout.status === "paid" ? (
+                  <p className="text-xs text-amber-700 dark:text-amber-300">
+                    Pagado, pero aún no hay capture visible. Si falta, contacta a Alcéntimo.
+                  </p>
+                ) : (
+                  <p className="text-xs text-zinc-500">
+                    El capture del pago aparecerá aquí cuando Alcéntimo liquide y lo cargue.
+                  </p>
+                )}
               </li>
             ))}
           </ul>

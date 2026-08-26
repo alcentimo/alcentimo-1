@@ -39,7 +39,7 @@ export function buildDispatchOrderText(details: DispatchOrderDetails): string {
 
   const lines = [
     `Alcéntimo · Pedido mayorista #${details.orderCode}`,
-    "Un dropshipper vendió estos productos. Apártalos y márcalos listos para recolección; Alcéntimo o su transporte pasará a retirarlos.",
+    "Alcéntimo te compró estos productos. Apártalos y márcalos listos para recolección; Alcéntimo o su transporte pasará a retirarlos.",
     "",
     "📦 Productos a apartar:",
     ...productLines,

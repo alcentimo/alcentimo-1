@@ -11,9 +11,9 @@ export type SupplierOrderStatus = (typeof SUPPLIER_ORDER_STATUSES)[number];
 
 export const SUPPLIER_ORDER_STATUS_LABELS: Record<SupplierOrderStatus, string> =
   {
-    pendiente: "Vendido por dropshipper",
+    pendiente: "Por preparar",
     preparando: "Listo para recolección",
-    despachado: "Retirado / Entregado al delivery de Alcéntimo",
+    despachado: "Retirado",
   };
 
 /** Estados que el mayorista puede marcar en el hub. El retiro lo confirma Alcéntimo. */

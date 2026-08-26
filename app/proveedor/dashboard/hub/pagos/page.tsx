@@ -14,7 +14,7 @@ export default async function ProveedorHubPagosPage() {
       <DashboardPageHeader
         sectionLabel="Suministro"
         title="Pagos"
-        description="Liquidaciones acreditadas y datos de tu cuenta para cobrar."
+        description="Liquidaciones acreditadas, captures de pago de Alcéntimo y datos de tu cuenta para cobrar."
       />
       {data.paymentConfigError ? (
         <p className="supplier-hub-alert">

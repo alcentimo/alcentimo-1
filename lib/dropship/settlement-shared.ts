@@ -87,7 +87,30 @@ export function mapPayoutRow(
     orderCount: Number(row.order_count) || 0,
     lineCount: Number(row.line_count) || 0,
     status: isSupplierPayoutStatus(statusRaw) ? statusRaw : "scheduled",
+    paymentProofUrl:
+      typeof row.payment_proof_url === "string" && row.payment_proof_url.trim()
+        ? row.payment_proof_url.trim()
+        : null,
+    paymentMethod:
+      typeof row.payment_method === "string" && row.payment_method.trim()
+        ? row.payment_method.trim()
+        : null,
+    paymentReference:
+      typeof row.payment_reference === "string" && row.payment_reference.trim()
+        ? row.payment_reference.trim()
+        : null,
+    paidAt: typeof row.paid_at === "string" && row.paid_at ? row.paid_at : null,
   };
+}
+
+export const SUPPLIER_PAYOUT_SELECT =
+  "id, settlement_id, supplier_user_id, business_date, ship_on, amount_usd, order_count, line_count, status, payment_proof_url, payment_method, payment_reference, paid_at";
+
+export const SUPPLIER_PAYOUT_SELECT_LEGACY =
+  "id, settlement_id, supplier_user_id, business_date, ship_on, amount_usd, order_count, line_count, status";
+
+export function isMissingPayoutProofColumnError(message: string): boolean {
+  return /payment_proof_url|paid_at|column/i.test(message);
 }
 
 export async function listLockedCatalogOrderIds(
