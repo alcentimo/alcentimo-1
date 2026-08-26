@@ -9,6 +9,7 @@ import type {
   DropshipSettlementShipmentProduct,
   DropshipSettlementShipmentView,
   DropshipSettlementShippingView,
+  SupplierPayoutProductLine,
 } from "@/lib/dropship/settlement-types";
 
 export const SETTLEMENT_LINE_SELECT =
@@ -259,6 +260,37 @@ export function groupSettlementShipments(
   }
 
   return Array.from(byOrder.values());
+}
+
+/** Agrupa líneas de liquidación en productos (sin datos de cliente ni dropshipper). */
+export function aggregateSupplierPayoutProducts(
+  lines: Array<{
+    productTitle: string;
+    quantity: number;
+    supplierPayoutUsd: number;
+    supplierProductId?: string | null;
+  }>,
+): SupplierPayoutProductLine[] {
+  const byKey = new Map<string, SupplierPayoutProductLine>();
+  for (const line of lines) {
+    const key = (line.supplierProductId || line.productTitle).trim() || line.productTitle;
+    const current = byKey.get(key);
+    if (current) {
+      current.quantity += line.quantity;
+      current.amountUsd = roundMoneyDisplay(
+        current.amountUsd + line.supplierPayoutUsd,
+      );
+      continue;
+    }
+    byKey.set(key, {
+      title: line.productTitle,
+      quantity: line.quantity,
+      amountUsd: roundMoneyDisplay(line.supplierPayoutUsd),
+    });
+  }
+  return Array.from(byKey.values()).sort((a, b) =>
+    a.title.localeCompare(b.title, "es"),
+  );
 }
 
 export function filterShipmentsForSupplier(

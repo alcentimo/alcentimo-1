@@ -116,6 +116,11 @@ export function SupplierOrdersPanel({
         />
       ) : (
         <>
+          <p className="rounded-xl border border-teal-200 bg-teal-50/80 px-3 py-2.5 text-sm text-teal-950 dark:border-teal-900/50 dark:bg-teal-950/30 dark:text-teal-100">
+            Pedidos de compra de Alcéntimo. Prepara el stock; Alcéntimo pasa a
+            retirarlo y lo despacha a los clientes. No verás datos del
+            dropshipper ni del comprador final.
+          </p>
           <div
             className="supplier-hub-orders-filters"
             role="tablist"

@@ -8,6 +8,12 @@ import {
   resolveSupplierAuthEmail,
 } from "@/lib/supplier/access";
 import {
+  HUB_COLLECTION_BUYER_NAME,
+  HUB_COLLECTION_CARRIER,
+  HUB_COLLECTION_NOTES,
+  isHubCollectionSupplierOrder,
+} from "@/lib/dropship/hub-collection";
+import {
   isSupplierOrderStatus,
   supplierCanSetOrderStatus,
   supplierOrderDispatchUnlocked,
@@ -171,6 +177,23 @@ function mapOrder(
   };
 }
 
+/** Quita datos de cliente final y dropshipper del DTO del panel del proveedor. */
+function toSupplierFacingOrder(order: SupplierOrder): SupplierOrder {
+  if (!isHubCollectionSupplierOrder(order)) return order;
+  return {
+    ...order,
+    buyerName: HUB_COLLECTION_BUYER_NAME,
+    buyerDocumentId: null,
+    buyerPhone: null,
+    buyerAddress: null,
+    shippingCarrier: HUB_COLLECTION_CARRIER,
+    shippingBranchName: null,
+    shippingBranchAddress: null,
+    senderName: null,
+    notes: HUB_COLLECTION_NOTES,
+  };
+}
+
 const SUPPLIER_ORDER_SELECT =
   "id, buyer_name, buyer_document_id, buyer_phone, buyer_address, shipping_carrier, shipping_branch_name, shipping_branch_address, status, tracking_number, notes, total_usd, created_at, updated_at, source_catalog_order_id, payment_status, payment_method, payment_reference, payment_proof_url, payment_notes, payment_notified_at, payment_reported_at, settlement_id, ship_on, sender_name, dispatch_notified_at";
 
@@ -239,7 +262,9 @@ export async function listSupplierOrders(): Promise<
 
   return {
     orders: ordersRaw.map((row) =>
-      mapOrder(row, itemsByOrder.get(String(row.id)) ?? []),
+      toSupplierFacingOrder(
+        mapOrder(row, itemsByOrder.get(String(row.id)) ?? []),
+      ),
     ),
   };
 }
@@ -540,9 +565,11 @@ export async function updateSupplierOrderDispatch(input: {
   revalidatePath("/proveedor/dashboard");
 
   return {
-    order: mapOrder(
-      orderRow as Record<string, unknown>,
-      ((itemRows as Record<string, unknown>[] | null) ?? []).map(mapItem),
+    order: toSupplierFacingOrder(
+      mapOrder(
+        orderRow as Record<string, unknown>,
+        ((itemRows as Record<string, unknown>[] | null) ?? []).map(mapItem),
+      ),
     ),
   };
 }

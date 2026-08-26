@@ -172,7 +172,7 @@ export function SupplierPaymentsPanel({
           <SupplierEmptyState
             icon={Wallet}
             title="Sin liquidaciones aún"
-            description="Cuando Alcéntimo te pague por compras de inventario, cada movimiento quedará registrado aquí, igual que el reporte de pago del dropshipper pero a tu favor."
+            description="Cuando Alcéntimo te pague por compras de inventario, verás aquí el comprobante, el monto y el detalle consolidado de productos."
           />
         ) : filtered.length === 0 ? (
           <SupplierEmptyState
