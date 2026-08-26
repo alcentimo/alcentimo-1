@@ -261,3 +261,34 @@ export function groupSettlementShipments(
   return Array.from(byOrder.values());
 }
 
+export function filterShipmentsForSupplier(
+  shipments: DropshipSettlementShipmentView[],
+  supplierUserId: string,
+): DropshipSettlementShipmentView[] {
+  if (!supplierUserId) return shipments;
+  return shipments.flatMap((shipment) => {
+    const products = (shipment.products ?? []).filter(
+      (product) =>
+        !product.supplierUserId || product.supplierUserId === supplierUserId,
+    );
+    if ((shipment.products?.length ?? 0) > 0 && products.length === 0) {
+      return [];
+    }
+    const quantity =
+      products.length > 0
+        ? products.reduce((sum, product) => sum + product.quantity, 0)
+        : shipment.quantity;
+    return [
+      {
+        ...shipment,
+        products,
+        productTitles:
+          products.length > 0
+            ? products.map((product) => product.title)
+            : shipment.productTitles,
+        quantity,
+      },
+    ];
+  });
+}
+

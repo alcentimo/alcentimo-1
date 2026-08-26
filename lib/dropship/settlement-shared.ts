@@ -100,6 +100,7 @@ export function mapPayoutRow(
         ? row.payment_reference.trim()
         : null,
     paidAt: typeof row.paid_at === "string" && row.paid_at ? row.paid_at : null,
+    shipments: [],
   };
 }
 

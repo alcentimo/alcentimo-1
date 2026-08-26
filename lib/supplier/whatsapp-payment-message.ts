@@ -36,7 +36,7 @@ export function buildSupplierPaymentWhatsAppMessage(options: {
   );
 
   const lines = [
-    `Alcéntimo te compró estos productos. Apártalos y márcalos listos para recolección.`,
+    `Alcéntimo te compró estos productos. Apártalos. Márcalos listos para recolección cuando el pago figure como registrado.`,
     "",
     `📦 Pedido mayorista #${code}`,
     `Estado de liquidación: ${SUPPLIER_ORDER_PAYMENT_STATUS_LABELS[options.order.paymentStatus]}`,

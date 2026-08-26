@@ -10,6 +10,7 @@ import {
 import {
   isSupplierOrderStatus,
   supplierCanSetOrderStatus,
+  supplierOrderDispatchUnlocked,
   type CreateSupplierOrderItemInput,
   type SupplierOrder,
   type SupplierOrderItem,
@@ -452,20 +453,38 @@ export async function updateSupplierOrderDispatch(input: {
   const admin = createAdminClient();
   const { data: currentRow, error: currentError } = await admin
     .from("supplier_orders")
-    .select("status")
+    .select("status, payment_status, settlement_id, source_catalog_order_id")
     .eq("id", orderId)
     .eq("supplier_user_id", supplierUserId)
     .maybeSingle();
 
   if (currentError) return { error: currentError.message };
   if (!currentRow) return { error: "Pedido no encontrado." };
-  const currentStatus = String(
-    (currentRow as Record<string, unknown>).status ?? "",
-  );
+  const current = currentRow as Record<string, unknown>;
+  const currentStatus = String(current.status ?? "");
   if (currentStatus === "despachado") {
     return {
       error:
         "Este pedido ya fue retirado por Alcéntimo. No puedes cambiar el estado.",
+    };
+  }
+
+  const paymentStatusRaw = String(current.payment_status ?? "pendiente");
+  const dispatchUnlocked = supplierOrderDispatchUnlocked({
+    paymentStatus: isSupplierOrderPaymentStatus(paymentStatusRaw)
+      ? paymentStatusRaw
+      : "pendiente",
+    settlementId:
+      typeof current.settlement_id === "string" ? current.settlement_id : null,
+    sourceCatalogOrderId:
+      typeof current.source_catalog_order_id === "string"
+        ? current.source_catalog_order_id
+        : null,
+  });
+  if (input.status === "preparando" && !dispatchUnlocked) {
+    return {
+      error:
+        "El despacho se habilita cuando Alcéntimo registre el pago de esta liquidación.",
     };
   }
 

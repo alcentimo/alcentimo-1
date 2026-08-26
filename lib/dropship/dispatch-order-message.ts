@@ -39,7 +39,7 @@ export function buildDispatchOrderText(details: DispatchOrderDetails): string {
 
   const lines = [
     `Alcéntimo · Pedido mayorista #${details.orderCode}`,
-    "Alcéntimo te compró estos productos. Apártalos y márcalos listos para recolección; Alcéntimo o su transporte pasará a retirarlos.",
+    "Alcéntimo te compró estos productos. Apártalos. El despacho se habilita cuando Alcéntimo registre el pago en tu panel; entonces márcalos listos para recolección.",
     "",
     "📦 Productos a apartar:",
     ...productLines,
@@ -49,7 +49,7 @@ export function buildDispatchOrderText(details: DispatchOrderDetails): string {
       ? destinationBits.map((bit) => `• ${bit}`).join("\n")
       : "• Sin destino registrado",
     "",
-    "No despaches ni cobres. Alcéntimo retira y te liquida.",
+    "No despaches ni cobres al cliente. Alcéntimo te paga y retira.",
   ];
 
   if (details.dashboardUrl?.trim()) {

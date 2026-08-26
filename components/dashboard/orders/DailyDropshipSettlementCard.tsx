@@ -138,11 +138,10 @@ export function DailyDropshipSettlementCard({
         <p className="inline-flex w-full items-start gap-2 rounded-xl border border-emerald-200 bg-emerald-50/80 px-3 py-2.5 text-sm text-emerald-900 dark:border-emerald-900/50 dark:bg-emerald-950/30 dark:text-emerald-100">
           <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
           <span>
-            Pago verificado. Los mayoristas ya pueden despachar
+            Pago verificado. Alcéntimo liquidará a cada mayorista; el despacho se habilita cuando ese pago quede registrado.
             {existing?.payouts[0]?.shipOn
-              ? ` el ${formatBusinessDateEs(existing.payouts[0].shipOn)}`
-              : " al día siguiente"}
-            .
+              ? ` Recolección a partir del ${formatBusinessDateEs(existing.payouts[0].shipOn)}.`
+              : ""}
           </span>
         </p>
       ) : null}

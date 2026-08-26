@@ -28,6 +28,16 @@ export function supplierCanSetOrderStatus(
   return status === "pendiente" || status === "preparando";
 }
 
+/** Pedidos ligados a una liquidación de Alcéntimo: el despacho espera el pago registrado. */
+export function supplierOrderDispatchUnlocked(order: {
+  paymentStatus: SupplierOrderPaymentStatus;
+  settlementId: string | null;
+  sourceCatalogOrderId: string | null;
+}): boolean {
+  if (!order.settlementId && !order.sourceCatalogOrderId) return true;
+  return order.paymentStatus === "confirmado";
+}
+
 export function isSupplierOrderStatus(
   value: unknown,
 ): value is SupplierOrderStatus {

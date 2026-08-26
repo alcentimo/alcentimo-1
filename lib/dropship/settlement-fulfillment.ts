@@ -146,7 +146,7 @@ export async function fulfillApprovedDailySettlement(input: {
     const orderPatch = {
       settlement_id: input.settlementId,
       ship_on: shipOn,
-      payment_status: "confirmado",
+      payment_status: "reportado",
       total_usd: totalUsd,
       sender_name: senderName,
       buyer_name: customerName,
