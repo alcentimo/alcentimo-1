@@ -4,7 +4,7 @@ import {
   MERCHANT_SIGNUP_HREF,
 } from "@/lib/landing/merchant-signup-href";
 import {
-  SUPPLIER_DASHBOARD_PATH,
+  SUPPLIER_LOGIN_PATH,
   SUPPLIER_ZONE_HREF,
 } from "@/lib/landing/supplier-zone-href";
 
@@ -33,7 +33,7 @@ export function LandingFooter() {
             <Link href={MERCHANT_LOGIN_HREF} className="link-brand">
               Acceso tienda
             </Link>
-            <Link href={SUPPLIER_DASHBOARD_PATH} className="link-brand">
+            <Link href={SUPPLIER_LOGIN_PATH} className="link-brand">
               Acceso proveedores
             </Link>
             <Link href="/terms" className="link-brand">

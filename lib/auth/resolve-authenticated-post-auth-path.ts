@@ -1,10 +1,11 @@
 "use server";
 
 import {
+  pickPostLoginPath,
   resolvePostAuthPath,
-  SUPPLIER_POST_AUTH_PATH,
+  type LoginIntent,
 } from "@/lib/auth/post-auth-redirect";
-import { shouldForceSupplierPostAuthRedirect } from "@/lib/supplier/access";
+import { loadPostAuthAccountFacts } from "@/lib/auth/post-auth-account-facts";
 
 export type PostAuthIdentity = {
   userId: string;
@@ -15,27 +16,27 @@ export type PostAuthIdentity = {
  * Destino post-auth sin tocar cookies de Supabase (evita
  * "Unexpected response was received from the server" en Server Actions).
  *
- * Login de tienda/cliente: panel dropshipping, salvo que `next` pida
- * explícitamente /proveedor y el usuario sea proveedor real.
+ * Login de tienda: panel dropshipping. Login de cliente: cuenta de la tienda.
+ * Hub mayorista solo si el origen/next es /proveedor y el usuario es proveedor.
  */
 export async function resolveAuthenticatedPostAuthPath(
   next?: string | null,
   identity?: PostAuthIdentity | null,
+  intent?: LoginIntent | null,
 ): Promise<string> {
   try {
     const nextPath = next?.trim() || null;
-    const wantsSupplierHub = Boolean(nextPath?.startsWith("/proveedor"));
-
-    if (wantsSupplierHub && identity?.userId) {
-      const isSupplier = await shouldForceSupplierPostAuthRedirect({
-        email: identity.email ?? null,
-        userId: identity.userId,
-      });
-      if (isSupplier) return SUPPLIER_POST_AUTH_PATH;
+    if (!identity?.userId) {
+      return resolvePostAuthPath(nextPath);
     }
 
-    // Login de tienda/cliente: nunca redirigir al hub de proveedores.
-    return resolvePostAuthPath(nextPath);
+    const facts = await loadPostAuthAccountFacts({
+      userId: identity.userId,
+      email: identity.email ?? null,
+      next: nextPath,
+      intent: intent ?? "merchant",
+    });
+    return pickPostLoginPath(facts);
   } catch {
     return resolvePostAuthPath(next);
   }

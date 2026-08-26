@@ -4,7 +4,7 @@ import Link from "next/link";
 import { ChevronDown, Package, Store } from "lucide-react";
 import { DropdownMenu } from "@/components/ui/dropdown-menu";
 import { MERCHANT_LOGIN_HREF } from "@/lib/landing/merchant-signup-href";
-import { SUPPLIER_DASHBOARD_PATH } from "@/lib/landing/supplier-zone-href";
+import { SUPPLIER_LOGIN_PATH } from "@/lib/landing/supplier-zone-href";
 
 const loginOptions = [
   {
@@ -14,7 +14,7 @@ const loginOptions = [
     icon: Store,
   },
   {
-    href: SUPPLIER_DASHBOARD_PATH,
+    href: SUPPLIER_LOGIN_PATH,
     label: "Panel de proveedores",
     description: "Mayoristas y catálogo B2B",
     icon: Package,

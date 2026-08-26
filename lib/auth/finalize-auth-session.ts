@@ -1,9 +1,9 @@
 import { ensureUserProfile } from "@/lib/auth/ensure-profile";
 import { ensureDefaultMerchantStore } from "@/lib/stores/ensure-default-merchant-store";
+import { loadPostAuthAccountFacts } from "@/lib/auth/post-auth-account-facts";
 import {
   isInvitationNextPath,
-  resolvePostAuthPath,
-  SUPPLIER_POST_AUTH_PATH,
+  pickPostLoginPath,
 } from "@/lib/auth/post-auth-redirect";
 import { sanitizeAuthReturnUrl } from "@/lib/auth/validate-auth-return-url";
 import { resolveCustomerNextDestination } from "@/lib/customers/middleware-access";
@@ -12,7 +12,6 @@ import { isValidCustomerPhone } from "@/lib/customers/phone-auth";
 import { linkGuestOrdersToCustomer } from "@/lib/orders/link-guest-orders";
 import type { SupabaseServerClient } from "@/lib/supabase/server";
 import { getSiteUrl } from "@/lib/site-url";
-import { shouldForceSupplierPostAuthRedirect } from "@/lib/supplier/access";
 import { resolveAuthEmail } from "@/lib/support/admin-access";
 
 function resolveAuthRedirectTarget(
@@ -61,10 +60,15 @@ export async function finalizeAuthSessionRedirect(
   const normalizedStoreSlug = input.storeSlug?.trim().toLowerCase() || null;
   const nextPath = input.nextPath?.trim() || null;
   const wantsSupplierHub = Boolean(nextPath?.startsWith("/proveedor"));
+  const loginIntent = normalizedStoreSlug
+    ? "customer"
+    : wantsSupplierHub
+      ? "supplier"
+      : "merchant";
 
   if (
     !normalizedStoreSlug &&
-    !wantsSupplierHub &&
+    loginIntent === "merchant" &&
     !isInvitationNextPath(nextPath)
   ) {
     try {
@@ -74,20 +78,13 @@ export async function finalizeAuthSessionRedirect(
     }
   }
 
-  // Solo forzar hub mayorista cuando el flujo lo pide explícitamente.
-  if (wantsSupplierHub && !normalizedStoreSlug) {
-    const isSupplier = await shouldForceSupplierPostAuthRedirect({
-      email: resolveAuthEmail(user),
-      userId: user.id,
-    });
-    if (isSupplier) {
-      return resolveAuthRedirectTarget(SUPPLIER_POST_AUTH_PATH, siteUrl, null);
-    }
-  }
-
-  const resolvedNext = normalizedStoreSlug
-    ? resolvePostAuthPath(nextPath)
-    : resolvePostAuthPath(nextPath);
+  const facts = await loadPostAuthAccountFacts({
+    userId: user.id,
+    email: resolveAuthEmail(user),
+    next: nextPath,
+    intent: loginIntent,
+  });
+  const resolvedNext = pickPostLoginPath(facts);
   const safeNext = resolveAuthRedirectTarget(
     resolvedNext,
     siteUrl,

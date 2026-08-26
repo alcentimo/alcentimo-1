@@ -28,10 +28,14 @@ export function AuthSessionRedirect() {
         if (cancelled || !user) return;
 
         const next = searchParams.get("next");
-        const destination = await resolveAuthenticatedPostAuthPath(next, {
-          userId: user.id,
-          email: user.email ?? null,
-        }).catch(() => resolvePostAuthPath(next));
+        const destination = await resolveAuthenticatedPostAuthPath(
+          next,
+          {
+            userId: user.id,
+            email: user.email ?? null,
+          },
+          "merchant",
+        ).catch(() => resolvePostAuthPath(next));
         if (cancelled) return;
         setRedirecting(true);
         window.location.replace(destination);

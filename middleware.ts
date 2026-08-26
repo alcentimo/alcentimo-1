@@ -30,6 +30,7 @@ import {
 import { getMerchantStoreRole } from "@/lib/team/store-context";
 import {
   applySafeInternalNextRedirect,
+  pickPostLoginPath,
   SUPPLIER_POST_AUTH_PATH,
 } from "@/lib/auth/post-auth-redirect";
 import { shouldRedirectGoogleAuthToApex } from "@/lib/auth/google-oauth-origin";
@@ -575,37 +576,40 @@ export async function middleware(request: NextRequest) {
       return NextResponse.redirect(loginUrl);
     }
 
-    // Solo proveedores sin tienda saltan onboarding → hub mayorista.
-    const forceSupplierHub = await shouldForceSupplierPostAuthRedirect({
-      email: resolveAuthEmail(authenticatedUser),
-      userId: authenticatedUser.id,
-    });
-    if (
-      forceSupplierHub &&
-      !(await userHasMerchantStore(supabase, authenticatedUser.id))
-    ) {
-      const supplierUrl = request.nextUrl.clone();
-      supplierUrl.pathname = SUPPLIER_POST_AUTH_PATH;
-      supplierUrl.search = "";
-      return NextResponse.redirect(supplierUrl);
-    }
-
-    if (await userHasMerchantStore(supabase, authenticatedUser.id)) {
+    // Tienda o cliente primero; hub mayorista solo si no hay otro panel.
+    const hasMerchantStoreOnboarding = await userHasMerchantStore(
+      supabase,
+      authenticatedUser.id,
+    );
+    if (hasMerchantStoreOnboarding) {
       const dashboardUrl = request.nextUrl.clone();
       dashboardUrl.pathname = "/dashboard/catalogo";
       dashboardUrl.search = "";
       return NextResponse.redirect(dashboardUrl);
     }
 
-    const customerStore = await getPrimaryCustomerStore(
+    const customerStoreOnboarding = await getPrimaryCustomerStore(
       supabase,
       authenticatedUser.id,
     );
-    if (customerStore) {
+    if (customerStoreOnboarding) {
       const accountUrl = request.nextUrl.clone();
-      accountUrl.pathname = buildCustomerAccountPath(customerStore.storeSlug);
+      accountUrl.pathname = buildCustomerAccountPath(
+        customerStoreOnboarding.storeSlug,
+      );
       accountUrl.search = "";
       return NextResponse.redirect(accountUrl);
+    }
+
+    const forceSupplierHub = await shouldForceSupplierPostAuthRedirect({
+      email: resolveAuthEmail(authenticatedUser),
+      userId: authenticatedUser.id,
+    });
+    if (forceSupplierHub) {
+      const supplierUrl = request.nextUrl.clone();
+      supplierUrl.pathname = SUPPLIER_POST_AUTH_PATH;
+      supplierUrl.search = "";
+      return NextResponse.redirect(supplierUrl);
     }
 
     const dashboardUrl = request.nextUrl.clone();
@@ -627,37 +631,19 @@ export async function middleware(request: NextRequest) {
         return supabaseResponse;
       }
 
-      const forceSupplierWithoutStoreMode =
-        (await shouldForceSupplierPostAuthRedirect({
-          email: resolveAuthEmail(authenticatedUser),
-          userId: authenticatedUser.id,
-        })) && !(await lookupSupplierStoreModeByUserId(authenticatedUser.id));
-
-      if (forceSupplierWithoutStoreMode) {
-        const supplierUrl = request.nextUrl.clone();
-        supplierUrl.pathname = SUPPLIER_POST_AUTH_PATH;
-        supplierUrl.search = "";
-        return NextResponse.redirect(supplierUrl);
-      }
-
       const hasMerchantStore = await userHasMerchantStore(
         supabase,
         authenticatedUser.id,
       );
+      const supplierStoreMode = await lookupSupplierStoreModeByUserId(
+        authenticatedUser.id,
+      );
+      const isSupplierAccount = await shouldForceSupplierPostAuthRedirect({
+        email: resolveAuthEmail(authenticatedUser),
+        userId: authenticatedUser.id,
+      });
 
-      // Tiendas con panel de dropshipping: nunca forzar /proveedor.
-      if (!hasMerchantStore) {
-        const forceSupplierHub = await shouldForceSupplierPostAuthRedirect({
-          email: resolveAuthEmail(authenticatedUser),
-          userId: authenticatedUser.id,
-        });
-        if (forceSupplierHub) {
-          const supplierUrl = request.nextUrl.clone();
-          supplierUrl.pathname = SUPPLIER_POST_AUTH_PATH;
-          supplierUrl.search = "";
-          return NextResponse.redirect(supplierUrl);
-        }
-
+      if (!hasMerchantStore && !supplierStoreMode) {
         const customerStore = await getPrimaryCustomerStore(
           supabase,
           authenticatedUser.id,
@@ -668,6 +654,13 @@ export async function middleware(request: NextRequest) {
           accountUrl.pathname = buildCustomerAccountPath(customerStore.storeSlug);
           accountUrl.search = "";
           return NextResponse.redirect(accountUrl);
+        }
+
+        if (isSupplierAccount) {
+          const supplierUrl = request.nextUrl.clone();
+          supplierUrl.pathname = SUPPLIER_POST_AUTH_PATH;
+          supplierUrl.search = "";
+          return NextResponse.redirect(supplierUrl);
         }
 
         // Sin tienda aún: el panel crea una genérica. No enviar a onboarding.
@@ -703,28 +696,12 @@ export async function middleware(request: NextRequest) {
       const redirectUrl = request.nextUrl.clone();
       const authEmail = resolveAuthEmail(authenticatedUser);
       const wantsSupplierHub = Boolean(next?.startsWith(PROVEEDOR_PREFIX));
-      const forceSupplierHub =
-        wantsSupplierHub &&
-        (await shouldForceSupplierPostAuthRedirect({
-          email: authEmail,
-          userId: authenticatedUser.id,
-        }));
 
       if (
         next?.startsWith(ADMIN_PREFIX) &&
         checkSupportAdminAccess(authEmail).ok
       ) {
         applySafeInternalNextRedirect(redirectUrl, next, "/admin/dashboard");
-        return NextResponse.redirect(redirectUrl);
-      }
-
-      // Solo si el login pide explícitamente el hub de proveedores.
-      if (forceSupplierHub) {
-        applySafeInternalNextRedirect(
-          redirectUrl,
-          SUPPLIER_POST_AUTH_PATH,
-          SUPPLIER_POST_AUTH_PATH,
-        );
         return NextResponse.redirect(redirectUrl);
       }
 
@@ -737,48 +714,29 @@ export async function middleware(request: NextRequest) {
         supabase,
         authenticatedUser.id,
       );
+      const supplierStoreMode = await lookupSupplierStoreModeByUserId(
+        authenticatedUser.id,
+      );
+      const isSupplierAccount = await shouldForceSupplierPostAuthRedirect({
+        email: authEmail,
+        userId: authenticatedUser.id,
+      });
+      const customerStore = hasMerchantStore
+        ? null
+        : await getPrimaryCustomerStore(supabase, authenticatedUser.id);
 
-      if (hasMerchantStore) {
-        applySafeInternalNextRedirect(
-          redirectUrl,
-          next &&
-            (next.startsWith(DASHBOARD_PREFIX) ||
-              next.startsWith(ADMIN_PREFIX) ||
-              next.startsWith(MERCADO_OCULTO_PREFIX) ||
-              next.startsWith(DASHBOARD_INVITATION_PATH))
-            ? next
-            : null,
-          "/dashboard/catalogo",
-        );
-      } else if (next?.startsWith(DASHBOARD_INVITATION_PATH)) {
-        applySafeInternalNextRedirect(redirectUrl, next, DASHBOARD_INVITATION_PATH);
-      } else {
-        // Proveedor puro (sin tienda) → hub; cliente → cuenta; resto → panel.
-        const supplierOnly = await shouldForceSupplierPostAuthRedirect({
-          email: authEmail,
-          userId: authenticatedUser.id,
-        });
-        if (supplierOnly) {
-          redirectUrl.pathname = SUPPLIER_POST_AUTH_PATH;
-          redirectUrl.search = "";
-        } else {
-          const customerStore = await getPrimaryCustomerStore(
-            supabase,
-            authenticatedUser.id,
-          );
+      const destination = pickPostLoginPath({
+        next,
+        intent: wantsSupplierHub ? "supplier" : "merchant",
+        isSupplier: isSupplierAccount,
+        hasMerchantStore,
+        supplierStoreMode,
+        customerAccountPath: customerStore
+          ? buildCustomerAccountPath(customerStore.storeSlug)
+          : null,
+      });
 
-          if (customerStore) {
-            redirectUrl.pathname = buildCustomerAccountPath(
-              customerStore.storeSlug,
-            );
-            redirectUrl.search = "";
-          } else {
-            redirectUrl.pathname = "/dashboard/catalogo";
-            redirectUrl.search = "";
-          }
-        }
-      }
-
+      applySafeInternalNextRedirect(redirectUrl, destination, destination);
       return NextResponse.redirect(redirectUrl);
     }
   }

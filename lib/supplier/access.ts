@@ -253,10 +253,8 @@ export async function shouldForceSupplierPostAuthRedirect(input: {
     return true;
   }
 
-  if (normalizedEmail) {
-    return emailHasActiveSupplierProfile(normalizedEmail);
-  }
-
+  // No emparejar solo por email: un cliente/tienda puede compartir correo
+  // con un perfil mayorista y acabaría en /proveedor/dashboard.
   return false;
 }
 
