@@ -218,6 +218,28 @@ export async function loadHydratedSettlementLines(
   }));
 }
 
+/** Líneas crudas por liquidación, sin hidratar envío ni datos de cliente. */
+export async function loadSettlementLinesBySettlementIds(
+  settlementIds: string[],
+): Promise<Map<string, DropshipSettlementLineView[]>> {
+  const result = new Map<string, DropshipSettlementLineView[]>();
+  if (settlementIds.length === 0) return result;
+
+  const rows = await selectSettlementLineRows(settlementIds);
+  for (const row of rows) {
+    const settlementId = String(row.settlement_id ?? "");
+    if (!settlementId) continue;
+    const line = mapSettlementLineRow(row);
+    const list = result.get(settlementId) ?? [];
+    list.push({
+      ...line,
+      shipping: null,
+    });
+    result.set(settlementId, list);
+  }
+  return result;
+}
+
 export async function loadShipmentsBySettlementIds(
   settlementIds: string[],
 ): Promise<Map<string, DropshipSettlementShipmentView[]>> {

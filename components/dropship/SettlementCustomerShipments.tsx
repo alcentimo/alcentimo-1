@@ -48,7 +48,7 @@ function compactAgencyLabel(shipment: DropshipSettlementShipmentView): string {
 interface SettlementCustomerShipmentsProps {
   shipments?: DropshipSettlementShipmentView[];
   lines?: DropshipSettlementLineView[];
-  variant?: "merchant" | "admin" | "supplier";
+  variant?: "merchant" | "admin";
   className?: string;
   emptyLabel?: string;
   /** Lista compacta con acordeón. Por defecto en dropshipper; admin queda expandido. */
@@ -69,7 +69,6 @@ export function SettlementCustomerShipments({
       : groupSettlementShipments(lines ?? []);
 
   const isAdmin = variant === "admin";
-  const isSupplier = variant === "supplier";
   const useAccordion = collapsible ?? !isAdmin;
   const [openKeys, setOpenKeys] = useState<Set<string>>(() => new Set());
 
@@ -105,11 +104,7 @@ export function SettlementCustomerShipments({
     <div className={cn("space-y-2", className)}>
       <div>
         <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">
-          {isAdmin
-            ? "Pedidos de clientes finales"
-            : isSupplier
-              ? "Pedidos a recolectar"
-              : "Pedidos del día"}
+          {isAdmin ? "Pedidos de clientes finales" : "Pedidos del día"}
         </p>
         <p className="mt-0.5 text-xs text-zinc-500">
           {items.length} pedido{items.length === 1 ? "" : "s"} · {productCount}{" "}

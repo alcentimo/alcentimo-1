@@ -5,15 +5,7 @@ export type DispatchOrderLine = {
 
 export type DispatchOrderDetails = {
   orderCode: string;
-  senderName: string;
   shipOn: string;
-  customerName: string;
-  customerPhone: string | null;
-  customerAddress: string | null;
-  customerDocumentId?: string | null;
-  shippingCarrier: string | null;
-  shippingBranchName: string | null;
-  shippingBranchAddress: string | null;
   items: DispatchOrderLine[];
   dashboardUrl?: string | null;
 };
@@ -29,14 +21,6 @@ export function buildDispatchOrderText(details: DispatchOrderDetails): string {
         )
       : ["• (sin líneas)"];
 
-  const destinationBits = [
-    details.customerName,
-    details.customerDocumentId ? `CI ${details.customerDocumentId}` : null,
-    details.customerPhone,
-    details.customerAddress,
-    details.shippingBranchName,
-  ].filter(Boolean);
-
   const lines = [
     `Alcéntimo · Pedido mayorista #${details.orderCode}`,
     "Alcéntimo te compró estos productos. Apártalos. El despacho se habilita cuando Alcéntimo registre el pago en tu panel; entonces márcalos listos para recolección.",
@@ -44,10 +28,10 @@ export function buildDispatchOrderText(details: DispatchOrderDetails): string {
     "📦 Productos a apartar:",
     ...productLines,
     "",
-    "🏷️ Referencia para retiro Alcéntimo:",
-    destinationBits.length > 0
-      ? destinationBits.map((bit) => `• ${bit}`).join("\n")
-      : "• Sin destino registrado",
+    "🚚 Retiro:",
+    details.shipOn
+      ? `Alcéntimo pasará a retirar la mercancía a partir del ${details.shipOn} y se encargará de despacharla a los clientes.`
+      : "Alcéntimo pasará a retirar la mercancía en tu almacén y se encargará de despacharla a los clientes.",
     "",
     "No despaches ni cobres al cliente. Alcéntimo te paga y retira.",
   ];

@@ -14,7 +14,7 @@ export default async function ProveedorHubPagosPage() {
       <DashboardPageHeader
         sectionLabel="Suministro"
         title="Pagos"
-        description="Mismos reportes de liquidación que el dropshipper, invertidos: ves lo que Alcéntimo te paga, el capture y cuándo se habilita el despacho."
+        description="Ves solo lo que Alcéntimo te compra y te paga: el comprobante, el monto y el detalle de productos. Alcéntimo retira la mercancía y la despacha a los clientes."
       />
       {data.paymentConfigError ? (
         <p className="supplier-hub-alert">

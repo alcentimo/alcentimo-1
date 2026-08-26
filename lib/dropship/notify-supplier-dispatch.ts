@@ -37,17 +37,6 @@ function buildDispatchHtml(details: DispatchOrderDetails): string {
     )
     .join("");
 
-  const destinationRows = [
-    details.customerName,
-    details.customerDocumentId ? `Cédula ${details.customerDocumentId}` : null,
-    details.customerPhone,
-    details.customerAddress,
-    details.shippingBranchName,
-  ]
-    .filter((value): value is string => Boolean(value?.trim()))
-    .map((value) => `<li style="margin:0 0 6px;">${escapeHtml(value)}</li>`)
-    .join("");
-
   const dashboardLink = details.dashboardUrl?.trim()
     ? `<p style="margin:20px 0 0;">
         <a href="${escapeHtml(details.dashboardUrl.trim())}" style="display:inline-block;background:#0d9488;color:#ffffff;text-decoration:none;padding:12px 20px;border-radius:8px;font-weight:600;">
@@ -67,8 +56,10 @@ function buildDispatchHtml(details: DispatchOrderDetails): string {
       </p>
       <h2 style="margin:20px 0 8px;font-size:16px;">Productos a apartar</h2>
       <ul style="margin:0;padding-left:18px;">${productRows || "<li>—</li>"}</ul>
-      <h2 style="margin:20px 0 8px;font-size:16px;">Referencia para retiro Alcéntimo</h2>
-      <ul style="margin:0;padding-left:18px;">${destinationRows || "<li>Sin destino registrado</li>"}</ul>
+      <p style="margin:16px 0 0;">
+        Alcéntimo pasará a retirar la mercancía en tu almacén y se encargará
+        de despacharla a los clientes.
+      </p>
       <p style="margin:16px 0 0;font-size:13px;color:#52525b;">
         No despaches ni cobres al cliente final. Alcéntimo retira
         el stock y te paga la liquidación.
@@ -155,15 +146,7 @@ export async function notifySuppliersOfDispatchOrders(
     };
     const details: DispatchOrderDetails = {
       orderCode: orderCode(payload.supplierOrderId),
-      senderName: payload.senderName,
       shipOn: payload.shipOn,
-      customerName: payload.customerName,
-      customerPhone: payload.customerPhone,
-      customerAddress: payload.customerAddress,
-      customerDocumentId: payload.customerDocumentId,
-      shippingCarrier: payload.shippingCarrier,
-      shippingBranchName: payload.shippingBranchName,
-      shippingBranchAddress: payload.shippingBranchAddress,
       items: payload.items,
       dashboardUrl,
     };
