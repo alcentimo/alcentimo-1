@@ -10,6 +10,7 @@ import {
   type SupplierPayoutObligationView,
 } from "@/lib/dropship/settlement-types";
 import { formatUsd } from "@/lib/format";
+import { isSupplierB2bPaymentMethodKey } from "@/lib/supplier/payment-types";
 import { getPaymentMethod } from "@/src/config/payment-methods";
 import { cn } from "@/lib/cn";
 
@@ -36,8 +37,9 @@ export function SupplierIncomingPayoutCard({
     [payout.businessDate],
   );
   const methodLabel = payout.paymentMethod
-    ? (getPaymentMethod(payout.paymentMethod as never)?.label ??
-      payout.paymentMethod)
+    ? isSupplierB2bPaymentMethodKey(payout.paymentMethod)
+      ? (getPaymentMethod(payout.paymentMethod).label ?? payout.paymentMethod)
+      : payout.paymentMethod
     : null;
 
   return (
