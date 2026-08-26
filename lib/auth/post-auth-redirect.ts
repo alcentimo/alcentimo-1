@@ -72,20 +72,47 @@ export function resolvePostAuthPath(next: string | null | undefined): string {
   return DEFAULT_POST_AUTH_PATH;
 }
 
-/**
- * Destino post-login para proveedores/mayoristas.
- * Destino exclusivo: /proveedor/dashboard (salvo admin / mercado oculto).
- */
-export function resolvePostAuthPathForUser(input: {
+/** Origen del botón / pantalla de login. */
+export type LoginIntent = "merchant" | "supplier" | "customer";
+
+export type PostLoginAccountFacts = {
   next?: string | null;
+  /** Si falta, se infiere por `next` (/proveedor → supplier). */
+  intent?: LoginIntent | null;
   isSupplier?: boolean;
-}): string {
+  hasMerchantStore?: boolean;
+  /** Proveedor autorizado a usar el panel /dashboard (modo tienda). */
+  supplierStoreMode?: boolean;
+  customerAccountPath?: string | null;
+};
+
+function inferLoginIntent(
+  next: string | null,
+  intent?: LoginIntent | null,
+): LoginIntent | "unspecified" {
+  if (intent) return intent;
+  if (next?.startsWith("/proveedor")) return "supplier";
+  if (next?.startsWith("/c/") || next === "/cuenta" || next?.startsWith("/cuenta/")) {
+    return "customer";
+  }
+  return "unspecified";
+}
+
+function canUseMerchantDashboard(input: PostLoginAccountFacts): boolean {
+  return Boolean(input.hasMerchantStore || input.supplierStoreMode);
+}
+
+/**
+ * Destino post-login según rol y origen del acceso.
+ * El login de tienda/cliente no envía al hub de proveedores salvo `next` explícito.
+ */
+export function pickPostLoginPath(input: PostLoginAccountFacts): string {
   const next = input.next?.trim() || null;
+  if (isInvitationNextPath(next)) {
+    return resolvePostAuthPath(next);
+  }
+
   const resolved = resolvePostAuthPath(next);
-
-  if (!input.isSupplier) return resolved;
-
-  if (resolved.startsWith("/proveedor")) return SUPPLIER_POST_AUTH_PATH;
   if (
     resolved.startsWith("/admin") ||
     resolved.startsWith("/mercado-oculto")
@@ -93,7 +120,51 @@ export function resolvePostAuthPathForUser(input: {
     return resolved;
   }
 
-  return SUPPLIER_POST_AUTH_PATH;
+  const intent = inferLoginIntent(next, input.intent);
+  const wantsSupplierHub = Boolean(next?.startsWith("/proveedor"));
+  const customerPath = input.customerAccountPath?.trim() || null;
+
+  if (intent === "supplier") {
+    if (input.isSupplier) return SUPPLIER_POST_AUTH_PATH;
+    if (canUseMerchantDashboard(input)) return DEFAULT_POST_AUTH_PATH;
+    if (customerPath) return customerPath;
+    return DEFAULT_POST_AUTH_PATH;
+  }
+
+  if (intent === "customer") {
+    if (customerPath) return customerPath;
+    return resolved.startsWith("/proveedor") ? DEFAULT_POST_AUTH_PATH : resolved;
+  }
+
+  // Login de tienda (`/dashboard/login`) u origen no marcado.
+  if (intent === "merchant") {
+    if (wantsSupplierHub && input.isSupplier) return SUPPLIER_POST_AUTH_PATH;
+    if (canUseMerchantDashboard(input)) {
+      return resolved.startsWith("/dashboard") ? resolved : DEFAULT_POST_AUTH_PATH;
+    }
+    if (customerPath) return customerPath;
+    return resolved.startsWith("/proveedor") ? DEFAULT_POST_AUTH_PATH : resolved;
+  }
+
+  if (wantsSupplierHub && input.isSupplier) return SUPPLIER_POST_AUTH_PATH;
+  if (canUseMerchantDashboard(input)) {
+    return resolved.startsWith("/dashboard") ? resolved : DEFAULT_POST_AUTH_PATH;
+  }
+  if (customerPath) return customerPath;
+  if (input.isSupplier) return SUPPLIER_POST_AUTH_PATH;
+  return resolved.startsWith("/proveedor") ? DEFAULT_POST_AUTH_PATH : resolved;
+}
+
+/** @deprecated Preferir pickPostLoginPath (rol + origen). */
+export function resolvePostAuthPathForUser(input: {
+  next?: string | null;
+  isSupplier?: boolean;
+}): string {
+  return pickPostLoginPath({
+    next: input.next,
+    isSupplier: input.isSupplier,
+    intent: input.isSupplier ? "supplier" : "merchant",
+  });
 }
 
 export function isInvitationNextPath(next: string | null | undefined): boolean {

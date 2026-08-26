@@ -152,10 +152,14 @@ export function AuthPanel({ defaultMode }: { defaultMode?: "login" | "signup" } 
           data: { user },
         } = await supabase.auth.getUser();
         const destination = user
-          ? await resolveAuthenticatedPostAuthPath(nextParam, {
-              userId: user.id,
-              email: user.email ?? null,
-            })
+          ? await resolveAuthenticatedPostAuthPath(
+              nextParam,
+              {
+                userId: user.id,
+                email: user.email ?? null,
+              },
+              "merchant",
+            )
           : resolvePostAuthPath(nextParam);
         navigateAfterAuth(destination);
       } catch (caught) {
@@ -280,17 +284,18 @@ export function AuthPanel({ defaultMode }: { defaultMode?: "login" | "signup" } 
       }
 
       logAuthEvent("signin_success", { hasUser: Boolean(result.data.user) });
-      // Evitar Server Action que lea/escriba cookies tras signIn (rompe con
-      // "Unexpected response"). Destino de tienda es local; solo consultamos
-      // servidor si next pide explícitamente /proveedor.
+      // Resolver destino por rol/origen vía admin (sin cookies de sesión).
       const nextPath = nextParam?.trim() || null;
-      let destination = resolvePostAuthPath(nextPath);
-      if (nextPath?.startsWith("/proveedor") && result.data.user) {
-        destination = await resolveAuthenticatedPostAuthPath(nextPath, {
-          userId: result.data.user.id,
-          email: result.data.user.email ?? null,
-        }).catch(() => resolvePostAuthPath(nextPath));
-      }
+      const destination = result.data.user
+        ? await resolveAuthenticatedPostAuthPath(
+            nextPath,
+            {
+              userId: result.data.user.id,
+              email: result.data.user.email ?? null,
+            },
+            "merchant",
+          ).catch(() => resolvePostAuthPath(nextPath))
+        : resolvePostAuthPath(nextPath);
       navigateAfterAuth(destination);
     } catch (caught) {
       setLoading(false);
