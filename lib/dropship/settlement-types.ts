@@ -192,6 +192,7 @@ export interface SupplierPayoutObligationView {
   paymentMethod: string | null;
   paymentReference: string | null;
   paidAt: string | null;
+  shipments: DropshipSettlementShipmentView[];
 }
 
 export const DROPSHIP_CENTRAL_PAYMENT_NOTICE =

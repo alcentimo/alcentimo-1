@@ -14,7 +14,7 @@ export default async function ProveedorHubPedidosPage() {
       <DashboardPageHeader
         sectionLabel="Suministro"
         title="Pedidos Mayoristas"
-        description="El pedido entra cuando Alcéntimo te compra inventario. Márcalo listo para recolección; Alcéntimo confirma el retiro."
+        description="El pedido entra cuando Alcéntimo te compra inventario. Márcalo listo para recolección cuando el pago figure como registrado; Alcéntimo confirma el retiro."
       />
       {data.ordersError ? (
         <p className="supplier-hub-alert">

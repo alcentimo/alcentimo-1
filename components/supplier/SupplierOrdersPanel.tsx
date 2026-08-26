@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState, useTransition } from "react";
+import Link from "next/link";
 import { Loader2, ShoppingBag } from "lucide-react";
 import { SupplierEmptyState } from "@/components/supplier/SupplierEmptyState";
 import { formatUsd } from "@/lib/format";
@@ -10,9 +11,11 @@ import { updateSupplierOrderDispatch } from "@/lib/supplier/order-actions";
 import {
   SUPPLIER_HUB_SETTABLE_STATUSES,
   SUPPLIER_ORDER_STATUS_LABELS,
+  supplierOrderDispatchUnlocked,
   type SupplierOrder,
   type SupplierOrderStatus,
 } from "@/lib/supplier/order-types";
+import { SUPPLIER_ORDER_PAYMENT_STATUS_LABELS } from "@/lib/supplier/payment-types";
 
 interface SupplierOrdersPanelProps {
   initialOrders: SupplierOrder[];
@@ -160,6 +163,8 @@ export function SupplierOrdersPanel({
                 <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800">
                   {filteredOrders.map((order) => {
                     const saving = pending && pendingId === order.id;
+                    const dispatchUnlocked =
+                      supplierOrderDispatchUnlocked(order);
                     return (
                       <tr key={order.id} className="bg-white dark:bg-zinc-950">
                         <td className="px-4 py-3 align-middle">
@@ -169,16 +174,24 @@ export function SupplierOrdersPanel({
                           <p className="font-mono text-[10px] uppercase text-zinc-400">
                             #{order.id.slice(0, 8)}
                           </p>
+                          <p className="mt-1 text-[11px] text-zinc-500">
+                            {SUPPLIER_ORDER_PAYMENT_STATUS_LABELS[order.paymentStatus]}
+                          </p>
                         </td>
                         <td className="px-4 py-3 align-middle tabular-nums font-medium text-zinc-900 dark:text-zinc-50">
                           {formatUsd(order.totalUsd)}
                         </td>
                         <td className="px-4 py-3 align-middle">
-                          <div className="flex items-center gap-2">
+                          <div className="flex flex-col gap-1.5">
+                            <div className="flex items-center gap-2">
                             <select
                               className="input-field !mt-0 min-w-[14rem] !py-2 text-xs"
                               value={order.status}
-                              disabled={saving || order.status === "despachado"}
+                              disabled={
+                                saving ||
+                                order.status === "despachado" ||
+                                !dispatchUnlocked
+                              }
                               aria-label={`Estado de ${summarizeProducts(order)}`}
                               onChange={(event) =>
                                 handleStatusChange(
@@ -214,6 +227,19 @@ export function SupplierOrdersPanel({
                                 {SUPPLIER_ORDER_STATUS_LABELS[order.status]}
                               </span>
                             )}
+                            </div>
+                            {!dispatchUnlocked &&
+                            order.status !== "despachado" ? (
+                              <p className="max-w-xs text-[11px] text-amber-700 dark:text-amber-300">
+                                Esperando el pago registrado de Alcéntimo.{" "}
+                                <Link
+                                  href="/proveedor/dashboard/hub/pagos"
+                                  className="font-medium underline-offset-2 hover:underline"
+                                >
+                                  Ver Pagos
+                                </Link>
+                              </p>
+                            ) : null}
                           </div>
                         </td>
                       </tr>

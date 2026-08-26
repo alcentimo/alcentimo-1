@@ -813,10 +813,10 @@ export function DropshipSettlementsPanel({
         title="Aprobar liquidación diaria"
         impact={
           approveTarget
-            ? `Vas a verificar el pago de ${approveTarget.storeName} por ${formatUsd(approveTarget.amountDueUsd)}. Revisa el comprobante y el destino de cada paquete (nombre, cédula, teléfono y sucursal/dirección) antes de aprobar. Se acreditará el costo a cada mayorista y se habilitará el despacho D+1.`
+            ? `Vas a verificar el pago de ${approveTarget.storeName} por ${formatUsd(approveTarget.amountDueUsd)}. Revisa el comprobante y el destino de cada paquete (nombre, cédula, teléfono y sucursal/dirección) antes de aprobar. Se acreditará el costo a cada mayorista. El despacho se habilita cuando registres el pago al proveedor.`
             : "Vas a aprobar este reporte diario."
         }
-        confirmLabel="Aprobar y habilitar D+1"
+        confirmLabel="Aprobar y acreditar a mayoristas"
         loading={pending && updatingId === approveId}
         onConfirm={handleApprove}
       />

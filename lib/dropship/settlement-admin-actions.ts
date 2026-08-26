@@ -347,9 +347,28 @@ export async function markSupplierPayoutPaid(
     };
   }
 
+  const payoutRow = updated as Record<string, unknown>;
+  const settlementId = String(payoutRow.settlement_id ?? "");
+  const supplierUserId = String(payoutRow.supplier_user_id ?? "");
+  if (settlementId && supplierUserId) {
+    await client
+      .from("supplier_orders")
+      .update({
+        payment_status: "confirmado",
+        payment_proof_url: uploaded.url,
+        payment_method: paymentMethod || null,
+        payment_reference: paymentReference || null,
+        payment_reported_at: now,
+        updated_at: now,
+      })
+      .eq("settlement_id", settlementId)
+      .eq("supplier_user_id", supplierUserId);
+  }
+
   revalidatePath("/admin/dashboard");
   revalidatePath("/proveedor/dashboard");
   revalidatePath("/proveedor/dashboard/hub/pagos");
+  revalidatePath("/proveedor/dashboard/hub/pedidos");
 
   const payout = mapPayoutRow(updated as Record<string, unknown>);
   const names = await loadSupplierDisplayNames([payout.supplierUserId]);

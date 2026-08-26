@@ -13,6 +13,8 @@ import {
   SUPPLIER_PAYOUT_SELECT_LEGACY,
 } from "@/lib/dropship/settlement-shared";
 import { getSupplierCreditedBalanceUsd } from "@/lib/dropship/settlement-ledger";
+import { loadShipmentsBySettlementIds } from "@/lib/dropship/settlement-shipping-load";
+import { filterShipmentsForSupplier } from "@/lib/dropship/settlement-shipping";
 import type { SupplierPayoutObligationView } from "@/lib/dropship/settlement-types";
 
 export async function listMySupplierPayoutObligations(): Promise<{
@@ -57,9 +59,25 @@ export async function listMySupplierPayoutObligations(): Promise<{
   }
 
   if (error) return { error: error.message };
+
+  const payouts = ((data as Record<string, unknown>[] | null) ?? []).map(
+    mapPayoutRow,
+  );
+  const settlementIds = [
+    ...new Set(payouts.map((item) => item.settlementId).filter(Boolean)),
+  ];
+  const shipmentsBySettlement =
+    await loadShipmentsBySettlementIds(settlementIds);
+
   const creditedBalanceUsd = await getSupplierCreditedBalanceUsd(user.id);
   return {
-    payouts: ((data as Record<string, unknown>[] | null) ?? []).map(mapPayoutRow),
+    payouts: payouts.map((payout) => ({
+      ...payout,
+      shipments: filterShipmentsForSupplier(
+        shipmentsBySettlement.get(payout.settlementId) ?? [],
+        user.id,
+      ),
+    })),
     creditedBalanceUsd,
   };
 }

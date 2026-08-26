@@ -1,18 +1,17 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useMemo, useState, useTransition } from "react";
 import { Loader2, Wallet } from "lucide-react";
 import { SupplierEmptyState } from "@/components/supplier/SupplierEmptyState";
-import { SupplierPayoutProofPreview } from "@/components/supplier/SupplierPayoutProofPreview";
+import { SupplierIncomingPayoutCard } from "@/components/supplier/SupplierIncomingPayoutCard";
 import { PaymentConfigField } from "@/components/payments/PaymentConfigField";
 import { PaymentMethodCard } from "@/components/payments/PaymentMethodCard";
 import { SettingsSwitch } from "@/components/ui/SettingsSwitch";
 import { saveSupplierPaymentConfig } from "@/lib/supplier/payment-actions";
 import {
-  SUPPLIER_PAYOUT_STATUS_LABELS,
+  SUPPLIER_ALCENTIMO_PAYOUT_NOTICE,
   type SupplierPayoutObligationView,
 } from "@/lib/dropship/settlement-types";
-import { formatBusinessDateEs } from "@/lib/dropship/settlement-date";
 import { formatUsd } from "@/lib/format";
 import {
   SUPPLIER_B2B_PAYMENT_METHOD_KEYS,
@@ -21,6 +20,14 @@ import {
 } from "@/lib/supplier/payment-types";
 import { getPaymentMethod } from "@/src/config/payment-methods";
 import { cn } from "@/lib/cn";
+
+type PayoutFilter = "all" | "open" | "paid";
+
+const FILTERS: Array<{ key: PayoutFilter; label: string }> = [
+  { key: "open", label: "Pendientes" },
+  { key: "paid", label: "Pagados" },
+  { key: "all", label: "Todos" },
+];
 
 interface SupplierPaymentsPanelProps {
   initialConfig: SupplierPaymentConfig;
@@ -38,6 +45,28 @@ export function SupplierPaymentsPanel({
   const [message, setMessage] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
   const [savingKey, setSavingKey] = useState<string | null>(null);
+  const [filter, setFilter] = useState<PayoutFilter>("open");
+
+  const counts = useMemo(
+    () => ({
+      all: payouts.length,
+      open: payouts.filter((item) => item.status !== "paid").length,
+      paid: payouts.filter((item) => item.status === "paid").length,
+    }),
+    [payouts],
+  );
+
+  const filtered = useMemo(
+    () =>
+      payouts.filter((item) =>
+        filter === "all"
+          ? true
+          : filter === "paid"
+            ? item.status === "paid"
+            : item.status !== "paid",
+      ),
+    [filter, payouts],
+  );
 
   function persist(next: SupplierPaymentConfig, key = "form") {
     setError(null);
@@ -99,58 +128,64 @@ export function SupplierPaymentsPanel({
       ) : null}
       {message ? <p className="supplier-hub-success">{message}</p> : null}
 
-      <section className="supplier-hub-card space-y-3">
+      <section className="space-y-4">
         <div className="flex flex-wrap items-baseline justify-between gap-2">
-          <h2 className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">
-            Liquidaciones
-          </h2>
+          <div>
+            <h2 className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">
+              Liquidaciones de Alcéntimo
+            </h2>
+            <p className="mt-1 max-w-xl text-xs text-zinc-500">
+              {SUPPLIER_ALCENTIMO_PAYOUT_NOTICE}
+            </p>
+          </div>
           <p className="tabular-nums text-sm font-medium text-zinc-900 dark:text-zinc-50">
-            {formatUsd(creditedBalanceUsd)}
+            Saldo acreditado {formatUsd(creditedBalanceUsd)}
           </p>
         </div>
+
+        {payouts.length > 0 ? (
+          <div className="flex flex-wrap gap-2" role="tablist" aria-label="Filtrar liquidaciones">
+            {FILTERS.map((item) => (
+              <button
+                key={item.key}
+                type="button"
+                role="tab"
+                aria-selected={filter === item.key}
+                onClick={() => setFilter(item.key)}
+                className={cn(
+                  "rounded-full border px-3 py-1 text-xs font-medium",
+                  filter === item.key
+                    ? "border-zinc-900 bg-zinc-900 text-white dark:border-zinc-100 dark:bg-zinc-100 dark:text-zinc-900"
+                    : "border-zinc-200 text-zinc-600 dark:border-zinc-700 dark:text-zinc-300",
+                )}
+              >
+                {item.label}
+                <span className="ml-1 tabular-nums opacity-70">
+                  {counts[item.key]}
+                </span>
+              </button>
+            ))}
+          </div>
+        ) : null}
+
         {payouts.length === 0 ? (
           <SupplierEmptyState
             icon={Wallet}
             title="Sin liquidaciones aún"
-            description="Cuando Alcéntimo te pague por compras de inventario, cada movimiento quedará registrado aquí."
+            description="Cuando Alcéntimo te pague por compras de inventario, cada movimiento quedará registrado aquí, igual que el reporte de pago del dropshipper pero a tu favor."
+          />
+        ) : filtered.length === 0 ? (
+          <SupplierEmptyState
+            icon={Wallet}
+            title="Nada en este filtro"
+            description="No hay liquidaciones con ese estado."
           />
         ) : (
-          <ul className="divide-y divide-zinc-100 dark:divide-zinc-800">
-            {payouts.map((payout) => (
-              <li
-                key={payout.id}
-                className="flex flex-col gap-2 py-3 text-sm"
-              >
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                  <div>
-                    <p className="font-medium tabular-nums text-zinc-900 dark:text-zinc-50">
-                      {formatUsd(payout.amountUsd)}
-                    </p>
-                    <p className="text-xs text-zinc-500">
-                      {formatBusinessDateEs(payout.businessDate)}
-                      {payout.paymentReference
-                        ? ` · Ref. ${payout.paymentReference}`
-                        : ""}
-                    </p>
-                  </div>
-                  <span className="rounded-full bg-zinc-100 px-2 py-0.5 text-[10px] font-semibold text-zinc-700 dark:bg-zinc-800 dark:text-zinc-200">
-                    {SUPPLIER_PAYOUT_STATUS_LABELS[payout.status]}
-                  </span>
-                </div>
-                {payout.paymentProofUrl ? (
-                  <SupplierPayoutProofPreview url={payout.paymentProofUrl} />
-                ) : payout.status === "paid" ? (
-                  <p className="text-xs text-amber-700 dark:text-amber-300">
-                    Pagado, pero aún no hay capture visible. Si falta, contacta a Alcéntimo.
-                  </p>
-                ) : (
-                  <p className="text-xs text-zinc-500">
-                    El capture del pago aparecerá aquí cuando Alcéntimo liquide y lo cargue.
-                  </p>
-                )}
-              </li>
+          <div className="space-y-6">
+            {filtered.map((payout) => (
+              <SupplierIncomingPayoutCard key={payout.id} payout={payout} />
             ))}
-          </ul>
+          </div>
         )}
       </section>
 
