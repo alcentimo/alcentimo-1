@@ -97,6 +97,7 @@ export async function saveSupplierPaymentConfig(
   }
 
   revalidatePath("/proveedor/dashboard");
+  revalidatePath("/proveedor/dashboard/hub/configuracion");
   return { ok: true, config };
 }
 

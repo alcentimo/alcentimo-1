@@ -12,7 +12,7 @@ export type SupplierOrderStatus = (typeof SUPPLIER_ORDER_STATUSES)[number];
 export const SUPPLIER_ORDER_STATUS_LABELS: Record<SupplierOrderStatus, string> =
   {
     pendiente: "Por preparar",
-    preparando: "Listo para recolección",
+    preparando: "Listo para retirar",
     despachado: "Retirado",
   };
 
