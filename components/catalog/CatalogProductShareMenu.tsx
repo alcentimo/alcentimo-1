@@ -1,8 +1,21 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Check, Copy, Facebook, MessageCircle, Share2 } from "lucide-react";
+import { Check, Copy, MessageCircle, Share2 } from "lucide-react";
 import { cn } from "@/lib/cn";
+
+function FacebookIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="currentColor"
+      aria-hidden="true"
+      className={className}
+    >
+      <path d="M13.5 21v-7.2h2.4l.36-2.8H13.5V9.18c0-.81.22-1.36 1.39-1.36H16.4V5.32c-.24-.03-1.07-.1-2.04-.1-2.02 0-3.4 1.23-3.4 3.5v1.96H8.5v2.8h2.46V21H13.5Z" />
+    </svg>
+  );
+}
 
 interface CatalogProductShareMenuProps {
   productName: string;
@@ -153,7 +166,7 @@ export function CatalogProductShareMenu({
             rel="noopener noreferrer"
             onClick={() => setOpen(false)}
           >
-            <Facebook className="h-4 w-4" aria-hidden="true" />
+            <FacebookIcon className="h-4 w-4" />
             Facebook
           </a>
 
