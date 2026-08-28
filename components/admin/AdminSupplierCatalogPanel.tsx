@@ -16,6 +16,11 @@ import {
   type AdminSupplierCatalogProduct,
   type AdminSupplierMarginOption,
 } from "@/lib/admin/supplier-catalog-actions";
+import {
+  assignSupplierProductOfficialBrand,
+  listAdminOfficialBrands,
+} from "@/lib/admin/official-brand-actions";
+import type { OfficialBrand } from "@/lib/official-brands/types";
 import { SettingsSwitch } from "@/components/ui/SettingsSwitch";
 import { supplierCategoryLabel } from "@/lib/supplier/categories";
 import {
@@ -145,6 +150,7 @@ function MoneyInput({
 export function AdminSupplierCatalogPanel() {
   const [products, setProducts] = useState<AdminSupplierCatalogProduct[]>([]);
   const [suppliers, setSuppliers] = useState<AdminSupplierMarginOption[]>([]);
+  const [officialBrands, setOfficialBrands] = useState<OfficialBrand[]>([]);
   const [query, setQuery] = useState("");
   const [priceDrafts, setPriceDrafts] = useState<Record<string, PriceDraft>>({});
   const [headerPercent, setHeaderPercent] = useState<Record<string, string>>({});
@@ -185,14 +191,20 @@ export function AdminSupplierCatalogPanel() {
     void (async () => {
       setLoading(true);
       setError(null);
-      const result = await listAdminSupplierCatalogProducts();
+      const [catalogResult, brandsResult] = await Promise.all([
+        listAdminSupplierCatalogProducts(),
+        listAdminOfficialBrands(),
+      ]);
       if (cancelled) return;
       setLoading(false);
-      if (result.error) {
-        setError(result.error);
+      if (catalogResult.error) {
+        setError(catalogResult.error);
         return;
       }
-      hydrate(result.products ?? [], result.suppliers ?? []);
+      hydrate(catalogResult.products ?? [], catalogResult.suppliers ?? []);
+      if (!brandsResult.error) {
+        setOfficialBrands(brandsResult.brands ?? []);
+      }
     })();
     return () => {
       cancelled = true;
@@ -206,6 +218,7 @@ export function AdminSupplierCatalogPanel() {
       (product) =>
         product.title.toLowerCase().includes(q) ||
         product.supplierName.toLowerCase().includes(q) ||
+        (product.officialBrandName ?? "").toLowerCase().includes(q) ||
         supplierCategoryLabel(product.category).toLowerCase().includes(q),
     );
   }, [products, query]);
@@ -725,6 +738,49 @@ export function AdminSupplierCatalogPanel() {
     }
   }
 
+  async function handleAssignBrand(
+    product: AdminSupplierCatalogProduct,
+    officialBrandId: string,
+  ) {
+    const nextId = officialBrandId.trim() || null;
+    const previous = {
+      officialBrandId: product.officialBrandId,
+      officialBrandName: product.officialBrandName,
+    };
+    const nextName =
+      officialBrands.find((brand) => brand.id === nextId)?.name ?? null;
+    setProducts((current) =>
+      current.map((row) =>
+        row.id === product.id
+          ? {
+              ...row,
+              officialBrandId: nextId,
+              officialBrandName: nextName,
+            }
+          : row,
+      ),
+    );
+    setError(null);
+    const result = await assignSupplierProductOfficialBrand({
+      supplierProductId: product.id,
+      officialBrandId: nextId,
+    });
+    if (result.error) {
+      setProducts((current) =>
+        current.map((row) =>
+          row.id === product.id
+            ? {
+                ...row,
+                officialBrandId: previous.officialBrandId,
+                officialBrandName: previous.officialBrandName,
+              }
+            : row,
+        ),
+      );
+      setError(result.error);
+    }
+  }
+
   const busy = savingAll || busySupplierId != null;
 
   return (
@@ -910,6 +966,7 @@ export function AdminSupplierCatalogPanel() {
                   <thead>
                     <tr>
                       <th className="admin-stores-th min-w-[12rem]">Producto</th>
+                      <th className="admin-stores-th min-w-[9rem]">Marca oficial</th>
                       <th className="admin-stores-th w-16 text-center">Stock</th>
                       <th className="admin-stores-th w-24 whitespace-normal leading-tight">
                         Costo
@@ -985,6 +1042,27 @@ export function AdminSupplierCatalogPanel() {
                                 </p>
                               </div>
                             </div>
+                          </td>
+                          <td className="admin-stores-td !max-w-none min-w-[9rem]">
+                            <select
+                              className="h-9 w-full min-w-[8.5rem] rounded-md border border-zinc-200 bg-white px-2 text-xs text-zinc-800 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100"
+                              value={product.officialBrandId ?? ""}
+                              disabled={saving || busy}
+                              aria-label={`Marca oficial de ${product.title}`}
+                              onChange={(event) =>
+                                void handleAssignBrand(
+                                  product,
+                                  event.target.value,
+                                )
+                              }
+                            >
+                              <option value="">Sin marca</option>
+                              {officialBrands.map((brand) => (
+                                <option key={brand.id} value={brand.id}>
+                                  {brand.name}
+                                </option>
+                              ))}
+                            </select>
                           </td>
                           <td className="admin-stores-td !max-w-none w-16 text-center">
                             <span

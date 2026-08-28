@@ -1,5 +1,7 @@
 "use client";
 
+import Image from "next/image";
+import { LayoutGrid } from "lucide-react";
 import { cn } from "@/lib/cn";
 import {
   productBrandKey,
@@ -13,7 +15,8 @@ interface StorefrontBrandRailProps {
 }
 
 /**
- * Filtros rápidos por marca (estilo marketplace): un clic muestra solo esa vitrina.
+ * Carrusel global de marcas oficiales de Alcéntimo (logo + nombre).
+ * Un clic filtra el catálogo del dropshipper.
  */
 export function StorefrontBrandRail({
   brands,
@@ -28,20 +31,23 @@ export function StorefrontBrandRail({
       aria-labelledby="storefront-brand-rail-title"
     >
       <div className="storefront-brand-rail-head">
-        <h2 id="storefront-brand-rail-title">Marcas</h2>
-        <p>Filtrá por marca propia con un clic</p>
+        <h2 id="storefront-brand-rail-title">Marcas destacadas</h2>
+        <p>Filtrá el catálogo por la marca oficial con un clic</p>
       </div>
       <ul className="storefront-brand-rail-track">
         <li>
           <button
             type="button"
             className={cn(
-              "storefront-brand-chip",
+              "storefront-brand-card",
               activeBrand == null && "is-active",
             )}
             onClick={() => onSelectBrand(null)}
           >
-            Todas
+            <span className="storefront-brand-card-logo" aria-hidden="true">
+              <LayoutGrid className="h-6 w-6" />
+            </span>
+            <span className="storefront-brand-card-label">Todas</span>
           </button>
         </li>
         {brands.map((brand) => (
@@ -49,14 +55,29 @@ export function StorefrontBrandRail({
             <button
               type="button"
               className={cn(
-                "storefront-brand-chip",
+                "storefront-brand-card",
                 activeBrand != null &&
-                  productBrandKey(activeBrand) === brand.key &&
+                  productBrandKey(activeBrand) === productBrandKey(brand.name) &&
                   "is-active",
               )}
               onClick={() => onSelectBrand(brand.name)}
             >
-              {brand.name}
+              <span className="storefront-brand-card-logo">
+                {brand.logoUrl ? (
+                  <Image
+                    src={brand.logoUrl}
+                    alt=""
+                    width={48}
+                    height={48}
+                    className="h-10 w-10 object-contain"
+                  />
+                ) : (
+                  <span className="storefront-brand-card-fallback">
+                    {brand.name.slice(0, 1)}
+                  </span>
+                )}
+              </span>
+              <span className="storefront-brand-card-label">{brand.name}</span>
             </button>
           </li>
         ))}

@@ -20,6 +20,8 @@ import { getPublicStoreBySlug } from "@/lib/stores";
 
 import { getPublicStoreLocations, getVariantLocationStocksForStore } from "@/lib/locations/get-store-locations";
 import type { StoreLocation, VariantLocationStock } from "@/lib/locations/types";
+import { listFeaturedOfficialBrands } from "@/lib/official-brands/public";
+import type { OfficialBrandPublic } from "@/lib/official-brands/types";
 import { normalizeStoreRubro } from "@/src/config/categories";
 
 export interface PublicCatalogPageData extends CatalogPageData {
@@ -31,6 +33,7 @@ export interface PublicCatalogPageData extends CatalogPageData {
   catalogCurrency: CatalogCurrencySettings;
   locations: StoreLocation[];
   locationStocks: VariantLocationStock[];
+  featuredBrands: OfficialBrandPublic[];
 }
 
 function normalizeStoreSlug(slug: string): string {
@@ -58,12 +61,14 @@ async function loadPublicCatalogPageDataUncached(
     storeCategories,
     locations,
     locationStocks,
+    featuredBrands,
   ] = await Promise.all([
     getPublicStoreSettingsConfig(store.id),
     fetchPublicPlatformSettings(),
     getPublicStoreCategories(store.id),
     getPublicStoreLocations(store.id).catch(() => []),
     getVariantLocationStocksForStore(store.id).catch(() => []),
+    listFeaturedOfficialBrands(),
   ]);
 
   const visibleStoreCategories = storeCategories;
@@ -110,6 +115,7 @@ async function loadPublicCatalogPageDataUncached(
     catalogCurrency: settingsConfig.catalogCurrency,
     locations,
     locationStocks,
+    featuredBrands,
   };
 }
 
@@ -126,7 +132,7 @@ export async function getPublicCatalogPageData(
   const categoryFilter = Boolean(options?.categoryFilter);
 
   return withPublicCatalogCache(
-    ["public-catalog-page-v4", slug, categorySlug, String(categoryFilter)],
+    ["public-catalog-page-v5", slug, categorySlug, String(categoryFilter)],
     { slug, storeId: store.id },
     () =>
       loadPublicCatalogPageDataUncached(slug, {
@@ -156,7 +162,7 @@ export async function getCatalogPreviewSettings(
     ),
     catalogDesign: resolveCatalogDesign(
       settingsConfig.catalogDesign,
-      store.rubro_tienda,
+      normalizeStoreRubro(store.rubro_tienda),
     ),
     catalogCurrency: settingsConfig.catalogCurrency,
   };

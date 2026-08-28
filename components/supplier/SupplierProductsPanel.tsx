@@ -71,7 +71,6 @@ interface SupplierProductsPanelProps {
 type ProductFormState = {
   title: string;
   description: string;
-  brand: string;
   category: SupplierProductCategory;
   variants: SupplierProductVariants;
   stock: string;
@@ -88,7 +87,6 @@ const EMPTY_GALLERY: ProductGalleryFieldValue = {
 const EMPTY_FORM: Omit<ProductFormState, "galleryKey"> = {
   title: "",
   description: "",
-  brand: "",
   category: "otros",
   variants: emptySupplierVariants(),
   stock: "",
@@ -117,7 +115,6 @@ function formFromProduct(product: SupplierProduct): ProductFormState {
   return {
     title: product.title,
     description: product.description,
-    brand: product.brand ?? "",
     category: product.category,
     variants: applyGeneralStockToUnspecifiedSupplierVariants(
       withFlag,
@@ -134,7 +131,6 @@ function buildFormData(form: ProductFormState): FormData {
   const formData = new FormData();
   formData.set("title", form.title);
   formData.set("description", form.description);
-  formData.set("brand", form.brand);
   formData.set("category", form.category);
   formData.set("variants", serializeSupplierVariants(form.variants));
   formData.set("stock", form.stock);
@@ -264,26 +260,6 @@ function ProductFields({
             placeholder="Ej: Caja mayorista de snacks"
             disabled={pending}
           />
-        </div>
-        <div>
-          <label htmlFor={`${idPrefix}-brand`} className="label-field">
-            Marca propia
-          </label>
-          <input
-            id={`${idPrefix}-brand`}
-            value={form.brand}
-            onChange={(event) =>
-              onChange({ ...form, brand: event.target.value })
-            }
-            className="input-field"
-            placeholder="Ej: Ponkesitas"
-            maxLength={80}
-            disabled={pending}
-          />
-          <p className="mt-1 text-[11px] leading-relaxed text-zinc-500">
-            Se muestra como sello en la vitrina de los dropshippers y al hacer
-            clic filtra el catálogo de esa marca.
-          </p>
         </div>
         <div>
           <label htmlFor={`${idPrefix}-category`} className="label-field">

@@ -13939,6 +13939,26 @@ button.mercado-mp-card-btn {
   @apply border-[var(--mo-emerald)] bg-[var(--mo-emerald)] text-white shadow-[0_6px_16px_color-mix(in_srgb,var(--mo-emerald)_22%,transparent)];
 }
 
+.storefront-brand-card {
+  @apply flex h-full w-[5.75rem] cursor-pointer flex-col items-center gap-2 rounded-2xl border border-[var(--mo-border)] bg-white px-2 py-3 text-center shadow-sm transition hover:-translate-y-0.5 hover:border-[var(--mo-emerald)] hover:shadow-md sm:w-24;
+}
+
+.storefront-brand-card.is-active {
+  @apply border-[var(--mo-emerald)] bg-[var(--mo-emerald-soft)] shadow-[0_8px_20px_color-mix(in_srgb,var(--mo-emerald)_18%,transparent)];
+}
+
+.storefront-brand-card-logo {
+  @apply flex h-11 w-11 items-center justify-center overflow-hidden rounded-full bg-white text-[var(--mo-emerald)];
+}
+
+.storefront-brand-card-fallback {
+  @apply text-sm font-bold uppercase;
+}
+
+.storefront-brand-card-label {
+  @apply line-clamp-2 text-[11px] font-semibold leading-tight text-[var(--mo-ink)];
+}
+
 .storefront-mp-listing {
   scroll-margin-top: 5.5rem;
 }

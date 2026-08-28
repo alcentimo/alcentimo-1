@@ -43,6 +43,7 @@ async function CatalogContent({
     locations,
     locationStocks,
     totalCount,
+    featuredBrands,
   } = data;
 
   return (
@@ -61,6 +62,7 @@ async function CatalogContent({
       locationStocks={locationStocks}
       catalogTotalCount={totalCount}
       enableServerPagination
+      featuredBrands={featuredBrands}
     />
   );
 }

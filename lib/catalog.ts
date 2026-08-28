@@ -44,7 +44,7 @@ export interface GetCatalogOptions {
   minPriceUsd?: number | null;
   /** Precio máximo en USD (moneda base). */
   maxPriceUsd?: number | null;
-  /** Marca propia (filtro de vitrina). */
+  /** Marca oficial de Alcéntimo (filtro de vitrina). */
   brand?: string | null;
   /** Restringe a IDs concretos (p. ej. hidratar carrito). */
   productIds?: string[];

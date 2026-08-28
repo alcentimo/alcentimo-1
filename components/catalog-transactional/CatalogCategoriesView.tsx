@@ -40,7 +40,8 @@ import { StorefrontCatalogListing } from "@/components/catalog-transactional/Sto
 import { StorefrontMoricheChrome } from "@/components/catalog-transactional/StorefrontMoricheChrome";
 import { useOpenCatalogProductById } from "@/components/catalog-transactional/useOpenCatalogProductById";
 import { mapCatalogListItemToMercadoCard } from "@/lib/catalog/map-catalog-to-mercado-card";
-import { extractCatalogBrands } from "@/lib/catalog/product-brand";
+import { officialBrandsToCatalogOptions } from "@/lib/catalog/product-brand";
+import type { OfficialBrandPublic } from "@/lib/official-brands/types";
 import { applyLocationStockToProduct } from "@/lib/locations/apply-catalog-stock";
 import { normalizeCatalogHeaderSettings } from "@/lib/store-settings/catalog-header";
 import { cn } from "@/lib/cn";
@@ -60,6 +61,7 @@ interface CatalogCategoriesViewProps {
   catalogTotalCount?: number;
   enableServerPagination?: boolean;
   initialProductId?: string | null;
+  featuredBrands?: OfficialBrandPublic[];
 }
 
 export function CatalogCategoriesView({
@@ -76,6 +78,7 @@ export function CatalogCategoriesView({
   catalogTotalCount,
   enableServerPagination = false,
   initialProductId = null,
+  featuredBrands = [],
 }: CatalogCategoriesViewProps) {
   return (
     <CatalogFulfillmentProvider
@@ -95,6 +98,7 @@ export function CatalogCategoriesView({
         catalogTotalCount={catalogTotalCount}
         enableServerPagination={enableServerPagination}
         initialProductId={initialProductId}
+        featuredBrands={featuredBrands}
       />
     </CatalogFulfillmentProvider>
   );
@@ -112,6 +116,7 @@ function CatalogCategoriesViewInner({
   catalogTotalCount,
   enableServerPagination = false,
   initialProductId = null,
+  featuredBrands = [],
 }: Omit<CatalogCategoriesViewProps, "locations" | "locationStocks">) {
   const liveExchangeRate = exchangeRate?.rate ?? null;
   const { showOfficialRate, showBsConversion, wholesaleEnabled } =
@@ -194,6 +199,7 @@ function CatalogCategoriesViewInner({
         browse={browse}
         initialProductId={initialProductId}
         onSelectBrand={handleSelectBrand}
+        featuredBrands={featuredBrands}
       />
     </CatalogProductDetailHost>
   );
@@ -214,6 +220,7 @@ interface CatalogCategoriesPageContentProps {
   browse: ReturnType<typeof useCatalogBrowse>;
   initialProductId?: string | null;
   onSelectBrand: (brand: string | null) => void;
+  featuredBrands: OfficialBrandPublic[];
 }
 
 function CatalogCategoriesPageContent({
@@ -231,6 +238,7 @@ function CatalogCategoriesPageContent({
   browse,
   initialProductId = null,
   onSelectBrand,
+  featuredBrands,
 }: CatalogCategoriesPageContentProps) {
   const { openProduct } = useCatalogProductDetail();
   const openProductById = useOpenCatalogProductById(
@@ -268,8 +276,8 @@ function CatalogCategoriesPageContent({
   );
 
   const brandOptions = useMemo(
-    () => extractCatalogBrands(catalogProducts),
-    [catalogProducts],
+    () => officialBrandsToCatalogOptions(featuredBrands),
+    [featuredBrands],
   );
 
   const productById = useMemo(() => {
@@ -342,6 +350,7 @@ function CatalogCategoriesPageContent({
           mercadoCards={mercadoCards}
           onActivateProduct={handleActivateProduct}
           onSelectBrand={onSelectBrand}
+          featuredBrands={brandOptions}
           exchangeRate={exchangeRate}
           showOfficialRate={showOfficialRate}
           showBsConversion={showBsConversion}

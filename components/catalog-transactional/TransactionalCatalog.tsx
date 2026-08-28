@@ -36,7 +36,8 @@ import { StorefrontMoricheChrome } from "@/components/catalog-transactional/Stor
 import { CatalogFaqSection } from "@/components/catalog-transactional/CatalogFaqSection";
 import { useOpenCatalogProductById } from "@/components/catalog-transactional/useOpenCatalogProductById";
 import { mapCatalogListItemToMercadoCard } from "@/lib/catalog/map-catalog-to-mercado-card";
-import { extractCatalogBrands } from "@/lib/catalog/product-brand";
+import { officialBrandsToCatalogOptions } from "@/lib/catalog/product-brand";
+import type { OfficialBrandPublic } from "@/lib/official-brands/types";
 import { applyLocationStockToProduct } from "@/lib/locations/apply-catalog-stock";
 import { storeUsesRubroProductModule } from "@/lib/rubros/registry";
 import { normalizeCatalogHeaderSettings } from "@/lib/store-settings/catalog-header";
@@ -68,6 +69,7 @@ interface TransactionalCatalogProps {
   /** Total de productos en BD (catálogo público paginado). */
   catalogTotalCount?: number;
   enableServerPagination?: boolean;
+  featuredBrands?: OfficialBrandPublic[];
 }
 
 export function TransactionalCatalog({
@@ -89,6 +91,7 @@ export function TransactionalCatalog({
   locationStocks = [],
   catalogTotalCount,
   enableServerPagination = false,
+  featuredBrands = [],
 }: TransactionalCatalogProps) {
   return (
     <CatalogFulfillmentProvider
@@ -113,6 +116,7 @@ export function TransactionalCatalog({
         showReferenceCta={showReferenceCta}
         catalogTotalCount={catalogTotalCount}
         enableServerPagination={enableServerPagination}
+        featuredBrands={featuredBrands}
       />
     </CatalogFulfillmentProvider>
   );
@@ -135,6 +139,7 @@ function TransactionalCatalogInner({
   showReferenceCta = false,
   catalogTotalCount,
   enableServerPagination = false,
+  featuredBrands = [],
 }: Omit<TransactionalCatalogProps, "locations" | "locationStocks">) {
   const liveExchangeRate = exchangeRate?.rate ?? null;
   const { showOfficialRate, showBsConversion } = catalogCurrency;
@@ -174,6 +179,7 @@ function TransactionalCatalogInner({
         showReferenceCta={showReferenceCta}
         catalogTotalCount={catalogTotalCount}
         enableServerPagination={enableServerPagination}
+        featuredBrands={featuredBrands}
         liveExchangeRate={liveExchangeRate}
         showOfficialRate={showOfficialRate}
         showBsConversion={showBsConversion}
@@ -202,6 +208,7 @@ function TransactionalCatalogContent({
   showReferenceCta = false,
   catalogTotalCount,
   enableServerPagination = false,
+  featuredBrands = [],
   liveExchangeRate,
   showOfficialRate,
   showBsConversion,
@@ -285,8 +292,8 @@ function TransactionalCatalogContent({
   );
 
   const brandOptions = useMemo(
-    () => extractCatalogBrands(catalogProducts),
-    [catalogProducts],
+    () => officialBrandsToCatalogOptions(featuredBrands),
+    [featuredBrands],
   );
 
   const browseServerPagination = useMemo(
@@ -421,6 +428,7 @@ function TransactionalCatalogContent({
           mercadoCards={mercadoCards}
           onActivateProduct={handleActivateProduct}
           onSelectBrand={handleSelectBrand}
+          featuredBrands={brandOptions}
           exchangeRate={exchangeRate}
           showOfficialRate={showOfficialRate}
           showBsConversion={showBsConversion}
