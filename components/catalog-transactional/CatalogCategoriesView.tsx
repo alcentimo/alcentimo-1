@@ -17,11 +17,6 @@ import {
   getCatalogThemeStyle,
 } from "@/lib/store-settings/catalog-theme";
 import {
-  CatalogProductDetailHost,
-  useCatalogProductDetail,
-} from "@/components/catalog/CatalogProductDetailHost";
-import { useCart } from "@/components/catalog-transactional/CartProvider";
-import {
   CatalogCartHost,
   type CartPanelView,
 } from "@/components/catalog-transactional/CatalogCartHost";
@@ -38,14 +33,12 @@ import { CatalogLocationPicker } from "@/components/catalog-transactional/Catalo
 import { CatalogPromoBannerCarousel } from "@/components/catalog-transactional/CatalogPromoBannerCarousel";
 import { StorefrontCatalogListing } from "@/components/catalog-transactional/StorefrontCatalogListing";
 import { StorefrontMoricheChrome } from "@/components/catalog-transactional/StorefrontMoricheChrome";
-import { useOpenCatalogProductById } from "@/components/catalog-transactional/useOpenCatalogProductById";
 import { mapCatalogListItemToMercadoCard } from "@/lib/catalog/map-catalog-to-mercado-card";
 import { officialBrandsToCatalogOptions } from "@/lib/catalog/product-brand";
 import type { OfficialBrandPublic } from "@/lib/official-brands/types";
 import { applyLocationStockToProduct } from "@/lib/locations/apply-catalog-stock";
 import { normalizeCatalogHeaderSettings } from "@/lib/store-settings/catalog-header";
 import { cn } from "@/lib/cn";
-import type { MercadoProductCard } from "@/lib/mercado-oculto/types";
 
 interface CatalogCategoriesViewProps {
   store: Store;
@@ -60,7 +53,6 @@ interface CatalogCategoriesViewProps {
   locationStocks?: VariantLocationStock[];
   catalogTotalCount?: number;
   enableServerPagination?: boolean;
-  initialProductId?: string | null;
   featuredBrands?: OfficialBrandPublic[];
 }
 
@@ -77,7 +69,6 @@ export function CatalogCategoriesView({
   locationStocks = [],
   catalogTotalCount,
   enableServerPagination = false,
-  initialProductId = null,
   featuredBrands = [],
 }: CatalogCategoriesViewProps) {
   return (
@@ -97,7 +88,6 @@ export function CatalogCategoriesView({
         catalogCurrency={catalogCurrency}
         catalogTotalCount={catalogTotalCount}
         enableServerPagination={enableServerPagination}
-        initialProductId={initialProductId}
         featuredBrands={featuredBrands}
       />
     </CatalogFulfillmentProvider>
@@ -115,13 +105,10 @@ function CatalogCategoriesViewInner({
   catalogCurrency,
   catalogTotalCount,
   enableServerPagination = false,
-  initialProductId = null,
   featuredBrands = [],
 }: Omit<CatalogCategoriesViewProps, "locations" | "locationStocks">) {
   const liveExchangeRate = exchangeRate?.rate ?? null;
-  const { showOfficialRate, showBsConversion, wholesaleEnabled } =
-    catalogCurrency;
-  const { addItem } = useCart();
+  const { showOfficialRate, showBsConversion } = catalogCurrency;
   const { getAvailableStock } = useCatalogFulfillment();
 
   const catalogProducts = useMemo(
@@ -171,43 +158,26 @@ function CatalogCategoriesViewInner({
   );
 
   return (
-    <CatalogProductDetailHost
-      storeId={store.id}
-      storeSlug={store.slug}
-      exchangeRate={liveExchangeRate}
-      showBsConversion={showBsConversion}
-      showOfficialRate={showOfficialRate}
-      storeRubro={store.rubro_tienda}
-      wholesaleEnabled={false}
-      checkoutType={purchaseInfo.checkoutType}
-      whatsappPhone={purchaseInfo.whatsappPhone}
-      onAddToCart={addItem}
-      onSelectBrand={(brand) => handleSelectBrand(brand)}
-    >
       <CatalogCategoriesPageContent
         store={store}
-        products={products}
         purchaseInfo={purchaseInfo}
-        catalogDesign={catalogDesign}
-        catalogCurrency={catalogCurrency}
-        exchangeRate={exchangeRate}
-        showOfficialRate={showOfficialRate}
-        showBsConversion={showBsConversion}
-        liveExchangeRate={liveExchangeRate}
-        catalogProducts={catalogProducts}
-        categoryOptions={categoryOptions}
-        browse={browse}
-        initialProductId={initialProductId}
-        onSelectBrand={handleSelectBrand}
-        featuredBrands={featuredBrands}
-      />
-    </CatalogProductDetailHost>
+      catalogDesign={catalogDesign}
+      catalogCurrency={catalogCurrency}
+      exchangeRate={exchangeRate}
+      showOfficialRate={showOfficialRate}
+      showBsConversion={showBsConversion}
+      liveExchangeRate={liveExchangeRate}
+      catalogProducts={catalogProducts}
+      categoryOptions={categoryOptions}
+      browse={browse}
+      onSelectBrand={handleSelectBrand}
+      featuredBrands={featuredBrands}
+    />
   );
 }
 
 interface CatalogCategoriesPageContentProps {
   store: Store;
-  products: CatalogListItem[];
   purchaseInfo: PublicPurchaseInfo;
   catalogDesign: CatalogDesignSettings;
   catalogCurrency: CatalogCurrencySettings;
@@ -218,14 +188,12 @@ interface CatalogCategoriesPageContentProps {
   catalogProducts: CatalogListItem[];
   categoryOptions: CatalogCategoryOption[];
   browse: ReturnType<typeof useCatalogBrowse>;
-  initialProductId?: string | null;
   onSelectBrand: (brand: string | null) => void;
   featuredBrands: OfficialBrandPublic[];
 }
 
 function CatalogCategoriesPageContent({
   store,
-  products,
   purchaseInfo,
   catalogDesign,
   catalogCurrency,
@@ -236,16 +204,9 @@ function CatalogCategoriesPageContent({
   catalogProducts,
   categoryOptions,
   browse,
-  initialProductId = null,
   onSelectBrand,
   featuredBrands,
 }: CatalogCategoriesPageContentProps) {
-  const { openProduct } = useCatalogProductDetail();
-  const openProductById = useOpenCatalogProductById(
-    store.slug,
-    products,
-    initialProductId,
-  );
   const shellNav = useCatalogShellNavigationOptional();
   const [cartPanelView, setCartPanelView] = useState<CartPanelView>("closed");
 
@@ -278,22 +239,6 @@ function CatalogCategoriesPageContent({
   const brandOptions = useMemo(
     () => officialBrandsToCatalogOptions(featuredBrands),
     [featuredBrands],
-  );
-
-  const productById = useMemo(() => {
-    const map = new Map<string, CatalogListItem>();
-    for (const product of catalogProducts) {
-      map.set(product.product_id, product);
-    }
-    return map;
-  }, [catalogProducts]);
-
-  const handleActivateProduct = useCallback(
-    (card: MercadoProductCard) => {
-      const product = productById.get(card.product_id);
-      if (product) openProduct(product);
-    },
-    [openProduct, productById],
   );
 
   const header = normalizeCatalogHeaderSettings(catalogDesign.header);
@@ -337,7 +282,6 @@ function CatalogCategoriesPageContent({
               promoBanner={catalogDesign.promoBanner}
               storeName={store.name}
               storeSlug={store.slug}
-              onOpenProduct={openProductById}
             />
             <CatalogLocationPicker />
           </>
@@ -348,7 +292,7 @@ function CatalogCategoriesPageContent({
           catalogProducts={catalogProducts}
           categoryOptions={categoryOptions}
           mercadoCards={mercadoCards}
-          onActivateProduct={handleActivateProduct}
+          storeSlug={store.slug}
           onSelectBrand={onSelectBrand}
           featuredBrands={brandOptions}
           exchangeRate={exchangeRate}

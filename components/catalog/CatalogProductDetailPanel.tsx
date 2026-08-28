@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Check, Loader2, MessageCircle, Plus, X } from "lucide-react";
+import Link from "next/link";
+import { ArrowLeft, Check, Loader2, MessageCircle, Plus, X } from "lucide-react";
 import { CatalogProductShareMenu } from "@/components/catalog/CatalogProductShareMenu";
 import { getStoreProductDeepLinkPath } from "@/lib/store-host";
 import type { CatalogListItem } from "@/lib/database.types";
@@ -91,7 +92,10 @@ interface CatalogProductDetailPanelProps {
   wholesaleEnabled?: boolean;
   checkoutType?: CheckoutType;
   whatsappPhone?: string | null;
-  onClose: () => void;
+  /** `page`: ficha a pantalla completa (Mercado Libre). `overlay`: modal (preview). */
+  layout?: "overlay" | "page";
+  catalogHref?: string;
+  onClose?: () => void;
   onSelectBrand?: (brand: string) => void;
   onAddToCart?: (
     product: CatalogListItem,
@@ -199,6 +203,8 @@ export function CatalogProductDetailPanel({
   wholesaleEnabled = false,
   checkoutType = "both",
   whatsappPhone = null,
+  layout = "overlay",
+  catalogHref,
   onClose,
   onSelectBrand,
   onAddToCart,
@@ -266,11 +272,13 @@ export function CatalogProductDetailPanel({
   }, [product.product_id, product.product_slug, product.store_slug]);
 
   useEffect(() => {
+    if (layout !== "overlay") return;
+
     const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
 
     function handleKeyDown(event: KeyboardEvent) {
-      if (event.key === "Escape") onClose();
+      if (event.key === "Escape") onClose?.();
     }
 
     window.addEventListener("keydown", handleKeyDown);
@@ -278,7 +286,7 @@ export function CatalogProductDetailPanel({
       document.body.style.overflow = previousOverflow;
       window.removeEventListener("keydown", handleKeyDown);
     };
-  }, [onClose]);
+  }, [layout, onClose]);
 
   const selectedVariant = useMemo(
     () =>
@@ -376,7 +384,7 @@ export function CatalogProductDetailPanel({
     } else if (!inCart) {
       return;
     }
-    onClose();
+    onClose?.();
     shellNav?.openCart();
   }
 
@@ -409,18 +417,37 @@ export function CatalogProductDetailPanel({
     Boolean(selectedVariant) &&
     !outOfStock;
 
+  const isPage = layout === "page";
+  const backHref = catalogHref || "/";
+
   return (
-    <div className="product-detail-overlay" role="dialog" aria-modal="true">
-      <button
-        type="button"
-        className="product-detail-backdrop"
-        aria-label="Cerrar detalle del producto"
-        onClick={onClose}
-      />
+    <div
+      className={isPage ? "product-detail-page" : "product-detail-overlay"}
+      role={isPage ? undefined : "dialog"}
+      aria-modal={isPage ? undefined : true}
+    >
+      {isPage ? null : (
+        <button
+          type="button"
+          className="product-detail-backdrop"
+          aria-label="Cerrar detalle del producto"
+          onClick={onClose}
+        />
+      )}
 
       <div className="product-detail-panel">
         <header className="product-detail-header">
-          {publicCategoryLabel ? (
+          {isPage ? (
+            <div className="product-detail-back-wrap">
+              <Link href={backHref} className="product-detail-back">
+                <ArrowLeft className="h-4 w-4" aria-hidden="true" />
+                Volver al catálogo
+              </Link>
+              {publicCategoryLabel ? (
+                <p className="product-detail-kicker">{publicCategoryLabel}</p>
+              ) : null}
+            </div>
+          ) : publicCategoryLabel ? (
             <p className="product-detail-kicker">{publicCategoryLabel}</p>
           ) : (
             <p className="product-detail-kicker" aria-hidden="true">
@@ -432,14 +459,16 @@ export function CatalogProductDetailPanel({
               productName={product.product_name}
               shareUrl={shareUrl || (typeof window !== "undefined" ? window.location.href : "")}
             />
-            <button
-              type="button"
-              onClick={onClose}
-              className="product-detail-close"
-              aria-label="Cerrar"
-            >
-              <X className="h-5 w-5" />
-            </button>
+            {isPage ? null : (
+              <button
+                type="button"
+                onClick={onClose}
+                className="product-detail-close"
+                aria-label="Cerrar"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            )}
           </div>
         </header>
 
@@ -467,7 +496,7 @@ export function CatalogProductDetailPanel({
                   className="product-detail-brand product-detail-brand-link"
                   onClick={() => {
                     onSelectBrand(brandName);
-                    onClose();
+                    onClose?.();
                   }}
                 >
                   {brandName}
@@ -477,7 +506,11 @@ export function CatalogProductDetailPanel({
               )
             ) : null}
 
-            <h2 className="product-detail-title">{product.product_name}</h2>
+            {isPage ? (
+              <h1 className="product-detail-title">{product.product_name}</h1>
+            ) : (
+              <h2 className="product-detail-title">{product.product_name}</h2>
+            )}
 
             <div className="product-detail-stock-row">
               {outOfStock ? (

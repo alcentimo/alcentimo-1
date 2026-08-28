@@ -9,10 +9,6 @@ import type { StoreLocation, VariantLocationStock } from "@/lib/locations/types"
 import { formatExchangeRate } from "@/lib/format";
 import { StoreHeader } from "@/components/catalog/StoreHeader";
 import { ProductCard } from "@/components/catalog/ProductCard";
-import {
-  CatalogProductDetailHost,
-  useCatalogProductDetail,
-} from "@/components/catalog/CatalogProductDetailHost";
 import { PurchaseInfoPanel } from "@/components/catalog/PurchaseInfoPanel";
 import { PageContainer } from "@/components/ui/PageContainer";
 import { useCart } from "@/components/catalog-transactional/CartProvider";
@@ -26,6 +22,7 @@ import {
 import { CatalogStoreBrandingProvider } from "@/components/catalog/CatalogStoreBrandingContext";
 import { CustomerPromoBanner } from "@/components/catalog-transactional/CustomerPromoBanner";
 import { usePromotionContext } from "@/components/catalog-transactional/PromotionProvider";
+import { getStoreProductDeepLinkPath } from "@/lib/store-host";
 
 interface StoreCatalogProps {
   store: Store;
@@ -87,19 +84,7 @@ function StoreCatalogInner({
   const [cartPanelView, setCartPanelView] = useState<CartPanelView>("closed");
 
   return (
-    <CatalogProductDetailHost
-      storeId={store.id}
-      storeSlug={store.slug}
-      exchangeRate={liveExchangeRate}
-      showBsConversion={showBsConversion}
-      showOfficialRate={showOfficialRate}
-      storeRubro={store.rubro_tienda}
-      wholesaleEnabled={wholesaleEnabled}
-      checkoutType={purchaseInfo.checkoutType}
-      whatsappPhone={purchaseInfo.whatsappPhone}
-      onAddToCart={addItem}
-    >
-      <StoreCatalogContent
+    <StoreCatalogContent
         store={store}
         products={products}
         exchangeRate={exchangeRate}
@@ -114,7 +99,6 @@ function StoreCatalogInner({
         setCartPanelView={setCartPanelView}
         addItem={addItem}
       />
-    </CatalogProductDetailHost>
   );
 }
 
@@ -143,8 +127,6 @@ function StoreCatalogContent({
   setCartPanelView: (view: CartPanelView) => void;
   addItem: ReturnType<typeof useCart>["addItem"];
 }) {
-  const { openProduct } = useCatalogProductDetail();
-
   return (
     <div className="store-catalog-shell">
       <CustomerPromoBanner promotion={guestBanner} />
@@ -189,7 +171,10 @@ function StoreCatalogContent({
                     storeRubro={store.rubro_tienda}
                     wholesaleEnabled={wholesaleEnabled}
                     onAddToCart={addItem}
-                    onOpenDetail={openProduct}
+                    detailHref={getStoreProductDeepLinkPath(
+                      store.slug,
+                      product.product_slug,
+                    )}
                   />
                 ))}
               </div>

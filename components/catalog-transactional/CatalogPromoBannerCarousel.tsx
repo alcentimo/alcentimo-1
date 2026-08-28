@@ -3,6 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { usePathname } from "next/navigation";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import {
   BANNER_DISPLAY_HEIGHT_DESKTOP_PX,
@@ -23,7 +24,7 @@ interface CatalogPromoBannerCarouselProps {
   promoBanner?: CatalogPromoBannerSettings | null;
   storeName: string;
   storeSlug?: string;
-  /** Abre la ficha del producto sin navegar (preferido en el catálogo). */
+  /** En preview/sandbox: abre el modal en lugar de navegar. */
   onOpenProduct?: (productId: string) => void;
   className?: string;
 }
@@ -85,6 +86,7 @@ export function CatalogPromoBannerCarousel({
   onOpenProduct,
   className,
 }: CatalogPromoBannerCarouselProps) {
+  const pathname = usePathname();
   const settings = resolvePromoBannerSettings(promoBanner ?? undefined, storeSlug);
   const slides = getActivePromoBannerSlides(settings);
 
@@ -222,9 +224,9 @@ export function CatalogPromoBannerCarousel({
           const productId = slide.productId?.trim();
           const productHref =
             productId && storeSlug
-              ? buildPromoBannerProductHref(storeSlug, productId)
+              ? buildPromoBannerProductHref(storeSlug, productId, { pathname })
               : productId
-                ? `/?product=${encodeURIComponent(productId)}`
+                ? `/producto/${encodeURIComponent(productId)}`
                 : null;
           const linkUrl = slide.linkUrl?.trim() || null;
 

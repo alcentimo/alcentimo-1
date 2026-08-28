@@ -11,6 +11,8 @@ import { resolvePrecioMayoristaUsd } from "@/lib/supplier/wholesale-price";
 /** Tarjeta / detalle de la vitrina mayorista B2B. */
 export interface MercadoProductCard {
   product_id: string;
+  /** Slug público para `/producto/[slug]` (vitrina dropshipper). */
+  product_slug?: string;
   product_name: string;
   short_description: string | null;
   price_usd: number;

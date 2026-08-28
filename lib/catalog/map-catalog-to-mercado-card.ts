@@ -35,6 +35,7 @@ export function mapCatalogListItemToMercadoCard(
 
   return {
     product_id: product.product_id,
+    product_slug: product.product_slug,
     product_name: product.product_name,
     short_description: product.short_description,
     price_usd: priceUsd,

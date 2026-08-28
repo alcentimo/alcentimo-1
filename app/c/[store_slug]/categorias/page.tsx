@@ -1,8 +1,9 @@
 import { Suspense } from "react";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { CatalogCategoriesView } from "@/components/catalog-transactional/CatalogCategoriesView";
 import { CatalogProductGridSkeleton } from "@/components/catalog/CatalogProductGridSkeleton";
 import { getPublicCatalogPageData } from "@/lib/catalog/get-public-catalog-page-data";
+import { getStoreProductDeepLinkPath } from "@/lib/store-host";
 
 // HTML dinámico (sesión/carrito). Los productos van al Data Cache (~60s + tags).
 export const dynamic = "force-dynamic";
@@ -15,11 +16,9 @@ interface CatalogCategoriesPageProps {
 async function CategoriesContent({
   storeSlug,
   categorySlug,
-  initialProductId,
 }: {
   storeSlug: string;
   categorySlug?: string;
-  initialProductId?: string | null;
 }) {
   const data = await getPublicCatalogPageData(storeSlug, {
     categoryFilter: true,
@@ -56,7 +55,6 @@ async function CategoriesContent({
       locationStocks={locationStocks}
       catalogTotalCount={totalCount}
       enableServerPagination
-      initialProductId={initialProductId}
       featuredBrands={featuredBrands}
     />
   );
@@ -68,6 +66,14 @@ export default async function CatalogCategoriesPage({
 }: CatalogCategoriesPageProps) {
   const { store_slug: storeSlug } = await params;
   const { categoria, product } = await searchParams;
+  const productKey = product?.trim();
+  if (productKey) {
+    redirect(
+      getStoreProductDeepLinkPath(storeSlug, productKey, {
+        pathname: `/c/${storeSlug}/categorias`,
+      }),
+    );
+  }
 
   return (
     <Suspense
@@ -77,11 +83,7 @@ export default async function CatalogCategoriesPage({
         </div>
       }
     >
-      <CategoriesContent
-        storeSlug={storeSlug}
-        categorySlug={categoria}
-        initialProductId={product?.trim() || null}
-      />
+      <CategoriesContent storeSlug={storeSlug} categorySlug={categoria} />
     </Suspense>
   );
 }

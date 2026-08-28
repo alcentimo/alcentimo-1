@@ -2992,6 +2992,27 @@ html:has(.landing-shell) {
   @apply fixed inset-0 z-[60] flex max-w-full items-end justify-center overflow-x-hidden sm:items-center sm:p-4;
 }
 
+.product-detail-page {
+  @apply mx-auto w-full max-w-6xl px-3 py-4 sm:px-6 sm:py-8;
+}
+
+.product-detail-page .product-detail-panel {
+  @apply max-h-none rounded-2xl shadow-md;
+  max-width: none;
+}
+
+.product-detail-page .product-detail-scroll {
+  @apply overflow-y-visible lg:overflow-visible;
+}
+
+.product-detail-back-wrap {
+  @apply min-w-0 flex-1;
+}
+
+.product-detail-back {
+  @apply mb-1 inline-flex items-center gap-1.5 text-sm font-medium text-zinc-600 transition hover:text-zinc-900;
+}
+
 .product-detail-backdrop {
   @apply absolute inset-0 border-0 bg-black/50 backdrop-blur-[2px];
 }

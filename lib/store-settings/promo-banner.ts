@@ -1,4 +1,4 @@
-import { getStoreCatalogBasePath } from "@/lib/store-host";
+import { getStoreProductDeepLinkPath } from "@/lib/store-host";
 import type {
   CatalogPromoBannerSettings,
   CatalogPromoBannerSlide,
@@ -27,15 +27,13 @@ export function isSafeBannerLink(value: string): boolean {
   return trimmed.startsWith("https://");
 }
 
-/** Ruta relativa del catálogo que abre la ficha de un producto (`?product=`). */
+/** Ruta de ficha pública (`/producto/{id}` o `/c/{tienda}/producto/{id}`). */
 export function buildPromoBannerProductHref(
   storeSlug: string,
   productId: string,
+  options?: { pathname?: string | null },
 ): string {
-  const base = getStoreCatalogBasePath(storeSlug);
-  const query = `product=${encodeURIComponent(productId.trim())}`;
-  if (base === "/") return `/?${query}`;
-  return `${base}?${query}`;
+  return getStoreProductDeepLinkPath(storeSlug, productId.trim(), options);
 }
 
 function normalizeProductId(value: unknown): string | undefined {

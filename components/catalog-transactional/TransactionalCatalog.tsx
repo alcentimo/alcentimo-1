@@ -348,14 +348,14 @@ function TransactionalCatalogContent({
   const handleSelectBrand = useCallback(
     (nextBrand: string | null) => {
       browse.setBrand(nextBrand);
-      closeProduct();
+      if (previewMode) closeProduct();
       if (typeof document !== "undefined") {
         document
           .getElementById("storefront-resultados")
           ?.scrollIntoView({ behavior: "smooth", block: "start" });
       }
     },
-    [browse.setBrand, closeProduct],
+    [browse.setBrand, closeProduct, previewMode],
   );
 
   brandFilterRef.current = (brand) => {
@@ -415,7 +415,7 @@ function TransactionalCatalogContent({
               promoBanner={catalogDesign.promoBanner}
               storeName={store.name}
               storeSlug={store.slug}
-              onOpenProduct={previewMode ? undefined : openProductById}
+              onOpenProduct={previewMode ? openProductById : undefined}
             />
             {!previewMode ? <CatalogLocationPicker /> : null}
           </>
@@ -426,7 +426,8 @@ function TransactionalCatalogContent({
           catalogProducts={catalogProducts}
           categoryOptions={categoryOptions}
           mercadoCards={mercadoCards}
-          onActivateProduct={handleActivateProduct}
+          storeSlug={store.slug}
+          onActivateProduct={previewMode ? handleActivateProduct : undefined}
           onSelectBrand={handleSelectBrand}
           featuredBrands={brandOptions}
           exchangeRate={exchangeRate}
