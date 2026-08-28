@@ -7,12 +7,7 @@ import {
   resolveSupplierAccess,
   resolveSupplierAuthEmail,
 } from "@/lib/supplier/access";
-import {
-  HUB_COLLECTION_BUYER_NAME,
-  HUB_COLLECTION_CARRIER,
-  HUB_COLLECTION_NOTES,
-  isHubCollectionSupplierOrder,
-} from "@/lib/dropship/hub-collection";
+import { HUB_COLLECTION_BUYER_NAME } from "@/lib/dropship/hub-collection";
 import {
   isSupplierOrderStatus,
   supplierCanSetOrderStatus,
@@ -179,18 +174,17 @@ function mapOrder(
 
 /** Quita datos de cliente final y dropshipper del DTO del panel del proveedor. */
 function toSupplierFacingOrder(order: SupplierOrder): SupplierOrder {
-  if (!isHubCollectionSupplierOrder(order)) return order;
   return {
     ...order,
     buyerName: HUB_COLLECTION_BUYER_NAME,
     buyerDocumentId: null,
     buyerPhone: null,
     buyerAddress: null,
-    shippingCarrier: HUB_COLLECTION_CARRIER,
     shippingBranchName: null,
     shippingBranchAddress: null,
     senderName: null,
-    notes: HUB_COLLECTION_NOTES,
+    notes: "",
+    paymentNotes: "",
   };
 }
 

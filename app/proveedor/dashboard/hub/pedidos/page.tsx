@@ -14,7 +14,6 @@ export default async function ProveedorHubPedidosPage() {
       <DashboardPageHeader
         sectionLabel="Suministro"
         title="Pedidos y pagos"
-        description="Cada pedido de Alcéntimo: mercancía a preparar, estado del pago con comprobante y retiro. No aparecen datos del cliente final."
       />
       {data.ordersError ? (
         <p className="supplier-hub-alert">

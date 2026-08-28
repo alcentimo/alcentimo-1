@@ -3,7 +3,7 @@ import type { ReactNode } from "react";
 interface DashboardPageHeaderProps {
   sectionLabel?: string;
   title: string;
-  description: ReactNode;
+  description?: ReactNode;
   before?: ReactNode;
   actions?: ReactNode;
 }
@@ -28,7 +28,9 @@ export function DashboardPageHeader({
           {before}
           {sectionLabel ? <p className="section-label">{sectionLabel}</p> : null}
           <h1 className="page-header-title">{title}</h1>
-          <p className="page-header-desc">{description}</p>
+          {description ? (
+            <p className="page-header-desc">{description}</p>
+          ) : null}
         </div>
         {actions ? (
           <div className="flex shrink-0 items-center self-start">{actions}</div>
