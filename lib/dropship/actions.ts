@@ -17,6 +17,7 @@ import {
 } from "@/lib/dropship/margin";
 import { getStoreSettingsConfig } from "@/lib/store-settings/get-store-settings";
 import { mergeStoreSettingsConfig } from "@/lib/store-settings/defaults";
+import { requireDropshipFeatureAccess } from "@/lib/dropship/feature-access";
 import { normalizeProductBrand } from "@/lib/catalog/product-brand";
 import {
   allocateUniqueProductSlug,
