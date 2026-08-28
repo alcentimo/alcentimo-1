@@ -21,6 +21,7 @@ interface CatalogProductDetailHostProps {
   wholesaleEnabled?: boolean;
   checkoutType?: CheckoutType;
   whatsappPhone?: string | null;
+  syncProductUrl?: boolean;
   onAddToCart?: (
     product: CatalogListItem,
     variant: CatalogVariantOption,
@@ -66,10 +67,15 @@ export function CatalogProductDetailHost({
   wholesaleEnabled,
   checkoutType,
   whatsappPhone,
+  syncProductUrl = true,
   onAddToCart,
 }: CatalogProductDetailHostProps) {
   return (
-    <CatalogProductDetailProvider storeId={storeId} storeSlug={storeSlug}>
+    <CatalogProductDetailProvider
+      storeId={storeId}
+      storeSlug={storeSlug}
+      syncProductUrl={syncProductUrl}
+    >
       {children}
       <CatalogProductDetailLayer
         exchangeRate={exchangeRate}

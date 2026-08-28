@@ -150,6 +150,7 @@ function TransactionalCatalogInner({
       wholesaleEnabled={false}
       checkoutType={purchaseInfo.checkoutType}
       whatsappPhone={purchaseInfo.whatsappPhone}
+      syncProductUrl={!previewMode}
       onAddToCart={referenceMode ? undefined : addItem}
     >
       <TransactionalCatalogContent
