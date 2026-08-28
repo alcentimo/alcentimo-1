@@ -23,7 +23,12 @@ export function useOpenCatalogProductById(
       const id = productId.trim();
       if (!id || pendingRef.current) return;
 
-      const local = products.find((product) => product.product_id === id);
+      const normalized = id.toLowerCase();
+      const local = products.find(
+        (product) =>
+          product.product_id.toLowerCase() === normalized ||
+          product.product_slug.toLowerCase() === normalized,
+      );
       if (local) {
         openProduct(local);
         return;

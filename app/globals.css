@@ -2878,8 +2878,8 @@ html:has(.landing-shell) {
   @apply right-2;
 }
 
-.product-image-gallery-card .product-image-gallery-count {
-  @apply right-2 top-2;
+.product-image-gallery-card .product-image-gallery-zoom {
+  display: none;
 }
 
 @media (hover: hover) and (pointer: fine) {
@@ -2956,6 +2956,55 @@ html:has(.landing-shell) {
 
 .product-detail-close {
   @apply shrink-0 rounded-lg p-2 text-zinc-500 transition hover:bg-zinc-100 hover:text-zinc-800;
+}
+
+.product-detail-header-actions {
+  @apply flex shrink-0 items-center gap-1;
+}
+
+.product-detail-share-btn {
+  @apply inline-flex min-h-9 items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-sm font-medium text-zinc-600 transition hover:bg-zinc-100 hover:text-zinc-900;
+}
+
+.product-detail-share-menu {
+  @apply absolute right-0 top-[calc(100%+0.35rem)] z-30 min-w-[13.5rem] rounded-xl border border-zinc-200 bg-white p-1.5 shadow-lg dark:border-zinc-700 dark:bg-zinc-950;
+}
+
+.product-image-gallery-zoom {
+  @apply absolute bottom-3 right-3 z-20 flex h-9 w-9 items-center justify-center rounded-full border border-zinc-200/80 bg-white/95 text-zinc-700 shadow-md transition hover:bg-white;
+}
+
+.product-image-gallery-stage-zoomable {
+  @apply cursor-zoom-in;
+}
+
+.product-gallery-lightbox {
+  @apply fixed inset-0 z-[80] flex items-center justify-center p-3 sm:p-6;
+}
+
+.product-gallery-lightbox-backdrop {
+  @apply absolute inset-0 border-0 bg-black/80;
+}
+
+.product-gallery-lightbox-frame {
+  @apply relative z-10 flex max-h-full w-full max-w-5xl flex-col gap-3;
+}
+
+.product-gallery-lightbox-close {
+  @apply absolute -top-1 right-0 z-20 rounded-full bg-white/95 p-2 text-zinc-800 shadow-md sm:right-0;
+}
+
+.product-gallery-lightbox-stage {
+  @apply relative min-h-0 flex-1 overflow-hidden rounded-xl bg-black/40;
+  min-height: min(70dvh, 720px);
+}
+
+.product-gallery-lightbox-image {
+  @apply object-contain object-center;
+}
+
+.product-gallery-lightbox-thumbs {
+  @apply flex justify-center gap-2 overflow-x-auto px-1;
 }
 
 .product-detail-scroll {

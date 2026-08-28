@@ -208,6 +208,21 @@ export function getStoreProductPublicUrl(
   );
 }
 
+/**
+ * Deep-link relativo según el catálogo actual (`/` en subdominio o `/c/slug`).
+ * Conserva query salvo `product`, que pasa a la ruta `/producto/{slug}`.
+ */
+export function getStoreProductDeepLinkPath(
+  storeSlug: string,
+  productSlug: string,
+  options?: { pathname?: string | null },
+): string {
+  return joinPublicPath(
+    getStoreCatalogBasePath(storeSlug, options),
+    getStoreProductPublicPath(productSlug),
+  );
+}
+
 export function getStoreCustomerAccountPath(
   storeSlug: string,
   section: "cuenta" | "perfil" = "cuenta",

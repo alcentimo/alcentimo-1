@@ -2,6 +2,8 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Check, Loader2, MessageCircle, Plus, X } from "lucide-react";
+import { CatalogProductShareMenu } from "@/components/catalog/CatalogProductShareMenu";
+import { getStoreProductDeepLinkPath } from "@/lib/store-host";
 import type { CatalogListItem } from "@/lib/database.types";
 import type { CatalogVariantOption } from "@/lib/products/variants";
 import type { CartModifierSelection } from "@/lib/catalog/cart-types";
@@ -259,6 +261,16 @@ export function CatalogProductDetailPanel({
     product.short_description?.trim() ||
     null;
 
+  const shareUrl = useMemo(() => {
+    if (typeof window === "undefined") return "";
+    const path = getStoreProductDeepLinkPath(
+      product.store_slug,
+      product.product_slug,
+      { pathname: window.location.pathname },
+    );
+    return `${window.location.origin}${path}`;
+  }, [product.product_slug, product.store_slug]);
+
   function handleAdd() {
     if (!canAddMore || !selectedVariant) return;
     onAddToCart?.(product, selectedVariant, selectedModifiers);
@@ -325,14 +337,20 @@ export function CatalogProductDetailPanel({
               &nbsp;
             </p>
           )}
-          <button
-            type="button"
-            onClick={onClose}
-            className="product-detail-close"
-            aria-label="Cerrar"
-          >
-            <X className="h-5 w-5" />
-          </button>
+          <div className="product-detail-header-actions">
+            <CatalogProductShareMenu
+              productName={product.product_name}
+              shareUrl={shareUrl || (typeof window !== "undefined" ? window.location.href : "")}
+            />
+            <button
+              type="button"
+              onClick={onClose}
+              className="product-detail-close"
+              aria-label="Cerrar"
+            >
+              <X className="h-5 w-5" />
+            </button>
+          </div>
         </header>
 
         <div className="product-detail-scroll">
