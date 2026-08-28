@@ -22,10 +22,10 @@ interface SupplierOrdersPanelProps {
 type SupplierOrderFilterId = "all" | SupplierOrderStatus;
 
 const FILTER_TABS: { id: SupplierOrderFilterId; label: string }[] = [
-  { id: "all", label: "Todos" },
   { id: "pendiente", label: "Por preparar" },
   { id: "preparando", label: "Listos para retirar" },
   { id: "despachado", label: "Retirados" },
+  { id: "all", label: "Todos" },
 ];
 
 function payoutForOrder(
@@ -47,7 +47,7 @@ export function SupplierOrdersPanel({
   const [pendingId, setPendingId] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
   const [statusFilter, setStatusFilter] =
-    useState<SupplierOrderFilterId>("all");
+    useState<SupplierOrderFilterId>("pendiente");
 
   const filteredOrders = useMemo(() => {
     if (statusFilter === "all") return orders;
@@ -101,15 +101,15 @@ export function SupplierOrdersPanel({
       {orders.length === 0 ? (
         <SupplierEmptyState
           icon={ShoppingBag}
-          title="Sin pedidos de Alcéntimo"
-          description="Cuando Alcéntimo te compre mercancía, verás aquí qué preparar, el estado del pago y el retiro. No aparecen datos del cliente final."
+          title="Sin pedidos"
+          description="Cuando Alcéntimo compre, aparecerán aquí."
         />
       ) : (
         <>
           <div
             className="supplier-hub-orders-filters"
             role="tablist"
-            aria-label="Filtrar por estado de retiro"
+            aria-label="Estado del pedido"
           >
             {FILTER_TABS.map((tab) => {
               const isActive = statusFilter === tab.id;
@@ -137,11 +137,11 @@ export function SupplierOrdersPanel({
           {filteredOrders.length === 0 ? (
             <SupplierEmptyState
               icon={ShoppingBag}
-              title="Nada en este filtro"
-              description="No hay pedidos con ese estado de retiro."
+              title="Sin pedidos"
+              description=""
             />
           ) : (
-            <div className="space-y-5">
+            <div className="space-y-4">
               {filteredOrders.map((order) => (
                 <SupplierIncomingPayoutCard
                   key={order.id}
