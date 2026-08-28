@@ -582,7 +582,7 @@ export function CatalogProductDetailPanel({
                   handleAdd={handleAdd}
                   handleWhatsAppOrder={handleWhatsAppOrder}
                   outOfStock={outOfStock}
-                  canAddMore={canAddMore}
+                  canAddMore={Boolean(canAddMore)}
                   inCart={inCart}
                   justAdded={justAdded}
                   contextCartQuantity={contextCartQuantity}
@@ -604,7 +604,7 @@ export function CatalogProductDetailPanel({
               handleAdd={handleAdd}
               handleWhatsAppOrder={handleWhatsAppOrder}
               outOfStock={outOfStock}
-              canAddMore={canAddMore}
+              canAddMore={Boolean(canAddMore)}
               inCart={inCart}
               justAdded={justAdded}
               contextCartQuantity={contextCartQuantity}
