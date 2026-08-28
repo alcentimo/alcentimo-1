@@ -1,6 +1,7 @@
 export type AdminDashboardTab =
   | "dropship"
   | "proveedor"
+  | "marcas"
   | "tiendas"
   | "envios"
   | "soporte"
@@ -13,6 +14,8 @@ const LEGACY_TAB_MAP: Record<string, AdminDashboardTab> = {
   liquidaciones: "dropship",
   "liquidaciones-dropship": "dropship",
   proveedor: "proveedor",
+  marcas: "marcas",
+  "marcas-destacadas": "marcas",
   mayorista: "proveedor",
   "proveedor-mayorista": "proveedor",
   catalogo: "proveedor",

@@ -39,6 +39,7 @@ async function CategoriesContent({
     locations,
     locationStocks,
     totalCount,
+    featuredBrands,
   } = data;
 
   return (
@@ -56,6 +57,7 @@ async function CategoriesContent({
       catalogTotalCount={totalCount}
       enableServerPagination
       initialProductId={initialProductId}
+      featuredBrands={featuredBrands}
     />
   );
 }

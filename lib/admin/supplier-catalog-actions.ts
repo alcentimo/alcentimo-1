@@ -55,6 +55,8 @@ export type AdminSupplierCatalogProduct = {
   catalogVisible: boolean;
   isVisible: boolean;
   imageUrl: string | null;
+  officialBrandId: string | null;
+  officialBrandName: string | null;
   supplierUserId: string;
   supplierName: string;
   createdAt: string;
@@ -74,7 +76,7 @@ export type AdminSupplierMarginOption = {
 };
 
 const PRODUCT_SELECT =
-  "id, title, description, category, stock, base_price_usd, precio_mayorista, suggested_retail_usd, publication_status, catalog_visible, is_visible, image_url, created_by, created_at, updated_at, is_active";
+  "id, title, description, category, brand, official_brand_id, stock, base_price_usd, precio_mayorista, suggested_retail_usd, publication_status, catalog_visible, is_visible, image_url, created_by, created_at, updated_at, is_active";
 
 async function requireSupportAdmin() {
   const supabase = await createClient();
@@ -121,6 +123,12 @@ function mapAdminProduct(
       typeof row.image_url === "string" && row.image_url.trim()
         ? row.image_url.trim()
         : null,
+    officialBrandId:
+      typeof row.official_brand_id === "string" && row.official_brand_id.trim()
+        ? row.official_brand_id.trim()
+        : null,
+    officialBrandName:
+      typeof row.brand === "string" && row.brand.trim() ? row.brand.trim() : null,
     supplierUserId,
     supplierName: supplierNameById.get(supplierUserId) ?? "Proveedor",
     createdAt: String(row.created_at ?? ""),

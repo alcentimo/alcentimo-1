@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  Award,
   BarChart3,
   Bot,
   MessageSquare,
@@ -39,6 +40,13 @@ export const ADMIN_NAV_ITEMS: AdminNavItem[] = [
       "Producto, costo y precio mayorista. Publica o oculta el catálogo entero de cada proveedor.",
     icon: Warehouse,
     showBadge: true,
+  },
+  {
+    id: "marcas",
+    label: "Marcas destacadas",
+    description:
+      "Marcas oficiales de Alcéntimo (nombre y logo) para las vitrinas de dropshippers.",
+    icon: Award,
   },
   {
     id: "tiendas",

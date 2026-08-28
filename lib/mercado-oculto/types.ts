@@ -27,7 +27,7 @@ export interface MercadoProductCard {
   seller_user_id: string;
   store_name: string;
   supplier_label: string;
-  /** Marca propia del producto (sello de vitrina). */
+  /** Marca oficial de Alcéntimo (sello de vitrina). */
   brand: string | null;
   variants: SupplierProductVariants;
   /** Galería completa; thumb_url es la portada (primera). */

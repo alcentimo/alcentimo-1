@@ -1,8 +1,6 @@
-import { parseExtraFieldsFromMetadata } from "@/lib/products/extra-fields";
-
 const BRAND_MAX_LENGTH = 80;
 
-/** Nombre de marca visible (columna o campo extra «Marca»). */
+/** Nombre de marca oficial visible en vitrina (columna products.brand). */
 export function normalizeProductBrand(
   value: string | null | undefined,
 ): string | null {
@@ -25,13 +23,7 @@ export function resolveCatalogProductBrand(product: {
   brand?: string | null;
   metadata?: Record<string, unknown> | null;
 }): string | null {
-  const fromColumn = normalizeProductBrand(product.brand);
-  if (fromColumn) return fromColumn;
-
-  const extra = parseExtraFieldsFromMetadata(product.metadata ?? null);
-  return normalizeProductBrand(
-    extra.Marca ?? extra.marca ?? extra.Brand ?? extra.brand ?? null,
-  );
+  return normalizeProductBrand(product.brand);
 }
 
 export function brandsMatch(
@@ -48,7 +40,31 @@ export function brandsMatch(
 export interface CatalogBrandOption {
   name: string;
   key: string;
-  count: number;
+  count?: number;
+  logoUrl?: string | null;
+}
+
+export function officialBrandsToCatalogOptions(
+  brands: Array<{
+    name: string;
+    slug?: string;
+    logoUrl?: string | null;
+  }>,
+  counts?: Map<string, number>,
+): CatalogBrandOption[] {
+  return brands
+    .map((brand) => {
+      const name = normalizeProductBrand(brand.name);
+      if (!name) return null;
+      const key = productBrandKey(name);
+      return {
+        name,
+        key,
+        count: counts?.get(key),
+        logoUrl: brand.logoUrl ?? null,
+      };
+    })
+    .filter((item): item is CatalogBrandOption => item != null);
 }
 
 export function extractCatalogBrands(
@@ -65,7 +81,7 @@ export function extractCatalogBrands(
     const key = productBrandKey(name);
     const current = map.get(key);
     if (current) {
-      current.count += 1;
+      current.count = (current.count ?? 0) + 1;
     } else {
       map.set(key, { name, key, count: 1 });
     }

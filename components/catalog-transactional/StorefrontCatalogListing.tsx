@@ -4,8 +4,10 @@ import { useMemo, type ReactNode } from "react";
 import type { CatalogListItem, ExchangeRate } from "@/lib/database.types";
 import type { CatalogCategoryOption } from "@/lib/catalog/extract-categories";
 import {
-  extractCatalogBrands,
+  officialBrandsToCatalogOptions,
   productBrandKey,
+  resolveCatalogProductBrand,
+  type CatalogBrandOption,
 } from "@/lib/catalog/product-brand";
 import { CatalogBrowseLoadMore } from "@/components/catalog-transactional/CatalogBrowseLoadMore";
 import { CatalogBrowseStatus } from "@/components/catalog-transactional/CatalogBrowseStatus";
@@ -31,6 +33,7 @@ interface StorefrontCatalogListingProps {
   noResultsDescription: string;
   extraAfterGrid?: ReactNode;
   onSelectBrand?: (brand: string | null) => void;
+  featuredBrands?: CatalogBrandOption[];
 }
 
 function StorefrontListingFilters({
@@ -42,7 +45,7 @@ function StorefrontListingFilters({
 }: {
   browse: ReturnType<typeof useCatalogBrowse>;
   categoryFacets: Array<CatalogCategoryOption & { count: number }>;
-  brandFacets: ReturnType<typeof extractCatalogBrands>;
+  brandFacets: CatalogBrandOption[];
   priceBounds: { min: number; max: number };
   onSelectBrand?: (brand: string | null) => void;
 }) {
@@ -85,6 +88,7 @@ export function StorefrontCatalogListing({
   noResultsDescription,
   extraAfterGrid = null,
   onSelectBrand,
+  featuredBrands = [],
 }: StorefrontCatalogListingProps) {
   const isDepartmentView = Boolean(
     browse.searchQuery.trim() ||
@@ -94,10 +98,19 @@ export function StorefrontCatalogListing({
       browse.maxPrice,
   );
 
-  const brandFacets = useMemo(
-    () => extractCatalogBrands(catalogProducts),
-    [catalogProducts],
-  );
+  const brandFacets = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const product of catalogProducts) {
+      const name = resolveCatalogProductBrand(product);
+      if (!name) continue;
+      const key = productBrandKey(name);
+      counts.set(key, (counts.get(key) ?? 0) + 1);
+    }
+    if (featuredBrands.length > 0) {
+      return officialBrandsToCatalogOptions(featuredBrands, counts);
+    }
+    return [];
+  }, [catalogProducts, featuredBrands]);
 
   const activeCategoryName = categoryOptions.find(
     (category) => category.slug === browse.categorySlug,

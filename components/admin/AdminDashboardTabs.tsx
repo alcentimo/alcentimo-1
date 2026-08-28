@@ -61,6 +61,20 @@ const AdminSupplierPickupPanel = dynamic(
   },
 );
 
+const AdminOfficialBrandsPanel = dynamic(
+  () =>
+    import("@/components/admin/AdminOfficialBrandsPanel").then((m) => ({
+      default: m.AdminOfficialBrandsPanel,
+    })),
+  {
+    loading: () => (
+      <p className="text-sm text-zinc-500 dark:text-zinc-400">
+        Cargando marcas destacadas…
+      </p>
+    ),
+  },
+);
+
 const AdminSupplierCatalogPanel = dynamic(
   () =>
     import("@/components/admin/AdminSupplierCatalogPanel").then((m) => ({
@@ -210,6 +224,8 @@ export function AdminDashboardTabs({
           <AdminSupplierCatalogPanel />
         </div>
       ) : null}
+
+      {activeTab === "marcas" ? <AdminOfficialBrandsPanel /> : null}
 
       {activeTab === "tiendas" ? (
         <AdminStoresPanel

@@ -37,7 +37,6 @@ import {
 } from "@/lib/supplier/wholesale-price";
 import { MERCADO_CATALOG_CACHE_TAG } from "@/lib/mercado-oculto/catalog-cache";
 import { revalidateAllPublicCatalogCaches } from "@/lib/catalog/public-catalog-cache";
-import { normalizeProductBrand } from "@/lib/catalog/product-brand";
 import { mirrorSupplierProductToOwnStore } from "@/lib/supplier/own-store";
 
 function bustMercadoCatalogCache() {
@@ -147,7 +146,6 @@ function parseProductFields(formData: FormData): {
   error?: string;
   title?: string;
   description?: string;
-  brand?: string | null;
   category?: SupplierProductCategory;
   variants?: SupplierProductVariants;
   stock?: number;
@@ -155,7 +153,6 @@ function parseProductFields(formData: FormData): {
 } {
   const title = String(formData.get("title") ?? "").trim();
   const description = String(formData.get("description") ?? "").trim();
-  const brand = normalizeProductBrand(String(formData.get("brand") ?? ""));
   const category = normalizeSupplierProductCategory(formData.get("category"));
   const variants = parseSupplierVariantsFromForm(formData.get("variants"));
   const stockRaw = String(formData.get("stock") ?? "0").trim();
@@ -224,7 +221,6 @@ function parseProductFields(formData: FormData): {
   return {
     title,
     description,
-    brand,
     category,
     variants: resolvedVariants,
     stock: resolvedStock,
@@ -277,7 +273,6 @@ export async function createSupplierProduct(
       created_by: auth.user.id,
       title: parsed.title.slice(0, 180),
       description: (parsed.description ?? "").slice(0, 4000),
-      brand: parsed.brand,
       category: parsed.category ?? "otros",
       variants: parsed.variants ?? normalizeSupplierProductVariants(null),
       stock: parsed.stock,
@@ -376,7 +371,6 @@ export async function updateSupplierProduct(
   const patch: Record<string, unknown> = {
     title: parsed.title.slice(0, 180),
     description: (parsed.description ?? "").slice(0, 4000),
-    brand: parsed.brand,
     category: parsed.category ?? "otros",
     variants: parsed.variants ?? normalizeSupplierProductVariants(null),
     stock: parsed.stock,

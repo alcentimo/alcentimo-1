@@ -33,6 +33,7 @@ async function ProductDeepLinkContent({
     locations,
     locationStocks,
     totalCount,
+    featuredBrands,
   } = data;
 
   return (
@@ -49,6 +50,7 @@ async function ProductDeepLinkContent({
       locationStocks={locationStocks}
       catalogTotalCount={totalCount}
       enableServerPagination
+      featuredBrands={featuredBrands}
     />
   );
 }
