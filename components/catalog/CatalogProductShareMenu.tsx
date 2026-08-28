@@ -4,6 +4,19 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Check, Copy, MessageCircle, Share2 } from "lucide-react";
 import { cn } from "@/lib/cn";
 
+function TelegramIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="currentColor"
+      aria-hidden="true"
+      className={className}
+    >
+      <path d="M21.2 4.3 2.9 11.3c-1.25.5-1.24 1.2-.22 1.52l4.7 1.47 1.82 5.6c.22.67.11.93.75.93.39 0 .56-.18.77-.4l2.2-2.14 4.57 3.37c.84.46 1.45.22 1.66-.78L22.4 5.7c.28-1.33-.5-1.93-1.2-1.4Z" />
+    </svg>
+  );
+}
+
 function FacebookIcon({ className }: { className?: string }) {
   return (
     <svg
@@ -143,7 +156,9 @@ export function CatalogProductShareMenu({
             ) : (
               <Copy className="h-4 w-4" aria-hidden="true" />
             )}
-            {copied ? "Enlace copiado" : "Copiar enlace"}
+            <span aria-live="polite">
+              {copied ? "¡Copiado!" : "Copiar enlace"}
+            </span>
           </button>
 
           <a
@@ -192,7 +207,7 @@ export function CatalogProductShareMenu({
             rel="noopener noreferrer"
             onClick={() => setOpen(false)}
           >
-            <Share2 className="h-4 w-4" aria-hidden="true" />
+            <TelegramIcon className="h-4 w-4 text-sky-500" />
             Telegram
           </a>
 

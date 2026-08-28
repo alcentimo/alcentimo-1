@@ -60,7 +60,10 @@ export function ProductImageGallery({
   const [activeIndex, setActiveIndex] = useState(0);
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [lightboxMounted, setLightboxMounted] = useState(false);
+  const [magnifierOn, setMagnifierOn] = useState(false);
+  const [magnifierOrigin, setMagnifierOrigin] = useState("50% 50%");
   const touchStartX = useRef<number | null>(null);
+  const stageRef = useRef<HTMLDivElement | null>(null);
 
   const activeImage: CatalogProductGalleryImage | null =
     images[activeIndex] ?? images[0] ?? null;
@@ -117,8 +120,26 @@ export function ProductImageGallery({
     };
   }, [lightboxOpen, goPrev, goNext]);
 
+  function updateMagnifier(event: React.MouseEvent<HTMLDivElement>) {
+    if (!canEnlarge || lightboxOpen) return;
+    if (
+      typeof window !== "undefined" &&
+      !window.matchMedia("(hover: hover) and (pointer: fine)").matches
+    ) {
+      return;
+    }
+    const rect = stageRef.current?.getBoundingClientRect();
+    if (!rect || rect.width < 8 || rect.height < 8) return;
+    const x = ((event.clientX - rect.left) / rect.width) * 100;
+    const y = ((event.clientY - rect.top) / rect.height) * 100;
+    setMagnifierOrigin(
+      `${Math.min(100, Math.max(0, x)).toFixed(2)}% ${Math.min(100, Math.max(0, y)).toFixed(2)}%`,
+    );
+  }
+
   function handleTouchStart(event: React.TouchEvent) {
     touchStartX.current = event.touches[0]?.clientX ?? null;
+    setMagnifierOn(false);
   }
 
   function handleTouchEnd(event: React.TouchEvent) {
@@ -154,11 +175,25 @@ export function ProductImageGallery({
       onTouchEnd={hasMultiple ? handleTouchEnd : undefined}
     >
       <div
+        ref={stageRef}
         className={cn(
           "product-image-gallery-stage",
           (onMediaClick || canEnlarge) && "cursor-pointer",
           canEnlarge && "product-image-gallery-stage-zoomable",
+          magnifierOn && "product-image-gallery-stage-magnifying",
         )}
+        onMouseEnter={(event) => {
+          if (!canEnlarge) return;
+          if (
+            !window.matchMedia("(hover: hover) and (pointer: fine)").matches
+          ) {
+            return;
+          }
+          setMagnifierOn(true);
+          updateMagnifier(event);
+        }}
+        onMouseMove={canEnlarge ? updateMagnifier : undefined}
+        onMouseLeave={() => setMagnifierOn(false)}
         onClick={
           onMediaClick || canEnlarge
             ? (event) => {
@@ -167,18 +202,34 @@ export function ProductImageGallery({
                   onMediaClick();
                   return;
                 }
+                setMagnifierOn(false);
                 setLightboxOpen(true);
               }
             : undefined
         }
       >
-        <CatalogProductImage
-          src={galleryDisplayUrl(activeImage, mode)}
-          alt={alt}
-          className={imageClassName}
-          loading={loading}
-          sizes={sizes}
-        />
+        <div
+          className="product-image-gallery-magnifier"
+          style={
+            magnifierOn
+              ? {
+                  transform: "scale(2.35)",
+                  transformOrigin: magnifierOrigin,
+                }
+              : {
+                  transform: "scale(1)",
+                  transformOrigin: magnifierOrigin,
+                }
+          }
+        >
+          <CatalogProductImage
+            src={galleryDisplayUrl(activeImage, mode)}
+            alt={alt}
+            className={imageClassName}
+            loading={loading}
+            sizes={sizes}
+          />
+        </div>
 
         {canEnlarge ? (
           <button
