@@ -46,6 +46,8 @@ export interface GetCatalogOptions {
   maxPriceUsd?: number | null;
   /** Restringe a IDs concretos (p. ej. hidratar carrito). */
   productIds?: string[];
+  /** Deep-link por slug público (`/producto/nombre-del-producto`). */
+  productSlug?: string;
 }
 
 /** Orden estándar del catálogo público: con stock primero, agotados al final. */
@@ -91,6 +93,7 @@ interface CatalogProductsQueryOptions {
   offset: number;
   limit: number;
   productIds?: string[];
+  productSlug?: string;
   searchOr: string | null;
   minPriceUsd?: number | null;
   maxPriceUsd?: number | null;
@@ -109,6 +112,7 @@ function buildCatalogProductsQuery(
     offset,
     limit,
     productIds,
+    productSlug,
     searchOr,
     minPriceUsd,
     maxPriceUsd,
@@ -131,6 +135,10 @@ function buildCatalogProductsQuery(
 
   if (productIds?.length) {
     query = query.in("product_id", productIds);
+  }
+
+  if (productSlug) {
+    query = query.eq("product_slug", productSlug);
   }
 
   if (searchOr) {
@@ -218,6 +226,7 @@ function catalogProductsCacheKey(options: GetCatalogOptions): string[] {
     options.minPriceUsd == null ? "" : String(options.minPriceUsd),
     options.maxPriceUsd == null ? "" : String(options.maxPriceUsd),
     productIds,
+    options.productSlug?.trim().toLowerCase() ?? "",
     "union-own",
   ];
 }
@@ -251,6 +260,7 @@ async function loadCatalogProductsUncached(
     minPriceUsd,
     maxPriceUsd,
     productIds,
+    productSlug,
   } = options;
   const normalizedSlug = storeSlug.trim().toLowerCase();
   const dropshipEntries = storeId?.trim()
@@ -291,7 +301,8 @@ async function loadCatalogProductsUncached(
   // Paginación solo en listados; las hidrataciones por IDs traen el set completo.
   // Filtro de tienda: store_slug + store_id en catalog_list_view (productos activos).
   // Los vínculos dropship enriquecen categorías; no vacían la vitrina si fallan.
-  const paginated = limit != null && productIds == null;
+  const paginated =
+    limit != null && productIds == null && !productSlug?.trim();
   const searchOr = buildInventorySearchOrFilter(search ?? "") || null;
   const useInFilter =
     Boolean(allowedProductIds?.length) &&
@@ -305,6 +316,7 @@ async function loadCatalogProductsUncached(
       offset,
       limit,
       productIds: useInFilter ? allowedProductIds : undefined,
+      productSlug: productSlug?.trim().toLowerCase() || undefined,
       searchOr,
       minPriceUsd: minPriceUsd ?? null,
       maxPriceUsd: maxPriceUsd ?? null,

@@ -41,6 +41,7 @@ import { getSupabaseCookieOptions } from "@/lib/supabase/cookie-options";
 import {
   getStoreCatalogPublicUrl,
   isStoreSubdomainCatalogEnabled,
+  parsePublicCatalogProductPath,
   parseStoreSlugFromHost,
   shouldRewriteSubdomainCatalogPath,
   toInternalCatalogPath,
@@ -69,13 +70,61 @@ const AUTH_CONFIRM_PATH = "/auth/confirm";
 const AUTH_CALLBACK_PATH = "/auth/callback";
 const CENTRALIZED_GOOGLE_AUTH_PATH = "/auth/google";
 
+function copyResponseOntoRewrite(
+  rewriteResponse: NextResponse,
+  response: NextResponse,
+): NextResponse {
+  response.cookies.getAll().forEach((cookie) => {
+    rewriteResponse.cookies.set(cookie);
+  });
+
+  response.headers.forEach((value, key) => {
+    if (key.toLowerCase() === "set-cookie") return;
+    rewriteResponse.headers.set(key, value);
+  });
+
+  return rewriteResponse;
+}
+
+function rewriteCatalogProductDeepLink(
+  request: NextRequest,
+  storeSlug: string,
+  productKey: string,
+  response?: NextResponse,
+): NextResponse {
+  const rewriteUrl = request.nextUrl.clone();
+  rewriteUrl.pathname = `/c/${storeSlug}`;
+  rewriteUrl.searchParams.set("product", productKey);
+  const rewriteResponse = NextResponse.rewrite(rewriteUrl);
+  if (!response) return rewriteResponse;
+  return copyResponseOntoRewrite(rewriteResponse, response);
+}
+
 function applySubdomainCatalogRewrite(
   request: NextRequest,
   storeSlugFromHost: string | null,
   pathname: string,
   response: NextResponse,
 ): NextResponse {
-  if (!storeSlugFromHost || !shouldRewriteSubdomainCatalogPath(pathname)) {
+  if (!storeSlugFromHost) {
+    return response;
+  }
+
+  const productPath = parsePublicCatalogProductPath(pathname);
+  if (productPath) {
+    const pathStore = productPath.storeSlugFromPath;
+    if (pathStore && pathStore !== storeSlugFromHost) {
+      return response;
+    }
+    return rewriteCatalogProductDeepLink(
+      request,
+      storeSlugFromHost,
+      productPath.productKey,
+      response,
+    );
+  }
+
+  if (!shouldRewriteSubdomainCatalogPath(pathname)) {
     return response;
   }
 
@@ -160,6 +209,19 @@ export async function middleware(request: NextRequest) {
   }
 
   if (!hasSupabasePublicEnv()) {
+    const productPath = parsePublicCatalogProductPath(pathname);
+    if (productPath) {
+      const slug =
+        effectiveStoreSlug ?? productPath.storeSlugFromPath ?? null;
+      if (slug) {
+        return rewriteCatalogProductDeepLink(
+          request,
+          slug,
+          productPath.productKey,
+        );
+      }
+    }
+
     if (effectiveStoreSlug && shouldRewriteSubdomainCatalogPath(pathname)) {
       const rewriteUrl = request.nextUrl.clone();
       rewriteUrl.pathname = toInternalCatalogPath(pathname, effectiveStoreSlug);
@@ -333,6 +395,26 @@ export async function middleware(request: NextRequest) {
 
   const catalogPathMatch = pathname.match(/^\/c\/([^/]+)/);
   const catalogSlug = effectiveStoreSlug ?? catalogPathMatch?.[1];
+
+  const catalogProductPath = parsePublicCatalogProductPath(pathname);
+  if (catalogProductPath) {
+    const slug = (
+      effectiveStoreSlug ??
+      catalogProductPath.storeSlugFromPath ??
+      catalogPathMatch?.[1] ??
+      ""
+    )
+      .trim()
+      .toLowerCase();
+    if (slug) {
+      return rewriteCatalogProductDeepLink(
+        request,
+        decodeURIComponent(slug),
+        catalogProductPath.productKey,
+        supabaseResponse,
+      );
+    }
+  }
 
   const vitrinaMatch = pathname.match(/^\/vitrina\/([^/]+)(\/.*)?$/);
   if (vitrinaMatch) {

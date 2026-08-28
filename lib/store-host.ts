@@ -155,6 +155,59 @@ export function getStoreCatalogPublicUrl(
   return `${origin}${joinPublicPath(basePath, path)}`;
 }
 
+function decodePathSegment(value: string): string {
+  try {
+    return decodeURIComponent(value).trim();
+  } catch {
+    return value.trim();
+  }
+}
+
+/**
+ * Deep-link de ficha: `/producto/{slug}` en subdominio o
+ * `/c/{tienda}/producto/{slug}` en catálogo por ruta.
+ */
+export function parsePublicCatalogProductPath(pathname: string): {
+  storeSlugFromPath: string | null;
+  productKey: string;
+} | null {
+  const parts = pathname.replace(/\/+$/, "").split("/").filter(Boolean);
+  if (parts.length === 2 && parts[0] === "producto") {
+    const productKey = decodePathSegment(parts[1] ?? "");
+    return productKey ? { storeSlugFromPath: null, productKey } : null;
+  }
+  if (
+    parts.length === 4 &&
+    parts[0] === "c" &&
+    parts[2] === "producto"
+  ) {
+    const storeSlugFromPath = normalizeStoreSlug(parts[1] ?? "");
+    const productKey = decodePathSegment(parts[3] ?? "");
+    if (!storeSlugFromPath || !productKey) return null;
+    return { storeSlugFromPath, productKey };
+  }
+  return null;
+}
+
+/** Ruta relativa de la ficha pública (`/producto/slug-del-producto`). */
+export function getStoreProductPublicPath(productSlug: string): string {
+  const slug = productSlug.trim().replace(/^\/+|\/+$/g, "");
+  return `/producto/${encodeURIComponent(slug)}`;
+}
+
+/** URL absoluta de un producto en la tienda pública del dropshipper. */
+export function getStoreProductPublicUrl(
+  storeSlug: string,
+  productSlug: string,
+  domainInfo?: StoreCustomDomainInfo | null,
+): string {
+  return getStoreCatalogPublicUrl(
+    storeSlug,
+    getStoreProductPublicPath(productSlug),
+    domainInfo,
+  );
+}
+
 export function getStoreCustomerAccountPath(
   storeSlug: string,
   section: "cuenta" | "perfil" = "cuenta",
@@ -235,7 +288,8 @@ function isSubdomainCatalogPublicPath(pathname: string): boolean {
     pathname.startsWith("/categorias/") ||
     pathname.startsWith("/cuenta/") ||
     pathname.startsWith("/perfil/") ||
-    pathname.startsWith("/registro")
+    pathname.startsWith("/registro") ||
+    pathname.startsWith("/producto/")
   );
 }
 

@@ -266,6 +266,7 @@ export type MerchantSupplierCatalogProduct = {
   variantCount: number;
   alreadyImported: boolean;
   linkedProductId: string | null;
+  linkedProductSlug: string | null;
 };
 
 export async function listActiveSupplierCatalogForMerchant(): Promise<
@@ -330,6 +331,23 @@ export async function listActiveSupplierCatalogForMerchant(): Promise<
   const retailResult = await loadRetailUsdByProductIds(admin, linkedProductIds);
   if (retailResult.error) return { error: retailResult.error };
 
+  const slugByProductId = new Map<string, string>();
+  const slugChunkSize = 100;
+  for (let index = 0; index < linkedProductIds.length; index += slugChunkSize) {
+    const chunk = linkedProductIds.slice(index, index + slugChunkSize);
+    const { data: slugRows, error: slugError } = await admin
+      .from("products")
+      .select("id, slug")
+      .in("id", chunk);
+    if (slugError) return { error: slugError.message };
+    for (const row of (slugRows as Array<{ id?: string; slug?: string }> | null) ??
+      []) {
+      const productId = typeof row.id === "string" ? row.id : "";
+      const slug = typeof row.slug === "string" ? row.slug.trim() : "";
+      if (productId && slug) slugByProductId.set(productId, slug);
+    }
+  }
+
   const products: MerchantSupplierCatalogProduct[] = [];
   for (const row of catalogRows) {
     const id = String(row.id);
@@ -368,6 +386,9 @@ export async function listActiveSupplierCatalogForMerchant(): Promise<
       variantCount: variants.options.length,
       alreadyImported: linkedProductId != null,
       linkedProductId,
+      linkedProductSlug: linkedProductId
+        ? (slugByProductId.get(linkedProductId) ?? null)
+        : null,
     });
   }
 
@@ -386,6 +407,7 @@ export async function importSupplierProductToStoreCatalog(
   ActionResult<{
     ok: true;
     productId: string;
+    productSlug?: string;
     retailUsd: number;
     productName: string;
     linkId: string;
@@ -717,6 +739,7 @@ export async function importSupplierProductToStoreCatalog(
     return {
       ok: true as const,
       productId,
+      productSlug,
       retailUsd,
       productName: title.slice(0, 120),
       linkId: String(linkRow.id),
