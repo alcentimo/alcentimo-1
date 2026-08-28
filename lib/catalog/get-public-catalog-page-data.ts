@@ -22,6 +22,7 @@ import { getPublicStoreLocations, getVariantLocationStocksForStore } from "@/lib
 import type { StoreLocation, VariantLocationStock } from "@/lib/locations/types";
 import { listFeaturedOfficialBrands } from "@/lib/official-brands/public";
 import type { OfficialBrandPublic } from "@/lib/official-brands/types";
+import { normalizeStoreRubro } from "@/src/config/categories";
 
 export interface PublicCatalogPageData extends CatalogPageData {
   store: Store;
@@ -161,7 +162,7 @@ export async function getCatalogPreviewSettings(
     ),
     catalogDesign: resolveCatalogDesign(
       settingsConfig.catalogDesign,
-      store.rubro_tienda,
+      normalizeStoreRubro(store.rubro_tienda),
     ),
     catalogCurrency: settingsConfig.catalogCurrency,
   };
