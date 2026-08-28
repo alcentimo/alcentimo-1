@@ -3,6 +3,10 @@
 import { useMemo, type ReactNode } from "react";
 import type { CatalogListItem, ExchangeRate } from "@/lib/database.types";
 import type { CatalogCategoryOption } from "@/lib/catalog/extract-categories";
+import {
+  extractCatalogBrands,
+  productBrandKey,
+} from "@/lib/catalog/product-brand";
 import { CatalogBrowseLoadMore } from "@/components/catalog-transactional/CatalogBrowseLoadMore";
 import { CatalogBrowseStatus } from "@/components/catalog-transactional/CatalogBrowseStatus";
 import { StorefrontFiltersPanel } from "@/components/catalog-transactional/StorefrontFiltersPanel";
@@ -26,6 +30,44 @@ interface StorefrontCatalogListingProps {
   noResultsTitle: string;
   noResultsDescription: string;
   extraAfterGrid?: ReactNode;
+  onSelectBrand?: (brand: string | null) => void;
+}
+
+function StorefrontListingFilters({
+  browse,
+  categoryFacets,
+  brandFacets,
+  priceBounds,
+  onSelectBrand,
+}: {
+  browse: ReturnType<typeof useCatalogBrowse>;
+  categoryFacets: Array<CatalogCategoryOption & { count: number }>;
+  brandFacets: ReturnType<typeof extractCatalogBrands>;
+  priceBounds: { min: number; max: number };
+  onSelectBrand?: (brand: string | null) => void;
+}) {
+  return (
+    <StorefrontFiltersPanel
+      categories={categoryFacets}
+      activeCategorySlug={browse.categorySlug}
+      onSelectCategory={browse.setCategorySlug}
+      brands={brandFacets}
+      activeBrand={browse.brand}
+      onSelectBrand={onSelectBrand ?? browse.setBrand}
+      minPrice={browse.minPrice}
+      maxPrice={browse.maxPrice}
+      onApplyPrice={(min, max) => {
+        browse.setMinPrice(min);
+        browse.setMaxPrice(max);
+      }}
+      onClear={browse.clearFilters}
+      resultCount={browse.totalCount}
+      priceMinPlaceholder={String(priceBounds.min)}
+      priceMaxPlaceholder={String(priceBounds.max)}
+      pending={browse.loadingFilter}
+      hasActiveFilters={browse.hasActiveFilters}
+    />
+  );
 }
 
 export function StorefrontCatalogListing({
@@ -42,23 +84,39 @@ export function StorefrontCatalogListing({
   noResultsTitle,
   noResultsDescription,
   extraAfterGrid = null,
+  onSelectBrand,
 }: StorefrontCatalogListingProps) {
   const isDepartmentView = Boolean(
     browse.searchQuery.trim() ||
       browse.categorySlug ||
+      browse.brand ||
       browse.minPrice ||
       browse.maxPrice,
+  );
+
+  const brandFacets = useMemo(
+    () => extractCatalogBrands(catalogProducts),
+    [catalogProducts],
   );
 
   const activeCategoryName = categoryOptions.find(
     (category) => category.slug === browse.categorySlug,
   )?.name;
 
+  const activeBrandName =
+    browse.brand &&
+    (brandFacets.find(
+      (brand) => productBrandKey(brand.name) === productBrandKey(browse.brand!),
+    )?.name ??
+      browse.brand);
+
   const resultsTitle = browse.searchQuery.trim()
     ? `Resultados para “${browse.searchQuery.trim()}”`
-    : activeCategoryName
-      ? activeCategoryName
-      : "Productos destacados";
+    : activeBrandName
+      ? `Marca ${activeBrandName}`
+      : activeCategoryName
+        ? activeCategoryName
+        : "Productos destacados";
 
   const rate = exchangeRate?.rate ?? null;
   const rateLabel =
@@ -127,6 +185,7 @@ export function StorefrontCatalogListing({
             <MercadoProductGrid
               products={mercadoCards}
               onProductActivate={onActivateProduct}
+              onSelectBrand={onSelectBrand ?? browse.setBrand}
               priceLabel="USD"
               priceHint={rateLabel}
               formatPriceSecondary={priceSecondary}
@@ -134,7 +193,7 @@ export function StorefrontCatalogListing({
               metaInStock="Listo para pedir"
               metaOutOfStock="Sin stock por ahora"
               emptyTitle="Nada en esta vitrina"
-              emptyDescription="Probá otra categoría o limpiá la búsqueda."
+              emptyDescription="Probá otra categoría, marca o limpiá la búsqueda."
             />
             {extraAfterGrid}
           </div>
@@ -155,22 +214,12 @@ export function StorefrontCatalogListing({
   );
 
   const filtersPanel = (
-    <StorefrontFiltersPanel
-      categories={categoryFacets}
-      activeCategorySlug={browse.categorySlug}
-      onSelectCategory={browse.setCategorySlug}
-      minPrice={browse.minPrice}
-      maxPrice={browse.maxPrice}
-      onApplyPrice={(min, max) => {
-        browse.setMinPrice(min);
-        browse.setMaxPrice(max);
-      }}
-      onClear={browse.clearFilters}
-      resultCount={browse.totalCount}
-      priceMinPlaceholder={String(priceBounds.min)}
-      priceMaxPlaceholder={String(priceBounds.max)}
-      pending={browse.loadingFilter}
-      hasActiveFilters={browse.hasActiveFilters}
+    <StorefrontListingFilters
+      browse={browse}
+      categoryFacets={categoryFacets}
+      brandFacets={brandFacets}
+      priceBounds={priceBounds}
+      onSelectBrand={onSelectBrand ?? browse.setBrand}
     />
   );
 
@@ -179,7 +228,11 @@ export function StorefrontCatalogListing({
       <div className="mercado-mp-results-head">
         <div>
           <p className="mercado-section-label">
-            {isDepartmentView ? "Búsqueda y departamentos" : "Vitrina"}
+            {isDepartmentView
+              ? browse.brand
+                ? "Escaparate de marca"
+                : "Búsqueda y departamentos"
+              : "Vitrina"}
           </p>
           <h2 className="mercado-heading text-xl sm:text-2xl">{resultsTitle}</h2>
           <p className="mercado-subheading mt-1">
@@ -209,23 +262,7 @@ export function StorefrontCatalogListing({
             className="mercado-mp-filters hidden lg:block"
             aria-label="Filtros del catálogo"
           >
-            <StorefrontFiltersPanel
-              categories={categoryFacets}
-              activeCategorySlug={browse.categorySlug}
-              onSelectCategory={browse.setCategorySlug}
-              minPrice={browse.minPrice}
-              maxPrice={browse.maxPrice}
-              onApplyPrice={(min, max) => {
-                browse.setMinPrice(min);
-                browse.setMaxPrice(max);
-              }}
-              onClear={browse.clearFilters}
-              resultCount={browse.totalCount}
-              priceMinPlaceholder={String(priceBounds.min)}
-              priceMaxPlaceholder={String(priceBounds.max)}
-              pending={browse.loadingFilter}
-              hasActiveFilters={browse.hasActiveFilters}
-            />
+            {filtersPanel}
           </aside>
           <div className="mercado-mp-results">{grid}</div>
         </div>

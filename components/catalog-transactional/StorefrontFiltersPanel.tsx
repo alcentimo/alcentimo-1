@@ -3,6 +3,10 @@
 import { useEffect, useState } from "react";
 import { cn } from "@/lib/cn";
 import type { CatalogCategoryOption } from "@/lib/catalog/extract-categories";
+import {
+  productBrandKey,
+  type CatalogBrandOption,
+} from "@/lib/catalog/product-brand";
 
 export interface StorefrontFilterCategory extends CatalogCategoryOption {
   count?: number;
@@ -21,6 +25,9 @@ interface StorefrontFiltersPanelProps {
   priceMaxPlaceholder?: string;
   pending?: boolean;
   hasActiveFilters?: boolean;
+  brands?: CatalogBrandOption[];
+  activeBrand?: string | null;
+  onSelectBrand?: (brand: string | null) => void;
 }
 
 /** Filtros rápidos de departamento: precio (USD) y categoría. */
@@ -37,6 +44,9 @@ export function StorefrontFiltersPanel({
   priceMaxPlaceholder = "0",
   pending = false,
   hasActiveFilters = false,
+  brands = [],
+  activeBrand = null,
+  onSelectBrand,
 }: StorefrontFiltersPanelProps) {
   const [draftMin, setDraftMin] = useState(minPrice);
   const [draftMax, setDraftMax] = useState(maxPrice);
@@ -126,6 +136,45 @@ export function StorefrontFiltersPanel({
                       {category.count}
                     </span>
                   ) : null}
+                </button>
+              </li>
+            ))}
+          </ul>
+        </details>
+      ) : null}
+
+      {brands.length > 0 && onSelectBrand ? (
+        <details className="mercado-mp-filter-block" open>
+          <summary className="mercado-mp-filter-title">Marcas</summary>
+          <ul className="mercado-mp-filter-list pt-1">
+            <li>
+              <button
+                type="button"
+                className={cn(
+                  "mercado-mp-filter-option",
+                  !activeBrand && "mercado-mp-filter-option-active",
+                )}
+                onClick={() => onSelectBrand(null)}
+              >
+                Todas
+              </button>
+            </li>
+            {brands.map((brand) => (
+              <li key={brand.key}>
+                <button
+                  type="button"
+                  className={cn(
+                    "mercado-mp-filter-option",
+                    activeBrand != null &&
+                      productBrandKey(activeBrand) === brand.key &&
+                      "mercado-mp-filter-option-active",
+                  )}
+                  onClick={() => onSelectBrand(brand.name)}
+                >
+                  <span>{brand.name}</span>
+                  <span className="tabular-nums text-zinc-400">
+                    {brand.count}
+                  </span>
                 </button>
               </li>
             ))}

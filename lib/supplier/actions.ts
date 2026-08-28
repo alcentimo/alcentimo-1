@@ -37,6 +37,7 @@ import {
 } from "@/lib/supplier/wholesale-price";
 import { MERCADO_CATALOG_CACHE_TAG } from "@/lib/mercado-oculto/catalog-cache";
 import { revalidateAllPublicCatalogCaches } from "@/lib/catalog/public-catalog-cache";
+import { normalizeProductBrand } from "@/lib/catalog/product-brand";
 import { mirrorSupplierProductToOwnStore } from "@/lib/supplier/own-store";
 
 function bustMercadoCatalogCache() {
@@ -49,6 +50,7 @@ export interface SupplierProduct {
   id: string;
   title: string;
   description: string;
+  brand: string | null;
   category: SupplierProductCategory;
   variants: SupplierProductVariants;
   stock: number;
@@ -92,7 +94,7 @@ async function requireSupplierUser(): Promise<{
 }
 
 const PRODUCT_SELECT =
-  "id, title, description, category, variants, stock, base_price_usd, publication_status, image_url, created_at, updated_at";
+  "id, title, description, brand, category, variants, stock, base_price_usd, publication_status, image_url, created_at, updated_at";
 
 function mapRow(
   row: Record<string, unknown>,
@@ -108,6 +110,7 @@ function mapRow(
     id: String(row.id),
     title: String(row.title ?? ""),
     description: String(row.description ?? ""),
+    brand: typeof row.brand === "string" && row.brand.trim() ? row.brand.trim() : null,
     category: normalizeSupplierProductCategory(row.category),
     variants: normalizeSupplierProductVariants(row.variants),
     stock: Number(row.stock) || 0,
@@ -144,6 +147,7 @@ function parseProductFields(formData: FormData): {
   error?: string;
   title?: string;
   description?: string;
+  brand?: string | null;
   category?: SupplierProductCategory;
   variants?: SupplierProductVariants;
   stock?: number;
@@ -151,6 +155,7 @@ function parseProductFields(formData: FormData): {
 } {
   const title = String(formData.get("title") ?? "").trim();
   const description = String(formData.get("description") ?? "").trim();
+  const brand = normalizeProductBrand(String(formData.get("brand") ?? ""));
   const category = normalizeSupplierProductCategory(formData.get("category"));
   const variants = parseSupplierVariantsFromForm(formData.get("variants"));
   const stockRaw = String(formData.get("stock") ?? "0").trim();
@@ -219,6 +224,7 @@ function parseProductFields(formData: FormData): {
   return {
     title,
     description,
+    brand,
     category,
     variants: resolvedVariants,
     stock: resolvedStock,
@@ -271,6 +277,7 @@ export async function createSupplierProduct(
       created_by: auth.user.id,
       title: parsed.title.slice(0, 180),
       description: (parsed.description ?? "").slice(0, 4000),
+      brand: parsed.brand,
       category: parsed.category ?? "otros",
       variants: parsed.variants ?? normalizeSupplierProductVariants(null),
       stock: parsed.stock,
@@ -369,6 +376,7 @@ export async function updateSupplierProduct(
   const patch: Record<string, unknown> = {
     title: parsed.title.slice(0, 180),
     description: (parsed.description ?? "").slice(0, 4000),
+    brand: parsed.brand,
     category: parsed.category ?? "otros",
     variants: parsed.variants ?? normalizeSupplierProductVariants(null),
     stock: parsed.stock,

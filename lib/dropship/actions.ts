@@ -17,7 +17,7 @@ import {
 } from "@/lib/dropship/margin";
 import { getStoreSettingsConfig } from "@/lib/store-settings/get-store-settings";
 import { mergeStoreSettingsConfig } from "@/lib/store-settings/defaults";
-import { requireDropshipFeatureAccess } from "@/lib/dropship/feature-access";
+import { normalizeProductBrand } from "@/lib/catalog/product-brand";
 import {
   allocateUniqueProductSlug,
   isProductSlugUniqueViolation,
@@ -551,7 +551,14 @@ export async function importSupplierProductToStoreCatalog(
       supplierVariants,
       cost,
     );
-    const metadata = buildProductMetadata(null, {}, []);
+    const importedBrand = normalizeProductBrand(
+      typeof supplierRow.brand === "string" ? supplierRow.brand : null,
+    );
+    const metadata = buildProductMetadata(
+      null,
+      importedBrand ? { Marca: importedBrand } : {},
+      ["Marca"],
+    );
     const sortOrder = await nextProductSortOrder(admin, auth.store.id);
 
     let productSlug = "";
@@ -576,6 +583,7 @@ export async function importSupplierProductToStoreCatalog(
           slug: productSlug,
           short_description: description,
           description,
+          brand: importedBrand,
           metadata,
           sort_order: sortOrder,
           is_active: true,

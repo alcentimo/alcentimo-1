@@ -16,6 +16,7 @@ export interface FetchPublicCatalogProductsInput {
   search?: string;
   minPrice?: string | number | null;
   maxPrice?: string | number | null;
+  brand?: string | null;
 }
 
 export interface FetchPublicCatalogProductsResult {
@@ -41,6 +42,7 @@ export async function fetchPublicCatalogProducts(
       search: input.search?.trim() || undefined,
       minPriceUsd: parseCatalogPriceBound(input.minPrice),
       maxPriceUsd: parseCatalogPriceBound(input.maxPrice),
+      brand: input.brand?.trim() || undefined,
     });
 
     return {
