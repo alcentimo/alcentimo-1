@@ -3,12 +3,13 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { requireAuthStore } from "@/lib/auth/require-dashboard-auth";
-import { slugify } from "@/lib/slugify";
 import { revalidatePublicCatalogCache } from "@/lib/catalog/public-catalog-cache";
 import {
   allocateUniqueProductSlug,
+  buildProductSlugWithSuffix,
   isProductSlugUniqueViolation,
   randomProductSlugSuffix,
+  shortProductSlugBase,
 } from "@/lib/products/allocate-product-slug";
 import { assertCanCreateProduct } from "@/lib/plans/product-limit";
 import { buildProductMetadata } from "@/lib/products/extra-fields";
@@ -283,7 +284,9 @@ export async function importProductsBulk(
     if (createResult.productId) {
       existingByName.set(normalizeProductNameKey(row.nombre), {
         id: createResult.productId,
-        slug: createResult.slug ?? (slugify(row.nombre) || "producto"),
+        slug:
+          createResult.slug ??
+          buildProductSlugWithSuffix(shortProductSlugBase(row.nombre)),
       });
     }
 

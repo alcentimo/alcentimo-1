@@ -46,7 +46,7 @@ export interface GetCatalogOptions {
   maxPriceUsd?: number | null;
   /** Restringe a IDs concretos (p. ej. hidratar carrito). */
   productIds?: string[];
-  /** Deep-link por slug público (`/producto/nombre-del-producto`). */
+  /** Deep-link por slug público (`/producto/camisa-manga-corta-a4f2`). */
   productSlug?: string;
 }
 
