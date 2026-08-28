@@ -1,6 +1,8 @@
 "use client";
 
 import { memo, useEffect, useMemo, useRef, useState } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Check, ShoppingCart } from "lucide-react";
 import { ProductImageGallery } from "@/components/catalog/ProductImageGallery";
 import type { CatalogListItem } from "@/lib/database.types";
@@ -91,6 +93,8 @@ interface ProductCardProps {
     variant: CatalogVariantOption,
     modifiers?: CartModifierSelection[],
   ) => void;
+  /** Navega a la ficha (misma pestaña). Preferido sobre `onOpenDetail`. */
+  detailHref?: string | null;
   onOpenDetail?: (product: CatalogListItem) => void;
   wholesaleEnabled?: boolean;
 }
@@ -145,10 +149,12 @@ export const ProductCard = memo(function ProductCard({
   referenceCatalog = false,
   storeRubro = null,
   onAddToCart,
+  detailHref = null,
   onOpenDetail,
   wholesaleEnabled = false,
 }: ProductCardProps) {
   const cartContext = useCartOptional();
+  const router = useRouter();
   const activeExchangeRate = exchangeRate ?? product.exchange_rate_used;
 
   const variantOptions = useMemo(
@@ -289,6 +295,8 @@ export const ProductCard = memo(function ProductCard({
     onOpenDetail?.(product);
   }
 
+  const opensDetail = Boolean(detailHref || onOpenDetail);
+
   function handleAddClick(event: React.MouseEvent) {
     event.preventDefault();
     event.stopPropagation();
@@ -306,11 +314,11 @@ export const ProductCard = memo(function ProductCard({
         <div
           className={cn(
             "store-product-media",
-            onOpenDetail && "store-product-media-openable",
+            opensDetail && "store-product-media-openable",
           )}
-          onClick={onOpenDetail ? handleOpenDetail : undefined}
+          onClick={!detailHref && onOpenDetail ? handleOpenDetail : undefined}
           onKeyDown={
-            onOpenDetail
+            !detailHref && onOpenDetail
               ? (event) => {
                   if (event.key === "Enter" || event.key === " ") {
                     event.preventDefault();
@@ -319,10 +327,12 @@ export const ProductCard = memo(function ProductCard({
                 }
               : undefined
           }
-          role={onOpenDetail ? "button" : undefined}
-          tabIndex={onOpenDetail ? 0 : undefined}
+          role={!detailHref && onOpenDetail ? "button" : undefined}
+          tabIndex={!detailHref && onOpenDetail ? 0 : undefined}
           aria-label={
-            onOpenDetail ? `Ver detalle de ${product.product_name}` : undefined
+            !detailHref && onOpenDetail
+              ? `Ver detalle de ${product.product_name}`
+              : undefined
           }
         >
           <ProductImageGallery
@@ -330,6 +340,13 @@ export const ProductCard = memo(function ProductCard({
             imageClassName="store-product-image"
             fallbackClassName="store-product-media-fallback"
             loading="lazy"
+            onMediaClick={
+              detailHref
+                ? () => router.push(detailHref)
+                : onOpenDetail
+                  ? handleOpenDetail
+                  : undefined
+            }
             sizes={
               referenceCatalog
                 ? "(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
@@ -378,7 +395,11 @@ export const ProductCard = memo(function ProductCard({
           </div>
 
           <div className="store-product-slot store-product-slot-title">
-            {onOpenDetail ? (
+            {detailHref ? (
+              <Link href={detailHref} className="store-product-name store-product-name-open">
+                {product.product_name}
+              </Link>
+            ) : onOpenDetail ? (
               <button
                 type="button"
                 className="store-product-name store-product-name-open"
@@ -405,7 +426,29 @@ export const ProductCard = memo(function ProductCard({
               >
                 {product.short_description ?? "\u00A0"}
               </p>
-              {onOpenDetail ? (
+              {opensDetail ? (
+                detailHref ? (
+                  <Link href={detailHref} className="store-product-details-link">
+                    Ver detalles →
+                  </Link>
+                ) : (
+                  <button
+                    type="button"
+                    className="store-product-details-link"
+                    onClick={handleOpenDetail}
+                  >
+                    Ver detalles →
+                  </button>
+                )
+              ) : null}
+            </div>
+          ) : opensDetail ? (
+            <div className="store-product-slot store-product-slot-desc">
+              {detailHref ? (
+                <Link href={detailHref} className="store-product-details-link">
+                  Ver detalles →
+                </Link>
+              ) : (
                 <button
                   type="button"
                   className="store-product-details-link"
@@ -413,17 +456,7 @@ export const ProductCard = memo(function ProductCard({
                 >
                   Ver detalles →
                 </button>
-              ) : null}
-            </div>
-          ) : onOpenDetail ? (
-            <div className="store-product-slot store-product-slot-desc">
-              <button
-                type="button"
-                className="store-product-details-link"
-                onClick={handleOpenDetail}
-              >
-                Ver detalles →
-              </button>
+              )}
             </div>
           ) : null}
         </div>

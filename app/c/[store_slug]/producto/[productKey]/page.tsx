@@ -2,7 +2,7 @@ import { Suspense } from "react";
 import { notFound } from "next/navigation";
 import { getPublicCatalogPageData } from "@/lib/catalog/get-public-catalog-page-data";
 import { fetchPublicCatalogProductById } from "@/lib/catalog/public-actions";
-import { TransactionalCatalog } from "@/components/catalog-transactional/TransactionalCatalog";
+import { CatalogStoreProductView } from "@/components/catalog-transactional/CatalogStoreProductView";
 import { CatalogProductGridSkeleton } from "@/components/catalog/CatalogProductGridSkeleton";
 import { getPublicStoreBySlug } from "@/lib/stores";
 
@@ -22,35 +22,26 @@ async function ProductDeepLinkContent({
   const data = await getPublicCatalogPageData(storeSlug);
   if (!data) notFound();
 
-  const {
-    store,
-    products,
-    exchangeRate,
-    purchaseInfo,
-    catalogDesign,
-    catalogCurrency,
-    storeCategories,
-    locations,
-    locationStocks,
-    totalCount,
-    featuredBrands,
-  } = data;
+  const listed = data.products.find(
+    (item) =>
+      item.product_id.toLowerCase() === productKey.toLowerCase() ||
+      item.product_slug.toLowerCase() === productKey.toLowerCase(),
+  );
+  const { product } = listed
+    ? { product: listed }
+    : await fetchPublicCatalogProductById(storeSlug, productKey);
+  if (!product) notFound();
 
   return (
-    <TransactionalCatalog
-      store={store}
-      products={products}
-      storeCategories={storeCategories}
-      exchangeRate={exchangeRate}
-      purchaseInfo={purchaseInfo}
-      catalogDesign={catalogDesign}
-      catalogCurrency={catalogCurrency}
-      initialProductId={productKey}
-      locations={locations}
-      locationStocks={locationStocks}
-      catalogTotalCount={totalCount}
-      enableServerPagination
-      featuredBrands={featuredBrands}
+    <CatalogStoreProductView
+      store={data.store}
+      product={product}
+      exchangeRate={data.exchangeRate}
+      purchaseInfo={data.purchaseInfo}
+      catalogDesign={data.catalogDesign}
+      catalogCurrency={data.catalogCurrency}
+      locations={data.locations}
+      locationStocks={data.locationStocks}
     />
   );
 }
@@ -66,7 +57,7 @@ export default async function StoreProductDeepLinkPage({
     <Suspense
       fallback={
         <div className="txn-catalog-loading">
-          <CatalogProductGridSkeleton count={8} />
+          <CatalogProductGridSkeleton count={4} />
         </div>
       }
     >

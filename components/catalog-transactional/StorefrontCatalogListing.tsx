@@ -1,7 +1,9 @@
 "use client";
 
-import { useMemo, type ReactNode } from "react";
+import { useCallback, useMemo, type ReactNode } from "react";
+import { usePathname } from "next/navigation";
 import type { CatalogListItem, ExchangeRate } from "@/lib/database.types";
+import { getStoreProductDeepLinkPath } from "@/lib/store-host";
 import type { CatalogCategoryOption } from "@/lib/catalog/extract-categories";
 import {
   officialBrandsToCatalogOptions,
@@ -23,7 +25,8 @@ interface StorefrontCatalogListingProps {
   catalogProducts: CatalogListItem[];
   categoryOptions: CatalogCategoryOption[];
   mercadoCards: MercadoProductCard[];
-  onActivateProduct: (card: MercadoProductCard) => void;
+  storeSlug: string;
+  onActivateProduct?: (card: MercadoProductCard) => void;
   exchangeRate: ExchangeRate | null;
   showOfficialRate: boolean;
   showBsConversion: boolean;
@@ -78,6 +81,7 @@ export function StorefrontCatalogListing({
   catalogProducts,
   categoryOptions,
   mercadoCards,
+  storeSlug,
   onActivateProduct,
   exchangeRate,
   showOfficialRate,
@@ -90,6 +94,16 @@ export function StorefrontCatalogListing({
   onSelectBrand,
   featuredBrands = [],
 }: StorefrontCatalogListingProps) {
+  const pathname = usePathname();
+  const getProductHref = useCallback(
+    (product: MercadoProductCard) =>
+      getStoreProductDeepLinkPath(
+        storeSlug,
+        product.product_slug?.trim() || product.product_id,
+        { pathname },
+      ),
+    [pathname, storeSlug],
+  );
   const isDepartmentView = Boolean(
     browse.searchQuery.trim() ||
       browse.categorySlug ||
@@ -197,6 +211,7 @@ export function StorefrontCatalogListing({
           >
             <MercadoProductGrid
               products={mercadoCards}
+              getProductHref={getProductHref}
               onProductActivate={onActivateProduct}
               onSelectBrand={onSelectBrand ?? browse.setBrand}
               priceLabel="USD"

@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { ArrowUpRight, Package, Truck } from "lucide-react";
 import { formatUsd } from "@/lib/format";
 import type { MercadoProductCard } from "@/lib/mercado-oculto/types";
@@ -14,7 +13,7 @@ interface MercadoProductGridProps {
   getProductHref?: (product: MercadoProductCard) => string;
   /**
    * Si se define, media/título/CTA disparan esta acción en lugar de navegar
-   * (p. ej. abrir ficha en el catálogo público).
+   * (p. ej. vista previa del dashboard).
    */
   onProductActivate?: (product: MercadoProductCard) => void;
   priceLabel?: string;
@@ -48,8 +47,6 @@ export function MercadoProductGrid({
   metaOutOfStock = "Reposición pendiente",
   onSelectBrand,
 }: MercadoProductGridProps) {
-  const router = useRouter();
-
   if (products.length === 0) {
     return (
       <div className="mercado-mp-empty">
@@ -77,14 +74,20 @@ export function MercadoProductGrid({
         const href = getProductHref(product);
         const activate = onProductActivate
           ? () => onProductActivate(product)
-          : () => router.push(href);
+          : undefined;
         const priceSecondary = formatPriceSecondary?.(product) ?? null;
 
         return (
           <li key={product.product_id}>
             <article className="group mercado-mp-card">
               <div className="mercado-mp-card-media">
-                <MercadoCardMedia product={product} onOpen={activate} />
+                {activate ? (
+                  <MercadoCardMedia product={product} onOpen={activate} />
+                ) : (
+                  <Link href={href} className="block" prefetch>
+                    <MercadoCardMedia product={product} />
+                  </Link>
+                )}
               </div>
 
               <div className="mercado-mp-card-body">
@@ -195,7 +198,7 @@ function MercadoCardMedia({
   onOpen,
 }: {
   product: MercadoProductCard;
-  onOpen: () => void;
+  onOpen?: () => void;
 }) {
   const inStock = product.available_stock > 0;
   const showDiscount =
