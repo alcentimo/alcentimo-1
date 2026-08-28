@@ -32,6 +32,7 @@ function sanitizeModifiers(
 export async function hydrateCartLines(
   storeSlug: string,
   lines: CartLineInput[],
+  heldByProductId?: Record<string, number>,
 ): Promise<CartItem[]> {
   if (lines.length === 0) return [];
 
@@ -58,11 +59,13 @@ export async function hydrateCartLines(
       ) ??
       variantOptions[0];
 
-    if (!variant || variant.availableStock <= 0) continue;
+    const ownHold = Math.max(0, Math.floor(heldByProductId?.[line.productId] ?? 0));
+    const visibleStock = Math.max(0, variant?.availableStock ?? 0) + ownHold;
+    if (!variant || visibleStock <= 0) continue;
 
     const variantKey = `${product.product_id}:${variant.id}`;
     const usedQty = qtyByVariant.get(variantKey) ?? 0;
-    const remaining = Math.max(0, variant.availableStock - usedQty);
+    const remaining = Math.max(0, visibleStock - usedQty);
     if (remaining <= 0) continue;
 
     const quantity = Math.min(

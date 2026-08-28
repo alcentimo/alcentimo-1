@@ -116,7 +116,7 @@ export async function resolveOrderLinesWithPricing(
   const { data: dropshipLinks } = await admin
     .from("store_dropship_links")
     .select(
-      "product_id, supplier_product_id, supplier_products(precio_mayorista, publication_status, catalog_visible, is_visible, is_active, stock, title)",
+      "product_id, supplier_product_id, supplier_products(precio_mayorista, publication_status, catalog_visible, is_visible, is_active, stock, reserved_quantity, title)",
     )
     .eq("store_id", storeId)
     .in("product_id", productIds);
@@ -139,6 +139,7 @@ export async function resolveOrderLinesWithPricing(
       is_visible?: boolean;
       is_active?: boolean;
       stock?: number;
+      reserved_quantity?: number;
       title?: string;
     } | null;
     if (!productId || !supplierProductId) continue;

@@ -10,8 +10,10 @@ import {
   type OrderEstado,
 } from "@/lib/orders/order-status";
 import type { OrderLineItem } from "@/lib/orders/types";
-import { restoreDropshipStockForOrderLines } from "@/lib/dropship/supplier-stock";
-import { ensureHubHoldOrdersForCatalogOrder } from "@/lib/dropship/ensure-hub-hold-orders";
+import {
+  commitDropshipStockForOrder,
+  restoreDropshipStockForOrderLines,
+} from "@/lib/dropship/supplier-stock";
 import { revalidatePublicCatalogCache } from "@/lib/catalog/public-catalog-cache";
 
 export interface UpdateOrderEstadoOptions {
@@ -71,7 +73,6 @@ export async function updateOrderEstado(
 
   let previousEstado: string | null = null;
   let orderItems: OrderLineItem[] = [];
-  let storeName = auth.store.name;
 
   const { data: existingOrder } = await supabase
     .from("orders")
@@ -98,7 +99,7 @@ export async function updateOrderEstado(
     orderItems.some((item) => item.supplier_product_id)
   ) {
     const admin = createAdminClient();
-    await restoreDropshipStockForOrderLines(admin, orderItems);
+    await restoreDropshipStockForOrderLines(admin, orderItems, trimmedId);
   }
 
   if (
@@ -106,15 +107,10 @@ export async function updateOrderEstado(
     previousEstado !== "procesando" &&
     orderItems.some((item) => item.supplier_product_id)
   ) {
-    const hubHold = await ensureHubHoldOrdersForCatalogOrder({
-      catalogOrderId: trimmedId,
-      storeId: auth.store.id,
-      merchantUserId: auth.authUser.id,
-      storeName,
-      items: orderItems,
-    });
-    if (hubHold.error) {
-      console.error("[updateOrderEstado] hub hold", hubHold.error);
+    const admin = createAdminClient();
+    const committed = await commitDropshipStockForOrder(admin, trimmedId);
+    if (committed.error) {
+      console.error("[updateOrderEstado] commit stock", committed.error);
     }
   }
 

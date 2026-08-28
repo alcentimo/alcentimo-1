@@ -54,7 +54,7 @@ export const CUSTOMER_ORDER_ESTADO_LABELS: Record<OrderEstado, string> = {
 export const CUSTOMER_ORDER_ESTADO_HINTS: Record<OrderEstado, string> = {
   por_pagar: "Sube el comprobante para verificar tu pago.",
   pendiente: "Estamos revisando tu pago.",
-  procesando: "Pago confirmado. El centro de acopio ya tiene tu pedido.",
+  procesando: "Pago confirmado. El saldo mayorista queda pendiente de pago a Alcéntimo.",
   preparacion_logistica: "El producto está listo. Alcéntimo prepara el envío.",
   enviado: "Tu pedido ya salió. Revisa el número de guía.",
   entregado: "Tu pedido ya salió. Revisa el número de guía.",
@@ -103,7 +103,7 @@ function resolveCustomerPipelineEstado(
 export const ORDER_ESTADO_HINTS: Record<OrderEstado, string> = {
   por_pagar: "Revisa el comprobante del cliente final",
   pendiente: "Revisa el comprobante del cliente final",
-  procesando: "Pago aprobado. La orden pasó al centro de acopio",
+  procesando: "Pago aprobado. Paga el costo mayorista a Alcéntimo para liberar la orden al proveedor",
   preparacion_logistica: "Alcéntimo prepara el envío al cliente",
   enviado: "Alcéntimo despachó el paquete al cliente",
   entregado: "Alcéntimo despachó el paquete al cliente",

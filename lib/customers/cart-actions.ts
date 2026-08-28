@@ -7,6 +7,10 @@ import { mergeCartLines } from "@/lib/catalog/cart-lines";
 import { hydrateCartLines } from "@/lib/catalog/hydrate-cart-items";
 import { resolveActiveStoreBySlug } from "@/lib/customers/middleware-access";
 import { createClient } from "@/lib/supabase/server";
+import {
+  claimDropshipCartHoldsForCustomer,
+  syncDropshipCartHolds,
+} from "@/lib/dropship/cart-hold-actions";
 
 export type CustomerCartActionResult =
   | { ok: true; items: CartItem[] }
@@ -166,6 +170,17 @@ async function persistCartLines(
   }
 }
 
+function holdMap(
+  result: Awaited<ReturnType<typeof syncDropshipCartHolds>>,
+): Record<string, number> {
+  if (!result.ok) return {};
+  const map: Record<string, number> = {};
+  for (const hold of result.holds) {
+    map[hold.productId] = (map[hold.productId] ?? 0) + hold.quantity;
+  }
+  return map;
+}
+
 function toPersistLines(items: CartItem[]): CartLineInput[] {
   return items.map((item) => ({
     productId: item.product.product_id,
@@ -186,7 +201,9 @@ export async function getCustomerCart(
     }
 
     const lines = await fetchStoredCartLines(access.userId, access.storeId);
-    const items = await hydrateCartLines(storeSlug, lines);
+    const holdResult = await syncDropshipCartHolds(storeSlug, lines);
+    const held = holdMap(holdResult);
+    const items = await hydrateCartLines(storeSlug, lines, held);
 
     if (items.length !== lines.length) {
       await persistCartLines(access.userId, access.storeId, toPersistLines(items));
@@ -224,7 +241,8 @@ export async function syncCustomerCart(
         modifiers: sanitizeModifiers(line.modifiers),
       }));
 
-    const items = await hydrateCartLines(storeSlug, sanitized);
+    const holdResult = await syncDropshipCartHolds(storeSlug, sanitized);
+    const items = await hydrateCartLines(storeSlug, sanitized, holdMap(holdResult));
 
     // No vaciar el carrito remoto si la hidratación falló por completo
     // (catálogo temporalmente vacío, IDs no resueltos, etc.).
@@ -236,6 +254,7 @@ export async function syncCustomerCart(
     }
 
     await persistCartLines(access.userId, access.storeId, toPersistLines(items));
+    await syncDropshipCartHolds(storeSlug, toPersistLines(items));
     return { ok: true, items };
   } catch (error) {
     return {
@@ -263,6 +282,8 @@ export async function mergeGuestCart(
     const mergedLines = mergeCartLines(serverLines, guestLines);
     const items = await hydrateCartLines(storeSlug, mergedLines);
     await persistCartLines(access.userId, access.storeId, toPersistLines(items));
+    await claimDropshipCartHoldsForCustomer(access.storeId);
+    await syncDropshipCartHolds(storeSlug, toPersistLines(items));
     return { ok: true, items };
   } catch (error) {
     return {
@@ -286,6 +307,7 @@ export async function clearCustomerCart(
     }
 
     await persistCartLines(access.userId, access.storeId, []);
+    await syncDropshipCartHolds(storeSlug, []);
     return { ok: true, items: [] };
   } catch (error) {
     return {
