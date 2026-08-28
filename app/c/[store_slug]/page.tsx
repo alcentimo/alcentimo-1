@@ -15,6 +15,8 @@ interface CatalogPageProps {
     checkout?: string;
     carrito?: string;
     product?: string;
+    q?: string;
+    marca?: string;
   }>;
 }
 
@@ -22,10 +24,14 @@ async function CatalogContent({
   storeSlug,
   openCheckoutInitially,
   openCartInitially,
+  initialSearchQuery,
+  initialBrand,
 }: {
   storeSlug: string;
   openCheckoutInitially: boolean;
   openCartInitially: boolean;
+  initialSearchQuery?: string | null;
+  initialBrand?: string | null;
 }) {
   const data = await getPublicCatalogPageData(storeSlug);
   if (!data) notFound();
@@ -60,6 +66,8 @@ async function CatalogContent({
       catalogTotalCount={totalCount}
       enableServerPagination
       featuredBrands={featuredBrands}
+      initialSearchQuery={initialSearchQuery}
+      initialBrand={initialBrand}
     />
   );
 }
@@ -72,6 +80,8 @@ export default async function TransactionalCatalogPage({
   const query = await searchParams;
   const openCheckoutInitially = query.checkout === "1";
   const openCartInitially = query.carrito === "1";
+  const initialSearchQuery = query.q?.trim() || null;
+  const initialBrand = query.marca?.trim() || null;
   const initialProductId = query.product?.trim() || null;
   if (initialProductId) {
     redirect(
@@ -93,6 +103,8 @@ export default async function TransactionalCatalogPage({
         storeSlug={storeSlug}
         openCheckoutInitially={openCheckoutInitially}
         openCartInitially={openCartInitially}
+        initialSearchQuery={initialSearchQuery}
+        initialBrand={initialBrand}
       />
     </Suspense>
   );

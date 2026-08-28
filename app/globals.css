@@ -2993,7 +2993,11 @@ html:has(.landing-shell) {
 }
 
 .product-detail-page {
-  @apply mx-auto w-full max-w-6xl px-3 py-4 sm:px-6 sm:py-8;
+  @apply mx-auto w-full max-w-6xl px-0 py-4 sm:px-0 sm:py-6;
+}
+
+.mercado-mp-main .product-detail-page {
+  padding-inline: 0;
 }
 
 .product-detail-page .product-detail-panel {
@@ -13772,6 +13776,22 @@ button.catalog-profile-footer-link {
 .mercado-mp-header {
   @apply sticky top-0 z-40 max-w-full overflow-x-clip border-b border-white/8 bg-[color-mix(in_srgb,var(--mo-forest)_92%,transparent)] shadow-[0_10px_30px_rgba(3,24,18,0.18)];
   backdrop-filter: blur(14px);
+}
+
+.storefront-mp-pin {
+  @apply sticky top-0 z-40;
+}
+
+.storefront-mp-pin .mercado-mp-header {
+  position: relative;
+  top: auto;
+  z-index: auto;
+  box-shadow: none;
+}
+
+.storefront-mp-pin .storefront-cat-rail {
+  @apply border-b border-[var(--mo-border)] bg-[color-mix(in_srgb,var(--mo-canvas,#f4f7f4)_94%,white)] py-3;
+  backdrop-filter: blur(12px);
 }
 
 .mercado-mp-header-top {

@@ -22,6 +22,7 @@ export interface StorefrontMoricheChromeProps {
   eyebrow?: string;
   searchQuery: string;
   onSearchQueryChange: (value: string) => void;
+  onSearchSubmit?: () => void;
   categories: CatalogCategoryOption[];
   activeCategoryId: string | null;
   onSelectCategory: (id: string | null) => void;
@@ -34,6 +35,8 @@ export interface StorefrontMoricheChromeProps {
   children: ReactNode;
   className?: string;
   style?: CSSProperties;
+  /** Cabecera + categorías fijas al hacer scroll (ficha de producto). */
+  pinNavigation?: boolean;
 }
 
 /**
@@ -50,6 +53,7 @@ export function StorefrontMoricheChrome({
   eyebrow = "Catálogo",
   searchQuery,
   onSearchQueryChange,
+  onSearchSubmit,
   categories,
   activeCategoryId,
   onSelectCategory,
@@ -61,6 +65,7 @@ export function StorefrontMoricheChrome({
   children,
   className,
   style,
+  pinNavigation = false,
 }: StorefrontMoricheChromeProps) {
   const pathname = usePathname();
   const brandHref = getStoreCatalogBasePath(storeSlug, { pathname });
@@ -76,42 +81,47 @@ export function StorefrontMoricheChrome({
       )}
       style={{ ...brandVars, ...style }}
     >
-      <MercadoBrandHeader
-        brandHref={brandHref}
-        brandTitle={storeName}
-        brandKicker={eyebrow}
-        brandMarkText={markText}
-        logoUrl={logoUrl}
-        search={
-          <StorefrontMarketplaceSearch
-            storeName={storeName}
-            value={searchQuery}
-            onChange={onSearchQueryChange}
-            pending={pending}
-          />
-        }
-        nav={<StorefrontMoricheNav storeSlug={storeSlug} />}
-      />
-
-      {banner}
-
-      {lead ? (
-        <p className="storefront-mp-lead">{lead}</p>
-      ) : null}
-
-      <StorefrontCategoryRail
-        categories={categories}
-        activeCategoryId={activeCategoryId}
-        onSelectCategory={onSelectCategory}
-      />
-
-      {onSelectBrand ? (
-        <StorefrontBrandRail
-          brands={brands}
-          activeBrand={activeBrand}
-          onSelectBrand={onSelectBrand}
+      <div
+        className={cn(pinNavigation && "storefront-mp-pin")}
+      >
+        <MercadoBrandHeader
+          brandHref={brandHref}
+          brandTitle={storeName}
+          brandKicker={eyebrow}
+          brandMarkText={markText}
+          logoUrl={logoUrl}
+          search={
+            <StorefrontMarketplaceSearch
+              storeName={storeName}
+              value={searchQuery}
+              onChange={onSearchQueryChange}
+              onSubmit={onSearchSubmit}
+              pending={pending}
+            />
+          }
+          nav={<StorefrontMoricheNav storeSlug={storeSlug} />}
         />
-      ) : null}
+
+        {banner}
+
+        {lead ? (
+          <p className="storefront-mp-lead">{lead}</p>
+        ) : null}
+
+        <StorefrontCategoryRail
+          categories={categories}
+          activeCategoryId={activeCategoryId}
+          onSelectCategory={onSelectCategory}
+        />
+
+        {onSelectBrand ? (
+          <StorefrontBrandRail
+            brands={brands}
+            activeBrand={activeBrand}
+            onSelectBrand={onSelectBrand}
+          />
+        ) : null}
+      </div>
 
       <main className="mercado-main mercado-mp-main">{children}</main>
     </div>

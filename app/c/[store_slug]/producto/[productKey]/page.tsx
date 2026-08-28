@@ -36,6 +36,8 @@ async function ProductDeepLinkContent({
     <CatalogStoreProductView
       store={data.store}
       product={product}
+      products={data.products}
+      storeCategories={data.storeCategories}
       exchangeRate={data.exchangeRate}
       purchaseInfo={data.purchaseInfo}
       catalogDesign={data.catalogDesign}
