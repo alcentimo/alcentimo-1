@@ -13785,7 +13785,7 @@ button.catalog-profile-footer-link {
 .storefront-mp-pin .mercado-mp-header {
   position: relative;
   top: auto;
-  z-auto;
+  z-index: auto;
   box-shadow: none;
 }
 
