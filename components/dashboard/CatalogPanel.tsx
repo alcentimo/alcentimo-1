@@ -88,6 +88,9 @@ export function CatalogPanel({
       />
 
       <AvailableProductsPanel
+        storeSlug={store.slug}
+        customDomain={store.custom_domain}
+        customDomainVerified={Boolean(store.custom_domain_verified)}
         onImported={() => {
           router.refresh();
         }}

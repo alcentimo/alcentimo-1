@@ -61,7 +61,7 @@ export async function fetchPublicCatalogProducts(
   }
 }
 
-/** Obtiene un producto público por id (p. ej. deep-link del banner). */
+/** Obtiene un producto público por id o slug (deep-link `/producto/...`). */
 export async function fetchPublicCatalogProductById(
   storeSlug: string,
   productId: string,
@@ -69,10 +69,17 @@ export async function fetchPublicCatalogProductById(
   const id = productId.trim();
   if (!id) return { product: null };
 
+  const looksLikeUuid =
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
+      id,
+    );
+
   try {
     const result = await getCatalogProducts({
       storeSlug,
-      productIds: [id],
+      ...(looksLikeUuid
+        ? { productIds: [id] }
+        : { productSlug: id.toLowerCase() }),
       limit: 1,
     });
     return { product: result.products[0] ?? null };

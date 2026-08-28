@@ -29,6 +29,7 @@ import {
 import { importSupplierProductsBulkToStore } from "@/lib/dropship/bulk-import";
 import { CatalogMoneyInput } from "@/components/dashboard/CatalogMoneyInput";
 import { SocialImageDownloadButton } from "@/components/dashboard/SocialImageDownloadButton";
+import { CopyProductPublicLinkButton } from "@/components/dashboard/CopyProductPublicLinkButton";
 import { ProductImageGallery } from "@/components/catalog/ProductImageGallery";
 import { Button } from "@/components/ui/button";
 import { Select } from "@/components/ui/select";
@@ -145,11 +146,17 @@ function SupplierCatalogCardMedia({
 }
 
 interface AvailableProductsPanelProps {
+  storeSlug: string;
+  customDomain?: string | null;
+  customDomainVerified?: boolean;
   onImported?: (productId: string) => void;
   className?: string;
 }
 
 export function AvailableProductsPanel({
+  storeSlug,
+  customDomain = null,
+  customDomainVerified = false,
   onImported,
   className,
 }: AvailableProductsPanelProps) {
@@ -504,6 +511,7 @@ export function AvailableProductsPanel({
             ...product,
             alreadyImported: true,
             linkedProductId,
+            linkedProductSlug: result.productSlug ?? product.linkedProductSlug,
             retailPriceUsd: result.retailUsd ?? product.retailPriceUsd,
             suggestedRetailUsd: result.retailUsd ?? product.suggestedRetailUsd,
           });
@@ -531,6 +539,7 @@ export function AvailableProductsPanel({
           ...product,
           alreadyImported: false,
           linkedProductId: null,
+          linkedProductSlug: null,
           retailPriceUsd: product.suggestedRetailUsd,
         });
       }
@@ -996,6 +1005,18 @@ export function AvailableProductsPanel({
                         <SocialImageDownloadButton
                           imageUrl={product.imageUrl}
                           productTitle={product.title}
+                        />
+                      ) : null}
+                      {product.linkedProductId || product.linkedProductSlug ? (
+                        <CopyProductPublicLinkButton
+                          storeSlug={storeSlug}
+                          productSlug={
+                            product.linkedProductSlug ??
+                            product.linkedProductId ??
+                            ""
+                          }
+                          customDomain={customDomain}
+                          customDomainVerified={customDomainVerified}
                         />
                       ) : null}
                       <button
