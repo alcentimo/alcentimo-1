@@ -86,15 +86,42 @@ function copyResponseOntoRewrite(
   return rewriteResponse;
 }
 
+function catalogProductAppPath(storeSlug: string, productKey: string): string {
+  const slug = storeSlug.trim().toLowerCase();
+  const key = productKey.trim();
+  return `/c/${slug}/producto/${encodeURIComponent(key)}`;
+}
+
+function pathnamesMatch(left: string, right: string): boolean {
+  const normalize = (value: string) => {
+    const trimmed = value.replace(/\/+$/, "") || "/";
+    try {
+      return decodeURI(trimmed).toLowerCase();
+    } catch {
+      return trimmed.toLowerCase();
+    }
+  };
+  return normalize(left) === normalize(right);
+}
+
+/**
+ * Deep-link público → App Router de ficha (`/c/{tienda}/producto/{slug}`).
+ * No reescribir a `?product=` (eso deja la URL de ficha en blanco / en bucle).
+ */
 function rewriteCatalogProductDeepLink(
   request: NextRequest,
   storeSlug: string,
   productKey: string,
   response?: NextResponse,
 ): NextResponse {
+  const targetPath = catalogProductAppPath(storeSlug, productKey);
+  if (pathnamesMatch(request.nextUrl.pathname, targetPath)) {
+    return response ?? NextResponse.next({ request });
+  }
+
   const rewriteUrl = request.nextUrl.clone();
-  rewriteUrl.pathname = `/c/${storeSlug}`;
-  rewriteUrl.searchParams.set("product", productKey);
+  rewriteUrl.pathname = targetPath;
+  rewriteUrl.searchParams.delete("product");
   const rewriteResponse = NextResponse.rewrite(rewriteUrl);
   if (!response) return rewriteResponse;
   return copyResponseOntoRewrite(rewriteResponse, response);
@@ -430,7 +457,10 @@ export async function middleware(request: NextRequest) {
         if (rest.startsWith("/producto/")) {
           const productId = rest.slice("/producto/".length).split("/")[0];
           if (productId) {
-            rewriteUrl.searchParams.set("product", productId);
+            rewriteUrl.pathname = catalogProductAppPath(
+              vitrinaSlug,
+              decodeURIComponent(productId),
+            );
           }
         }
         const rewriteResponse = NextResponse.rewrite(rewriteUrl);

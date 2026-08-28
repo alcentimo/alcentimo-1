@@ -2997,12 +2997,14 @@ html:has(.landing-shell) {
 }
 
 .product-detail-page .product-detail-panel {
-  @apply max-h-none rounded-2xl shadow-md;
+  @apply max-h-none overflow-visible rounded-2xl shadow-md;
   max-width: none;
+  height: auto;
 }
 
 .product-detail-page .product-detail-scroll {
-  @apply overflow-y-visible lg:overflow-visible;
+  @apply min-h-0 overflow-visible lg:overflow-visible;
+  flex: none;
 }
 
 .product-detail-back-wrap {
