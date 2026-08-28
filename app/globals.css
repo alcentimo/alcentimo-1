@@ -2802,6 +2802,30 @@ html:has(.landing-shell) {
   @apply relative min-h-0 flex-1 overflow-hidden;
 }
 
+.product-image-gallery-magnifier {
+  @apply absolute inset-0;
+  transform: scale(1);
+  transform-origin: 50% 50%;
+  will-change: transform;
+  transition: transform 160ms ease-out;
+}
+
+.product-image-gallery-stage-magnifying .product-image-gallery-magnifier {
+  transition: none;
+}
+
+.product-image-gallery-stage-magnifying .product-detail-gallery-image,
+.product-image-gallery-stage-magnifying .store-product-image,
+.product-image-gallery-stage-magnifying img {
+  @apply object-cover;
+}
+
+@media (hover: none), (pointer: coarse) {
+  .product-image-gallery-magnifier {
+    transform: none !important;
+  }
+}
+
 .product-image-gallery-count {
   @apply pointer-events-none absolute right-2 top-2 z-10 rounded-full bg-zinc-950/70 px-2 py-0.5 text-[10px] font-semibold text-white backdrop-blur-sm;
 }
@@ -2810,6 +2834,12 @@ html:has(.landing-shell) {
 .product-image-gallery-thumbs {
   @apply relative z-[2] flex shrink-0 gap-1.5 overflow-x-auto border-t border-zinc-200/80 bg-white/95 px-2 py-1.5 backdrop-blur-sm dark:border-zinc-800 dark:bg-zinc-950/95;
   scrollbar-width: thin;
+}
+
+@media (min-width: 768px) {
+  .product-image-gallery-detail.product-image-gallery-multi .product-image-gallery-thumbs-detail {
+    @apply flex-col overflow-x-hidden overflow-y-auto border-r border-t-0 px-1.5 py-2;
+  }
 }
 
 .product-image-gallery-thumb {
@@ -2825,11 +2855,35 @@ html:has(.landing-shell) {
 }
 
 .product-image-gallery-detail {
-  @apply relative aspect-square w-full max-w-full overflow-hidden rounded-xl bg-zinc-100 sm:aspect-[4/5];
+  @apply relative grid w-full max-w-full overflow-hidden rounded-xl bg-zinc-50;
+  grid-template-areas:
+    "stage"
+    "thumbs";
+  grid-template-rows: minmax(0, 1fr) auto;
+  aspect-ratio: 1 / 1;
+}
+
+@media (min-width: 768px) {
+  .product-image-gallery-detail.product-image-gallery-multi {
+    aspect-ratio: auto;
+    min-height: 28rem;
+    grid-template-areas: "thumbs stage";
+    grid-template-columns: 4.75rem minmax(0, 1fr);
+    grid-template-rows: minmax(22rem, 1fr);
+  }
 }
 
 .product-image-gallery-detail .product-image-gallery-stage {
+  grid-area: stage;
   @apply bg-zinc-100;
+}
+
+.product-image-gallery-detail .product-image-gallery-thumbs-detail {
+  grid-area: thumbs;
+}
+
+.product-image-gallery-detail.product-image-gallery-multi .product-image-gallery-dots {
+  @apply hidden md:hidden;
 }
 
 .product-image-gallery-detail .product-detail-gallery-image,
@@ -2943,11 +2997,12 @@ html:has(.landing-shell) {
 }
 
 .product-detail-panel {
-  @apply relative z-10 flex max-h-[min(92dvh,900px)] w-full max-w-full flex-col overflow-hidden rounded-t-2xl bg-white shadow-2xl sm:max-w-2xl sm:rounded-2xl;
+  @apply relative z-10 flex max-h-[min(94dvh,920px)] w-full max-w-full flex-col overflow-hidden rounded-t-2xl bg-white shadow-2xl sm:rounded-2xl;
+  max-width: min(100%, 72rem);
 }
 
 .product-detail-header {
-  @apply flex items-start justify-between gap-3 border-b border-zinc-100 px-4 py-3 sm:px-5;
+  @apply flex items-start justify-between gap-3 border-b border-zinc-100 px-4 py-3 sm:px-6;
 }
 
 .product-detail-kicker {
@@ -2967,7 +3022,7 @@ html:has(.landing-shell) {
 }
 
 .product-detail-share-menu {
-  @apply absolute right-0 top-[calc(100%+0.35rem)] z-30 min-w-[13.5rem] rounded-xl border border-zinc-200 bg-white p-1.5 shadow-lg dark:border-zinc-700 dark:bg-zinc-950;
+  @apply absolute right-0 top-[calc(100%+0.35rem)] z-30 min-w-[14rem] rounded-xl border border-zinc-200 bg-white p-1.5 shadow-lg dark:border-zinc-700 dark:bg-zinc-950;
 }
 
 .product-image-gallery-zoom {
@@ -3008,15 +3063,15 @@ html:has(.landing-shell) {
 }
 
 .product-detail-scroll {
-  @apply min-h-0 min-w-0 flex-1 overflow-x-hidden overflow-y-auto;
+  @apply grid min-h-0 min-w-0 flex-1 grid-cols-1 overflow-x-hidden overflow-y-auto lg:grid-cols-[minmax(0,1.15fr)_minmax(18rem,0.95fr)] lg:overflow-hidden;
 }
 
 .product-detail-media {
-  @apply max-w-full bg-zinc-50 p-3 sm:p-4;
+  @apply max-w-full bg-zinc-50 p-3 sm:p-5 lg:overflow-y-auto;
 }
 
 .product-detail-media .mercado-mp-detail-gallery {
-  @apply mx-auto w-full max-w-xl;
+  @apply mx-auto w-full max-w-none rounded-none border-0 bg-transparent p-0 shadow-none;
 }
 
 .product-detail-media .mercado-mp-detail-gallery .product-image-gallery-detail {
@@ -3024,7 +3079,7 @@ html:has(.landing-shell) {
 }
 
 .product-detail-gallery {
-  @apply relative mx-auto w-full max-w-xl;
+  @apply relative mx-auto w-full;
 }
 
 .product-detail-gallery-image {
@@ -3032,15 +3087,15 @@ html:has(.landing-shell) {
 }
 
 .product-detail-gallery-fallback {
-  @apply aspect-[4/5] w-full rounded-xl sm:aspect-square;
+  @apply aspect-square w-full rounded-xl;
 }
 
 .product-detail-body {
-  @apply space-y-4 px-4 py-4 sm:px-5 sm:py-5;
+  @apply space-y-4 px-4 py-4 sm:px-6 sm:py-5 lg:overflow-y-auto;
 }
 
 .product-detail-title {
-  @apply text-xl font-semibold tracking-tight text-zinc-900 sm:text-2xl;
+  @apply text-[1.35rem] font-semibold leading-snug tracking-tight text-zinc-900 sm:text-[1.65rem];
 }
 
 .product-detail-brand {
@@ -3048,7 +3103,7 @@ html:has(.landing-shell) {
 }
 
 .product-detail-pricing {
-  @apply rounded-xl border border-zinc-100 bg-zinc-50/80 p-4;
+  @apply rounded-2xl border border-zinc-100 bg-zinc-50/80 p-4 sm:p-5;
 }
 
 .product-detail-pricing--sale {
@@ -3060,19 +3115,19 @@ html:has(.landing-shell) {
 }
 
 .product-detail-price-row {
-  @apply flex flex-wrap items-baseline gap-x-2.5 gap-y-1;
+  @apply flex flex-wrap items-baseline gap-x-3 gap-y-1;
 }
 
 .product-detail-price {
-  @apply text-2xl font-semibold text-zinc-900;
+  @apply text-3xl font-bold tracking-tight text-zinc-900 sm:text-4xl;
 }
 
 .product-detail-pricing--sale .product-detail-price {
-  @apply text-3xl font-extrabold tracking-tight text-orange-700;
+  @apply text-3xl font-extrabold tracking-tight text-orange-700 sm:text-4xl;
 }
 
 .product-detail-price-compare {
-  @apply text-sm text-zinc-500 line-through;
+  @apply text-base text-zinc-500 line-through;
   text-decoration-thickness: 1.5px;
 }
 
@@ -3082,7 +3137,39 @@ html:has(.landing-shell) {
 }
 
 .product-detail-price-ves {
-  @apply mt-1 text-sm text-zinc-500;
+  @apply mt-1.5 text-base font-medium text-zinc-600;
+}
+
+.product-detail-rate {
+  @apply mt-1 text-xs text-zinc-500;
+}
+
+.product-detail-stock-row {
+  @apply flex flex-wrap items-center gap-2;
+}
+
+.product-detail-stock-badge {
+  @apply inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-semibold;
+}
+
+.product-detail-stock-badge--in {
+  @apply border-emerald-200 bg-emerald-50 text-emerald-800;
+}
+
+.product-detail-stock-badge--low {
+  @apply border-amber-200 bg-amber-50 text-amber-800;
+}
+
+.product-detail-stock-badge--out {
+  @apply border-zinc-200 bg-zinc-100 text-zinc-600;
+}
+
+.product-detail-stock-dot {
+  @apply h-1.5 w-1.5 rounded-full bg-current;
+}
+
+.product-detail-actions {
+  @apply hidden space-y-2 lg:block;
 }
 
 .product-detail-wholesale {
@@ -3134,11 +3221,15 @@ html:has(.landing-shell) {
 }
 
 .product-detail-footer {
-  @apply border-t border-zinc-100 bg-white p-4;
+  @apply border-t border-zinc-100 bg-white p-4 lg:hidden;
 }
 
 .product-detail-add-btn {
-  @apply flex w-full touch-manipulation items-center justify-center gap-2 rounded-xl bg-teal-600 px-4 py-3.5 text-sm font-semibold text-white transition hover:bg-teal-700 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60 disabled:active:scale-100;
+  @apply flex w-full touch-manipulation items-center justify-center gap-2 rounded-xl bg-teal-600 px-4 py-3.5 text-sm font-semibold text-white shadow-sm transition hover:bg-teal-700 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60 disabled:active:scale-100;
+}
+
+.product-detail-cart-btn {
+  @apply flex w-full touch-manipulation items-center justify-center gap-2 rounded-xl border-2 border-teal-600 bg-white px-4 py-3 text-sm font-semibold text-teal-700 transition hover:bg-teal-50 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60 disabled:active:scale-100;
 }
 
 .product-detail-add-btn-in-cart {

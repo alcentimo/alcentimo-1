@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import { notFound } from "next/navigation";
 import { getPublicCatalogPageData } from "@/lib/catalog/get-public-catalog-page-data";
+import { fetchPublicCatalogProductById } from "@/lib/catalog/public-actions";
 import { TransactionalCatalog } from "@/components/catalog-transactional/TransactionalCatalog";
 import { CatalogProductGridSkeleton } from "@/components/catalog/CatalogProductGridSkeleton";
 import { getPublicStoreBySlug } from "@/lib/stores";
@@ -92,12 +93,31 @@ export default async function TransactionalCatalogPage({
   );
 }
 
-export async function generateMetadata({ params }: CatalogPageProps) {
+export async function generateMetadata({ params, searchParams }: CatalogPageProps) {
   const { store_slug: storeSlug } = await params;
   const store = await getPublicStoreBySlug(storeSlug);
 
   if (!store) {
     return { title: "Catálogo no encontrado" };
+  }
+
+  const productKey = (await searchParams).product?.trim();
+  if (productKey) {
+    const { product } = await fetchPublicCatalogProductById(storeSlug, productKey);
+    if (product) {
+      const description =
+        product.short_description?.trim() ||
+        `Compra ${product.product_name} en ${store.name}`;
+      return {
+        title: `${product.product_name} — ${store.name}`,
+        description,
+        openGraph: {
+          title: product.product_name,
+          description,
+          images: product.thumb_url ? [{ url: product.thumb_url }] : undefined,
+        },
+      };
+    }
   }
 
   return {

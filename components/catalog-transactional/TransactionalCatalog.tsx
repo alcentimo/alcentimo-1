@@ -146,6 +146,7 @@ function TransactionalCatalogInner({
       storeSlug={store.slug}
       exchangeRate={liveExchangeRate}
       showBsConversion={showBsConversion}
+      showOfficialRate={showOfficialRate}
       storeRubro={store.rubro_tienda}
       wholesaleEnabled={false}
       checkoutType={purchaseInfo.checkoutType}

@@ -17,6 +17,7 @@ interface CatalogProductDetailHostProps {
   storeSlug?: string | null;
   exchangeRate?: number | null;
   showBsConversion?: boolean;
+  showOfficialRate?: boolean;
   storeRubro?: string | null;
   wholesaleEnabled?: boolean;
   checkoutType?: CheckoutType;
@@ -32,6 +33,7 @@ interface CatalogProductDetailHostProps {
 function CatalogProductDetailLayer({
   exchangeRate,
   showBsConversion,
+  showOfficialRate,
   storeRubro,
   wholesaleEnabled,
   checkoutType,
@@ -47,6 +49,7 @@ function CatalogProductDetailLayer({
       product={selectedProduct}
       exchangeRate={exchangeRate}
       showBsConversion={showBsConversion}
+      showOfficialRate={showOfficialRate}
       storeRubro={storeRubro}
       wholesaleEnabled={wholesaleEnabled}
       checkoutType={checkoutType}
@@ -63,6 +66,7 @@ export function CatalogProductDetailHost({
   storeSlug,
   exchangeRate,
   showBsConversion,
+  showOfficialRate,
   storeRubro,
   wholesaleEnabled,
   checkoutType,
@@ -80,6 +84,7 @@ export function CatalogProductDetailHost({
       <CatalogProductDetailLayer
         exchangeRate={exchangeRate}
         showBsConversion={showBsConversion}
+        showOfficialRate={showOfficialRate}
         storeRubro={storeRubro}
         wholesaleEnabled={wholesaleEnabled}
         checkoutType={checkoutType}

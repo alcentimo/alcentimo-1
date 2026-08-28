@@ -92,6 +92,7 @@ function StoreCatalogInner({
       storeSlug={store.slug}
       exchangeRate={liveExchangeRate}
       showBsConversion={showBsConversion}
+      showOfficialRate={showOfficialRate}
       storeRubro={store.rubro_tienda}
       wholesaleEnabled={wholesaleEnabled}
       checkoutType={purchaseInfo.checkoutType}

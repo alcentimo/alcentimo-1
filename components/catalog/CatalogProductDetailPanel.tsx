@@ -37,7 +37,7 @@ import {
   resolveCartStockCap,
   shouldShowExactStockQuantity,
 } from "@/lib/inventory/open-stock";
-import { formatApproxBs, formatUsd } from "@/lib/format";
+import { formatApproxBs, formatExchangeRate, formatUsd } from "@/lib/format";
 import { storeUsesRubroProductModule } from "@/lib/rubros/registry";
 import {
   hasFoodModifiers,
@@ -85,6 +85,7 @@ interface CatalogProductDetailPanelProps {
   product: CatalogListItem;
   exchangeRate?: number | null;
   showBsConversion?: boolean;
+  showOfficialRate?: boolean;
   storeRubro?: string | null;
   wholesaleEnabled?: boolean;
   checkoutType?: CheckoutType;
@@ -103,10 +104,95 @@ function formatAttributeLabel(key: string): string {
     .replace(/\b\w/g, (char) => char.toUpperCase());
 }
 
+function ProductDetailActionButtons({
+  onAddToCart,
+  handleBuyNow,
+  handleAdd,
+  handleWhatsAppOrder,
+  outOfStock,
+  canAddMore,
+  inCart,
+  justAdded,
+  contextCartQuantity,
+  showWhatsAppOrder,
+  whatsappReady,
+  whatsappPrimary,
+  canWhatsAppOrder,
+}: {
+  onAddToCart?: CatalogProductDetailPanelProps["onAddToCart"];
+  handleBuyNow: () => void;
+  handleAdd: () => void;
+  handleWhatsAppOrder: () => void;
+  outOfStock: boolean;
+  canAddMore: boolean;
+  inCart: boolean;
+  justAdded: boolean;
+  contextCartQuantity: number;
+  showWhatsAppOrder: boolean;
+  whatsappReady: boolean;
+  whatsappPrimary: boolean;
+  canWhatsAppOrder: boolean;
+}) {
+  return (
+    <>
+      {onAddToCart ? (
+        <>
+          <button
+            type="button"
+            onClick={handleBuyNow}
+            disabled={outOfStock || (!canAddMore && !inCart)}
+            className="product-detail-add-btn touch-manipulation"
+          >
+            Comprar ahora
+          </button>
+          <button
+            type="button"
+            onClick={handleAdd}
+            disabled={!canAddMore && inCart}
+            className={cn(
+              "product-detail-cart-btn touch-manipulation",
+              justAdded && "store-add-btn-just-added",
+            )}
+          >
+            {inCart || justAdded ? (
+              <Check className="h-4 w-4" aria-hidden="true" />
+            ) : (
+              <Plus className="h-4 w-4" aria-hidden="true" />
+            )}
+            {inCart
+              ? canAddMore
+                ? `En carrito (${contextCartQuantity}) · Añadir otro`
+                : `En carrito (${contextCartQuantity})`
+              : "Agregar al carrito"}
+          </button>
+        </>
+      ) : null}
+
+      {showWhatsAppOrder && whatsappReady ? (
+        <button
+          type="button"
+          onClick={handleWhatsAppOrder}
+          disabled={!canWhatsAppOrder}
+          className={cn(
+            "flex w-full touch-manipulation items-center justify-center gap-2 disabled:cursor-not-allowed disabled:opacity-60",
+            whatsappPrimary || !onAddToCart
+              ? "txn-whatsapp-primary-btn"
+              : "txn-whatsapp-outline-btn !mt-0",
+          )}
+        >
+          <MessageCircle className="h-4 w-4" aria-hidden="true" />
+          Pedir por WhatsApp
+        </button>
+      ) : null}
+    </>
+  );
+}
+
 export function CatalogProductDetailPanel({
   product,
   exchangeRate = null,
   showBsConversion = true,
+  showOfficialRate = false,
   storeRubro = null,
   wholesaleEnabled = false,
   checkoutType = "both",
@@ -376,6 +462,26 @@ export function CatalogProductDetailPanel({
               <p className="product-detail-brand">Marca: {product.brand}</p>
             ) : null}
 
+            <div className="product-detail-stock-row">
+              {outOfStock ? (
+                <span className="product-detail-stock-badge product-detail-stock-badge--out">
+                  <span className="product-detail-stock-dot" aria-hidden="true" />
+                  Agotado
+                </span>
+              ) : shouldShowExactStockQuantity(displayStock) &&
+                displayStock <= threshold ? (
+                <span className="product-detail-stock-badge product-detail-stock-badge--low">
+                  <span className="product-detail-stock-dot" aria-hidden="true" />
+                  En stock · Quedan {displayStock}
+                </span>
+              ) : (
+                <span className="product-detail-stock-badge product-detail-stock-badge--in">
+                  <span className="product-detail-stock-dot" aria-hidden="true" />
+                  Disponible
+                </span>
+              )}
+            </div>
+
             {storeUsesRubroProductModule(storeRubro, "tecnologia") ? (
               <TechSpecsChips product={product} />
             ) : null}
@@ -419,6 +525,14 @@ export function CatalogProductDetailPanel({
               {showBsConversion && priceVes != null ? (
                 <p className="product-detail-price-ves">{formatApproxBs(priceVes)}</p>
               ) : null}
+              {showOfficialRate &&
+              activeExchangeRate != null &&
+              Number.isFinite(activeExchangeRate) &&
+              activeExchangeRate > 0 ? (
+                <p className="product-detail-rate">
+                  Tasa oficial BCV: Bs. {formatExchangeRate(activeExchangeRate)} / USD
+                </p>
+              ) : null}
             </div>
 
             {attributeEntries.length > 0 ? (
@@ -460,67 +574,45 @@ export function CatalogProductDetailPanel({
               </div>
             ) : null}
 
-            {!outOfStock &&
-            shouldShowExactStockQuantity(displayStock) &&
-            displayStock <= threshold ? (
-              <p className="product-detail-stock-hint">
-                Quedan {displayStock} disponibles
-              </p>
+            {showFooter ? (
+              <div className="product-detail-actions">
+                <ProductDetailActionButtons
+                  onAddToCart={onAddToCart}
+                  handleBuyNow={handleBuyNow}
+                  handleAdd={handleAdd}
+                  handleWhatsAppOrder={handleWhatsAppOrder}
+                  outOfStock={outOfStock}
+                  canAddMore={canAddMore}
+                  inCart={inCart}
+                  justAdded={justAdded}
+                  contextCartQuantity={contextCartQuantity}
+                  showWhatsAppOrder={showWhatsAppOrder}
+                  whatsappReady={whatsappReady}
+                  whatsappPrimary={whatsappPrimary}
+                  canWhatsAppOrder={canWhatsAppOrder}
+                />
+              </div>
             ) : null}
           </div>
         </div>
 
         {showFooter ? (
           <footer className="product-detail-footer safe-area-bottom space-y-2">
-            {onAddToCart ? (
-              <>
-                <button
-                  type="button"
-                  onClick={handleBuyNow}
-                  disabled={outOfStock || (!canAddMore && !inCart)}
-                  className="product-detail-add-btn touch-manipulation"
-                >
-                  Comprar ahora
-                </button>
-                <button
-                  type="button"
-                  onClick={handleAdd}
-                  disabled={!canAddMore && inCart}
-                  className={cn(
-                    "txn-whatsapp-outline-btn !mt-0 touch-manipulation",
-                    justAdded && "store-add-btn-just-added",
-                  )}
-                >
-                  {inCart || justAdded ? (
-                    <Check className="h-4 w-4" aria-hidden="true" />
-                  ) : (
-                    <Plus className="h-4 w-4" aria-hidden="true" />
-                  )}
-                  {inCart
-                    ? canAddMore
-                      ? `En carrito (${contextCartQuantity}) · Añadir otro`
-                      : `En carrito (${contextCartQuantity})`
-                    : "Agregar al carrito"}
-                </button>
-              </>
-            ) : null}
-
-            {showWhatsAppOrder && whatsappReady ? (
-              <button
-                type="button"
-                onClick={handleWhatsAppOrder}
-                disabled={!canWhatsAppOrder}
-                className={cn(
-                  "flex w-full touch-manipulation items-center justify-center gap-2 disabled:cursor-not-allowed disabled:opacity-60",
-                  whatsappPrimary || !onAddToCart
-                    ? "txn-whatsapp-primary-btn"
-                    : "txn-whatsapp-outline-btn !mt-0",
-                )}
-              >
-                <MessageCircle className="h-4 w-4" aria-hidden="true" />
-                Pedir por WhatsApp
-              </button>
-            ) : null}
+            <ProductDetailActionButtons
+              onAddToCart={onAddToCart}
+              handleBuyNow={handleBuyNow}
+              handleAdd={handleAdd}
+              handleWhatsAppOrder={handleWhatsAppOrder}
+              outOfStock={outOfStock}
+              canAddMore={canAddMore}
+              inCart={inCart}
+              justAdded={justAdded}
+              contextCartQuantity={contextCartQuantity}
+              showWhatsAppOrder={showWhatsAppOrder}
+              whatsappReady={whatsappReady}
+              whatsappPrimary={whatsappPrimary}
+              canWhatsAppOrder={canWhatsAppOrder}
+            />
           </footer>
         ) : null}
       </div>
