@@ -52,19 +52,19 @@ export function officialBrandsToCatalogOptions(
   }>,
   counts?: Map<string, number>,
 ): CatalogBrandOption[] {
-  return brands
-    .map((brand) => {
-      const name = normalizeProductBrand(brand.name);
-      if (!name) return null;
-      const key = productBrandKey(name);
-      return {
-        name,
-        key,
-        count: counts?.get(key),
-        logoUrl: brand.logoUrl ?? null,
-      };
-    })
-    .filter((item): item is CatalogBrandOption => item != null);
+  const options: CatalogBrandOption[] = [];
+  for (const brand of brands) {
+    const name = normalizeProductBrand(brand.name);
+    if (!name) continue;
+    const key = productBrandKey(name);
+    options.push({
+      name,
+      key,
+      count: counts?.get(key),
+      logoUrl: brand.logoUrl ?? null,
+    });
+  }
+  return options;
 }
 
 export function extractCatalogBrands(
