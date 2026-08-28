@@ -189,4 +189,4 @@ export function applyDropshipVisibleProductFilter<T>(query: T): T {
  * Nunca incluir base_price_usd (costo_proveedor).
  */
 export const DROPSHIP_SUPPLIER_PRODUCT_SELECT =
-  "id, title, description, category, variants, stock, precio_mayorista, suggested_retail_usd, compare_at_usd, free_shipping, image_url, created_by, created_at, is_active, publication_status, catalog_visible, is_visible";
+  "id, title, description, category, brand, variants, stock, precio_mayorista, suggested_retail_usd, compare_at_usd, free_shipping, image_url, created_by, created_at, is_active, publication_status, catalog_visible, is_visible";

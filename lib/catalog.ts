@@ -44,6 +44,8 @@ export interface GetCatalogOptions {
   minPriceUsd?: number | null;
   /** Precio máximo en USD (moneda base). */
   maxPriceUsd?: number | null;
+  /** Marca propia (filtro de vitrina). */
+  brand?: string | null;
   /** Restringe a IDs concretos (p. ej. hidratar carrito). */
   productIds?: string[];
   /** Deep-link por slug público (`/producto/camisa-manga-corta-a4f2`). */
@@ -97,6 +99,7 @@ interface CatalogProductsQueryOptions {
   searchOr: string | null;
   minPriceUsd?: number | null;
   maxPriceUsd?: number | null;
+  brand?: string | null;
   mode: CatalogProductsQueryMode;
 }
 
@@ -116,6 +119,7 @@ function buildCatalogProductsQuery(
     searchOr,
     minPriceUsd,
     maxPriceUsd,
+    brand,
     mode,
   } = options;
 
@@ -151,6 +155,11 @@ function buildCatalogProductsQuery(
 
   if (maxPriceUsd != null) {
     query = query.lte("price_usd", maxPriceUsd);
+  }
+
+  const brandFilter = brand?.trim();
+  if (brandFilter) {
+    query = query.ilike("brand", brandFilter);
   }
 
   if (paginated) {
@@ -225,6 +234,7 @@ function catalogProductsCacheKey(options: GetCatalogOptions): string[] {
     (options.search ?? "").trim().toLowerCase(),
     options.minPriceUsd == null ? "" : String(options.minPriceUsd),
     options.maxPriceUsd == null ? "" : String(options.maxPriceUsd),
+    options.brand?.trim().toLowerCase() ?? "",
     productIds,
     options.productSlug?.trim().toLowerCase() ?? "",
     "union-own",
@@ -259,6 +269,7 @@ async function loadCatalogProductsUncached(
     search,
     minPriceUsd,
     maxPriceUsd,
+    brand,
     productIds,
     productSlug,
   } = options;
@@ -320,6 +331,7 @@ async function loadCatalogProductsUncached(
       searchOr,
       minPriceUsd: minPriceUsd ?? null,
       maxPriceUsd: maxPriceUsd ?? null,
+      brand: brand?.trim() || null,
     };
   let queryMode: CatalogProductsQueryMode = "ranked";
   let selectColumns = PUBLIC_CATALOG_LIST_SELECT;

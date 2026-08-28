@@ -3099,7 +3099,11 @@ html:has(.landing-shell) {
 }
 
 .product-detail-brand {
-  @apply text-sm font-medium text-zinc-600;
+  @apply m-0 text-[11px] font-semibold uppercase tracking-[0.16em] text-[var(--mo-gold,theme(colors.amber.700))];
+}
+
+.product-detail-brand-link {
+  @apply inline-flex cursor-pointer border-0 bg-transparent p-0 text-left underline-offset-2 hover:underline;
 }
 
 .product-detail-pricing {
@@ -3909,6 +3913,10 @@ html:has(.landing-shell) {
   font-size: var(--pc-meta-size);
   color: var(--pc-fg-meta);
   @apply line-clamp-1 font-semibold uppercase tracking-wider;
+}
+
+.store-product-brand {
+  @apply mb-0.5 line-clamp-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--mo-gold,theme(colors.amber.700))];
 }
 
 .store-product-name {
@@ -13895,6 +13903,42 @@ button.mercado-mp-card-btn {
   @apply line-clamp-2 text-[11px] font-semibold leading-tight text-[var(--mo-ink)];
 }
 
+.storefront-brand-rail {
+  @apply mx-auto w-full max-w-7xl px-4 pb-4 sm:px-6 lg:px-8;
+}
+
+.storefront-brand-rail-head {
+  @apply mb-2;
+}
+
+.storefront-brand-rail-head h2 {
+  @apply m-0 text-base font-semibold tracking-tight text-[var(--mo-ink)];
+}
+
+.storefront-brand-rail-head p {
+  @apply m-0 mt-0.5 text-xs text-[var(--mo-muted)];
+}
+
+.storefront-brand-rail-track {
+  @apply m-0 flex list-none gap-2 overflow-x-auto pb-1 [scrollbar-width:none];
+}
+
+.storefront-brand-rail-track::-webkit-scrollbar {
+  display: none;
+}
+
+.storefront-brand-rail-track > li {
+  @apply shrink-0;
+}
+
+.storefront-brand-chip {
+  @apply cursor-pointer rounded-full border border-[var(--mo-border)] bg-white px-3.5 py-1.5 text-[12px] font-semibold tracking-tight text-[var(--mo-ink)] shadow-sm transition hover:border-[var(--mo-emerald)] hover:text-[var(--mo-forest)];
+}
+
+.storefront-brand-chip.is-active {
+  @apply border-[var(--mo-emerald)] bg-[var(--mo-emerald)] text-white shadow-[0_6px_16px_color-mix(in_srgb,var(--mo-emerald)_22%,transparent)];
+}
+
 .storefront-mp-listing {
   scroll-margin-top: 5.5rem;
 }
@@ -14309,6 +14353,10 @@ button.mercado-mp-card-btn {
 
 .mercado-mp-card-supplier {
   @apply truncate text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--mo-gold)];
+}
+
+.mercado-mp-card-brand {
+  @apply m-0 max-w-full truncate border-0 bg-transparent p-0 text-left text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--mo-gold)] underline-offset-2 hover:underline;
 }
 
 .mercado-mp-card-pricing {

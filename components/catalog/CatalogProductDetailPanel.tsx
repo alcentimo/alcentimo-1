@@ -37,6 +37,7 @@ import {
   resolveCartStockCap,
   shouldShowExactStockQuantity,
 } from "@/lib/inventory/open-stock";
+import { resolveCatalogProductBrand } from "@/lib/catalog/product-brand";
 import { formatApproxBs, formatExchangeRate, formatUsd } from "@/lib/format";
 import { storeUsesRubroProductModule } from "@/lib/rubros/registry";
 import {
@@ -91,6 +92,7 @@ interface CatalogProductDetailPanelProps {
   checkoutType?: CheckoutType;
   whatsappPhone?: string | null;
   onClose: () => void;
+  onSelectBrand?: (brand: string) => void;
   onAddToCart?: (
     product: CatalogListItem,
     variant: CatalogVariantOption,
@@ -198,6 +200,7 @@ export function CatalogProductDetailPanel({
   checkoutType = "both",
   whatsappPhone = null,
   onClose,
+  onSelectBrand,
   onAddToCart,
 }: CatalogProductDetailPanelProps) {
   const cartContext = useCartOptional();
@@ -330,6 +333,7 @@ export function CatalogProductDetailPanel({
     product.category_name,
     normalizeStoreRubro(storeRubro),
   );
+  const brandName = resolveCatalogProductBrand(product);
   const foodHasModifiers =
     isAlimentos &&
     hasFoodModifiers(parseFoodModifiersFromMetadata(product.metadata ?? null));
@@ -456,11 +460,24 @@ export function CatalogProductDetailPanel({
           </div>
 
           <div className="product-detail-body">
-            <h2 className="product-detail-title">{product.product_name}</h2>
-
-            {product.brand ? (
-              <p className="product-detail-brand">Marca: {product.brand}</p>
+            {brandName ? (
+              onSelectBrand ? (
+                <button
+                  type="button"
+                  className="product-detail-brand product-detail-brand-link"
+                  onClick={() => {
+                    onSelectBrand(brandName);
+                    onClose();
+                  }}
+                >
+                  {brandName}
+                </button>
+              ) : (
+                <p className="product-detail-brand">{brandName}</p>
+              )
             ) : null}
+
+            <h2 className="product-detail-title">{product.product_name}</h2>
 
             <div className="product-detail-stock-row">
               {outOfStock ? (

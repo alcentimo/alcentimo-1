@@ -27,6 +27,7 @@ interface MercadoProductGridProps {
   emptyDescription?: string;
   metaInStock?: string;
   metaOutOfStock?: string;
+  onSelectBrand?: (brand: string) => void;
 }
 
 function defaultProductHref(product: MercadoProductCard): string {
@@ -45,6 +46,7 @@ export function MercadoProductGrid({
   emptyDescription = "Probá otra colección o limpiá la búsqueda. La vitrina se actualiza con nuevos mayoristas.",
   metaInStock = "Listo para tu catálogo",
   metaOutOfStock = "Reposición pendiente",
+  onSelectBrand,
 }: MercadoProductGridProps) {
   const router = useRouter();
 
@@ -86,9 +88,27 @@ export function MercadoProductGrid({
               </div>
 
               <div className="mercado-mp-card-body">
-                <p className="mercado-mp-card-supplier">
-                  {product.supplier_label}
-                </p>
+                {product.brand ? (
+                  onSelectBrand ? (
+                    <button
+                      type="button"
+                      className="mercado-mp-card-brand"
+                      onClick={(event) => {
+                        event.preventDefault();
+                        event.stopPropagation();
+                        onSelectBrand(product.brand as string);
+                      }}
+                    >
+                      {product.brand}
+                    </button>
+                  ) : (
+                    <p className="mercado-mp-card-brand">{product.brand}</p>
+                  )
+                ) : (
+                  <p className="mercado-mp-card-supplier">
+                    {product.supplier_label}
+                  </p>
+                )}
                 {onProductActivate ? (
                   <button
                     type="button"

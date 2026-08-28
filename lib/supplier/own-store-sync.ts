@@ -5,6 +5,7 @@ import type { Store } from "@/lib/database.types";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { revalidatePublicCatalogCache } from "@/lib/catalog/public-catalog-cache";
 import { supplierPublicCatalogPath } from "@/lib/catalog/supplier-public-catalog";
+import { normalizeProductBrand } from "@/lib/catalog/product-brand";
 import { buildProductMetadata } from "@/lib/products/extra-fields";
 import {
   buildImportCategoryCache,
@@ -219,10 +220,13 @@ async function upsertOwnStoreProduct(
   );
   if (categoryResolved.error || !categoryResolved.categoryId) return;
 
+  const ownBrand = normalizeProductBrand(
+    typeof input.row.brand === "string" ? input.row.brand : null,
+  );
   const metadata = buildProductMetadata(
     { [SUPPLIER_OWN_PRODUCT_METADATA_KEY]: String(input.row.id) },
-    {},
-    [],
+    ownBrand ? { Marca: ownBrand } : {},
+    ["Marca"],
   );
   const now = new Date().toISOString();
   let productId = input.existingId;
@@ -238,6 +242,7 @@ async function upsertOwnStoreProduct(
       slug,
       short_description: description,
       description,
+      brand: ownBrand,
       metadata,
       is_active: true,
       is_deleted: false,
@@ -304,6 +309,7 @@ async function upsertOwnStoreProduct(
       name: title,
       short_description: description,
       description,
+      brand: ownBrand,
       metadata,
       is_active: true,
       is_deleted: false,

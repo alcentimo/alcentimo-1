@@ -6,9 +6,11 @@ import { MercadoBrandHeader } from "@/components/mercado-oculto/MercadoBrandHead
 import { StorefrontMoricheNav } from "@/components/catalog-transactional/StorefrontMoricheNav";
 import { StorefrontMarketplaceSearch } from "@/components/catalog-transactional/StorefrontMarketplaceSearch";
 import { StorefrontCategoryRail } from "@/components/catalog-transactional/StorefrontCategoryRail";
+import { StorefrontBrandRail } from "@/components/catalog-transactional/StorefrontBrandRail";
 import { buildMercadoBrandCssVars } from "@/lib/mercado-oculto/brand-css-vars";
 import { getStoreCatalogBasePath } from "@/lib/store-host";
 import type { CatalogCategoryOption } from "@/lib/catalog/extract-categories";
+import type { CatalogBrandOption } from "@/lib/catalog/product-brand";
 import { cn } from "@/lib/cn";
 
 export interface StorefrontMoricheChromeProps {
@@ -24,6 +26,9 @@ export interface StorefrontMoricheChromeProps {
   activeCategoryId: string | null;
   onSelectCategory: (id: string | null) => void;
   pending?: boolean;
+  brands?: CatalogBrandOption[];
+  activeBrand?: string | null;
+  onSelectBrand?: (brand: string | null) => void;
   /** Banner / promo debajo de la cabecera (personalización de tienda). */
   banner?: ReactNode;
   children: ReactNode;
@@ -49,6 +54,9 @@ export function StorefrontMoricheChrome({
   activeCategoryId,
   onSelectCategory,
   pending = false,
+  brands = [],
+  activeBrand = null,
+  onSelectBrand,
   banner = null,
   children,
   className,
@@ -96,6 +104,14 @@ export function StorefrontMoricheChrome({
         activeCategoryId={activeCategoryId}
         onSelectCategory={onSelectCategory}
       />
+
+      {onSelectBrand ? (
+        <StorefrontBrandRail
+          brands={brands}
+          activeBrand={activeBrand}
+          onSelectBrand={onSelectBrand}
+        />
+      ) : null}
 
       <main className="mercado-main mercado-mp-main">{children}</main>
     </div>

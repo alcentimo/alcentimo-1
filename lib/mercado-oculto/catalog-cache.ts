@@ -27,7 +27,7 @@ import {
 export const MERCADO_CATALOG_CACHE_TAG = "mercado-catalog";
 
 const SUPPLIER_PRODUCT_SELECT =
-  "id, title, description, category, variants, stock, precio_mayorista, compare_at_usd, free_shipping, image_url, created_by, created_at, is_active, publication_status, catalog_visible, is_visible";
+  "id, title, description, category, brand, variants, stock, precio_mayorista, compare_at_usd, free_shipping, image_url, created_by, created_at, is_active, publication_status, catalog_visible, is_visible";
 
 export type MercadoCatalogSnapshot = {
   products: MercadoProductCard[];

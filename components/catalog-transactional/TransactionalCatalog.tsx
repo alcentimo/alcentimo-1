@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type MutableRefObject } from "react";
 import type { CatalogListItem, ExchangeRate, Store } from "@/lib/database.types";
 import type { PublicPurchaseInfo } from "@/lib/store-settings/purchase-info";
 import type { CatalogDesignSettings, CatalogCurrencySettings } from "@/lib/store-settings/types";
@@ -36,6 +36,7 @@ import { StorefrontMoricheChrome } from "@/components/catalog-transactional/Stor
 import { CatalogFaqSection } from "@/components/catalog-transactional/CatalogFaqSection";
 import { useOpenCatalogProductById } from "@/components/catalog-transactional/useOpenCatalogProductById";
 import { mapCatalogListItemToMercadoCard } from "@/lib/catalog/map-catalog-to-mercado-card";
+import { extractCatalogBrands } from "@/lib/catalog/product-brand";
 import { applyLocationStockToProduct } from "@/lib/locations/apply-catalog-stock";
 import { storeUsesRubroProductModule } from "@/lib/rubros/registry";
 import { normalizeCatalogHeaderSettings } from "@/lib/store-settings/catalog-header";
@@ -139,6 +140,7 @@ function TransactionalCatalogInner({
   const { showOfficialRate, showBsConversion } = catalogCurrency;
   const wholesaleEnabled = catalogCurrency.wholesaleEnabled;
   const { addItem } = useCart();
+  const brandFilterRef = useRef<(brand: string) => void>(() => {});
 
   return (
     <CatalogProductDetailHost
@@ -153,6 +155,7 @@ function TransactionalCatalogInner({
       whatsappPhone={purchaseInfo.whatsappPhone}
       syncProductUrl={!previewMode}
       onAddToCart={referenceMode ? undefined : addItem}
+      onSelectBrand={(brand) => brandFilterRef.current(brand)}
     >
       <TransactionalCatalogContent
         store={store}
@@ -176,6 +179,7 @@ function TransactionalCatalogInner({
         showBsConversion={showBsConversion}
         wholesaleEnabled={wholesaleEnabled}
         addItem={addItem}
+        brandFilterRef={brandFilterRef}
       />
     </CatalogProductDetailHost>
   );
@@ -203,14 +207,16 @@ function TransactionalCatalogContent({
   showBsConversion,
   wholesaleEnabled: _wholesaleEnabled,
   addItem: _addItem,
+  brandFilterRef,
 }: Omit<TransactionalCatalogProps, "locations" | "locationStocks"> & {
   liveExchangeRate: number | null;
   showOfficialRate: boolean;
   showBsConversion: boolean;
   wholesaleEnabled: boolean;
   addItem: ReturnType<typeof useCart>["addItem"];
+  brandFilterRef: MutableRefObject<(brand: string) => void>;
 }) {
-  const { openProduct } = useCatalogProductDetail();
+  const { openProduct, closeProduct } = useCatalogProductDetail();
   const openProductById = useOpenCatalogProductById(
     store.slug,
     products,
@@ -278,6 +284,11 @@ function TransactionalCatalogContent({
     [storeCategories, catalogProducts],
   );
 
+  const brandOptions = useMemo(
+    () => extractCatalogBrands(catalogProducts),
+    [catalogProducts],
+  );
+
   const browseServerPagination = useMemo(
     () =>
       enableServerPagination && !previewMode
@@ -327,6 +338,23 @@ function TransactionalCatalogContent({
     return map;
   }, [catalogProducts]);
 
+  const handleSelectBrand = useCallback(
+    (nextBrand: string | null) => {
+      browse.setBrand(nextBrand);
+      closeProduct();
+      if (typeof document !== "undefined") {
+        document
+          .getElementById("storefront-resultados")
+          ?.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
+    },
+    [browse.setBrand, closeProduct],
+  );
+
+  brandFilterRef.current = (brand) => {
+    handleSelectBrand(brand);
+  };
+
   const handleActivateProduct = useCallback(
     (card: MercadoProductCard) => {
       const product = productById.get(card.product_id);
@@ -364,6 +392,9 @@ function TransactionalCatalogContent({
         categories={categoryOptions}
         activeCategoryId={browse.categorySlug}
         onSelectCategory={browse.setCategorySlug}
+        brands={brandOptions}
+        activeBrand={browse.brand}
+        onSelectBrand={handleSelectBrand}
         pending={browse.loadingFilter}
         banner={
           <>
@@ -389,6 +420,7 @@ function TransactionalCatalogContent({
           categoryOptions={categoryOptions}
           mercadoCards={mercadoCards}
           onActivateProduct={handleActivateProduct}
+          onSelectBrand={handleSelectBrand}
           exchangeRate={exchangeRate}
           showOfficialRate={showOfficialRate}
           showBsConversion={showBsConversion}

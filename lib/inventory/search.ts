@@ -13,7 +13,7 @@ export function buildInventorySearchOrFilter(query: string): string | null {
   if (!sanitized) return null;
 
   const pattern = `"%${sanitized}%"`;
-  return `product_name.ilike.${pattern},default_sku.ilike.${pattern},product_slug.ilike.${pattern}`;
+  return `product_name.ilike.${pattern},default_sku.ilike.${pattern},product_slug.ilike.${pattern},brand.ilike.${pattern}`;
 }
 
 /** Ventana de páginas para la UI (números + elipsis). */

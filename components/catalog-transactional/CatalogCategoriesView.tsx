@@ -40,6 +40,7 @@ import { StorefrontCatalogListing } from "@/components/catalog-transactional/Sto
 import { StorefrontMoricheChrome } from "@/components/catalog-transactional/StorefrontMoricheChrome";
 import { useOpenCatalogProductById } from "@/components/catalog-transactional/useOpenCatalogProductById";
 import { mapCatalogListItemToMercadoCard } from "@/lib/catalog/map-catalog-to-mercado-card";
+import { extractCatalogBrands } from "@/lib/catalog/product-brand";
 import { applyLocationStockToProduct } from "@/lib/locations/apply-catalog-stock";
 import { normalizeCatalogHeaderSettings } from "@/lib/store-settings/catalog-header";
 import { cn } from "@/lib/cn";
@@ -152,6 +153,18 @@ function CatalogCategoriesViewInner({
     serverPagination: browseServerPagination,
   });
 
+  const handleSelectBrand = useCallback(
+    (brand: string | null) => {
+      browse.setBrand(brand);
+      if (typeof document !== "undefined" && brand) {
+        document
+          .getElementById("storefront-resultados")
+          ?.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
+    },
+    [browse.setBrand],
+  );
+
   return (
     <CatalogProductDetailHost
       storeId={store.id}
@@ -164,6 +177,7 @@ function CatalogCategoriesViewInner({
       checkoutType={purchaseInfo.checkoutType}
       whatsappPhone={purchaseInfo.whatsappPhone}
       onAddToCart={addItem}
+      onSelectBrand={(brand) => handleSelectBrand(brand)}
     >
       <CatalogCategoriesPageContent
         store={store}
@@ -179,6 +193,7 @@ function CatalogCategoriesViewInner({
         categoryOptions={categoryOptions}
         browse={browse}
         initialProductId={initialProductId}
+        onSelectBrand={handleSelectBrand}
       />
     </CatalogProductDetailHost>
   );
@@ -198,6 +213,7 @@ interface CatalogCategoriesPageContentProps {
   categoryOptions: CatalogCategoryOption[];
   browse: ReturnType<typeof useCatalogBrowse>;
   initialProductId?: string | null;
+  onSelectBrand: (brand: string | null) => void;
 }
 
 function CatalogCategoriesPageContent({
@@ -214,6 +230,7 @@ function CatalogCategoriesPageContent({
   categoryOptions,
   browse,
   initialProductId = null,
+  onSelectBrand,
 }: CatalogCategoriesPageContentProps) {
   const { openProduct } = useCatalogProductDetail();
   const openProductById = useOpenCatalogProductById(
@@ -248,6 +265,11 @@ function CatalogCategoriesPageContent({
         mapCatalogListItemToMercadoCard(product, store.name),
       ),
     [browse.visibleProducts, store.name],
+  );
+
+  const brandOptions = useMemo(
+    () => extractCatalogBrands(catalogProducts),
+    [catalogProducts],
   );
 
   const productById = useMemo(() => {
@@ -291,6 +313,9 @@ function CatalogCategoriesPageContent({
         categories={categoryOptions}
         activeCategoryId={browse.categorySlug}
         onSelectCategory={browse.setCategorySlug}
+        brands={brandOptions}
+        activeBrand={browse.brand}
+        onSelectBrand={onSelectBrand}
         pending={browse.loadingFilter}
         banner={
           <>
@@ -316,6 +341,7 @@ function CatalogCategoriesPageContent({
           categoryOptions={categoryOptions}
           mercadoCards={mercadoCards}
           onActivateProduct={handleActivateProduct}
+          onSelectBrand={onSelectBrand}
           exchangeRate={exchangeRate}
           showOfficialRate={showOfficialRate}
           showBsConversion={showBsConversion}

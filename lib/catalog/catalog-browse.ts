@@ -1,4 +1,9 @@
 import type { CatalogListItem } from "@/lib/database.types";
+import {
+  brandsMatch,
+  normalizeProductBrand,
+  resolveCatalogProductBrand,
+} from "@/lib/catalog/product-brand";
 
 export type CatalogSortKey =
   | "featured"
@@ -48,7 +53,7 @@ export function matchesCatalogSearch(
     product.product_name,
     product.short_description,
     product.category_name,
-    product.brand,
+    resolveCatalogProductBrand(product),
   ]
     .filter(Boolean)
     .join(" ")
@@ -101,6 +106,7 @@ export function filterCatalogProducts(
   options: {
     searchQuery: string;
     categorySlug: string | null;
+    brand?: string | null;
     minPrice?: string;
     maxPrice?: string;
   },
@@ -109,6 +115,13 @@ export function filterCatalogProducts(
     if (
       options.categorySlug &&
       product.category_slug !== options.categorySlug
+    ) {
+      return false;
+    }
+
+    if (
+      options.brand &&
+      !brandsMatch(resolveCatalogProductBrand(product), options.brand)
     ) {
       return false;
     }
@@ -177,6 +190,7 @@ export function browseCatalogProducts(
   options: {
     searchQuery: string;
     categorySlug: string | null;
+    brand?: string | null;
     sortKey: CatalogSortKey;
     visibleCount: number;
     minPrice?: string;
@@ -186,6 +200,7 @@ export function browseCatalogProducts(
   const filtered = filterCatalogProducts(products, {
     searchQuery: options.searchQuery,
     categorySlug: options.categorySlug,
+    brand: options.brand,
     minPrice: options.minPrice,
     maxPrice: options.maxPrice,
   });
@@ -204,12 +219,14 @@ export function hasActiveCatalogContentFilters(
   categorySlug: string | null,
   minPrice = "",
   maxPrice = "",
+  brand: string | null = null,
 ): boolean {
   return (
     normalizeCatalogSearchText(searchQuery).length > 0 ||
     categorySlug != null ||
     parseCatalogPriceBound(minPrice) != null ||
-    parseCatalogPriceBound(maxPrice) != null
+    parseCatalogPriceBound(maxPrice) != null ||
+    normalizeProductBrand(brand) != null
   );
 }
 
@@ -219,6 +236,7 @@ export function hasActiveCatalogBrowseFilters(
   sortKey: CatalogSortKey,
   minPrice = "",
   maxPrice = "",
+  brand: string | null = null,
 ): boolean {
   return (
     hasActiveCatalogContentFilters(
@@ -226,6 +244,7 @@ export function hasActiveCatalogBrowseFilters(
       categorySlug,
       minPrice,
       maxPrice,
+      brand,
     ) || sortKey !== "featured"
   );
 }

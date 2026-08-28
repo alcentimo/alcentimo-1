@@ -27,6 +27,8 @@ export interface MercadoProductCard {
   seller_user_id: string;
   store_name: string;
   supplier_label: string;
+  /** Marca propia del producto (sello de vitrina). */
+  brand: string | null;
   variants: SupplierProductVariants;
   /** Galería completa; thumb_url es la portada (primera). */
   gallery_urls: string[];
@@ -95,6 +97,9 @@ export function mapSupplierRowToMercadoCard(
     seller_user_id: String(row.created_by ?? ""),
     store_name: supplierLabel,
     supplier_label: supplierLabel,
+    brand: typeof row.brand === "string" && row.brand.trim()
+      ? row.brand.trim()
+      : null,
     variants: normalizeSupplierProductVariants(row.variants),
   };
 }

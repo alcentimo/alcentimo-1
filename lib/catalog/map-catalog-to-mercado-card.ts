@@ -1,3 +1,4 @@
+import { resolveCatalogProductBrand } from "@/lib/catalog/product-brand";
 import type { CatalogListItem } from "@/lib/database.types";
 import {
   computeDiscountPercent,
@@ -30,6 +31,8 @@ export function mapCatalogListItemToMercadoCard(
     galleryUrls.push(product.thumb_url);
   }
 
+  const brand = resolveCatalogProductBrand(product);
+
   return {
     product_id: product.product_id,
     product_name: product.product_name,
@@ -45,10 +48,8 @@ export function mapCatalogListItemToMercadoCard(
     created_at: product.created_at,
     seller_user_id: product.store_id,
     store_name: storeName,
-    supplier_label:
-      product.brand?.trim() ||
-      product.category_name?.trim() ||
-      storeName,
+    brand,
+    supplier_label: brand || storeName,
     variants: emptySupplierVariants(),
     gallery_urls: galleryUrls,
   };

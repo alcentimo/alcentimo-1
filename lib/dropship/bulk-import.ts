@@ -21,6 +21,7 @@ import {
 } from "@/lib/products/allocate-product-slug";
 import { getStoreProductLimitContext } from "@/lib/plans/product-limit";
 import { getProductLimitErrorMessage } from "@/src/config/plans";
+import { normalizeProductBrand } from "@/lib/catalog/product-brand";
 import { buildProductMetadata } from "@/lib/products/extra-fields";
 import {
   buildImportCategoryCache,
@@ -78,6 +79,7 @@ type SupplierCatalogRow = {
   id: string;
   title: string;
   description: string | null;
+  brand: string | null;
   wholesalePriceUsd: number;
   platformSuggestedRetailUsd: number | null;
   stock: number;
@@ -165,6 +167,9 @@ async function fetchAllActiveSupplierProducts(
           typeof row.description === "string"
             ? row.description.trim().slice(0, 2000) || null
             : null,
+        brand: normalizeProductBrand(
+          typeof row.brand === "string" ? row.brand : null,
+        ),
         wholesalePriceUsd,
         platformSuggestedRetailUsd: resolveSuggestedRetailUsd(row),
         stock: Math.max(0, Math.floor(Number(row.stock) || 0)),
@@ -437,7 +442,6 @@ export async function importSupplierProductsBulkToStore(input?: {
       categoriesResult.rows as { id: string; name: string; slug: string }[],
     );
     const defaultLocationId = await getDefaultLocationId(admin, auth.store.id);
-    const emptyMetadata = buildProductMetadata(null, {}, []);
     const now = new Date().toISOString();
 
     const importedSupplierIds: string[] = [];
@@ -512,7 +516,12 @@ export async function importSupplierProductsBulkToStore(input?: {
             slug: item.slug,
             short_description: item.supplier.description,
             description: item.supplier.description,
-            metadata: emptyMetadata,
+            brand: item.supplier.brand,
+            metadata: buildProductMetadata(
+              null,
+              item.supplier.brand ? { Marca: item.supplier.brand } : {},
+              ["Marca"],
+            ),
             sort_order: sortOrder,
             is_active: true,
             is_deleted: false,

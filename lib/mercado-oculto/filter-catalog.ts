@@ -85,6 +85,7 @@ export function filterMercadoProducts(
         product.short_description ?? "",
         product.category_name,
         product.supplier_label,
+        product.brand ?? "",
       ]
         .join(" ")
         .toLowerCase();

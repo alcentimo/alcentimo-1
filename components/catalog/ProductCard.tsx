@@ -40,6 +40,7 @@ import {
   resolvePublicCategoryLabel,
 } from "@/src/config/categories";
 import dynamic from "next/dynamic";
+import { resolveCatalogProductBrand } from "@/lib/catalog/product-brand";
 import { cn } from "@/lib/cn";
 
 const EMPTY_MODIFIERS: CartModifierSelection[] = [];
@@ -171,6 +172,7 @@ export const ProductCard = memo(function ProductCard({
     product.category_name,
     normalizeStoreRubro(storeRubro),
   );
+  const brandName = resolveCatalogProductBrand(product);
   const isAlimentos = storeUsesRubroProductModule(storeRubro, "alimentos");
   const isTecnologia = storeUsesRubroProductModule(storeRubro, "tecnologia");
   const isColeccionables = storeUsesRubroProductModule(
@@ -362,6 +364,9 @@ export const ProductCard = memo(function ProductCard({
       <div className="store-product-content w-full min-w-0">
         <div className={cn("store-product-body w-full min-w-0", bodyLayoutClass)}>
           <div className="store-product-slot store-product-slot-meta">
+            {brandName ? (
+              <p className="store-product-brand">{brandName}</p>
+            ) : null}
             <p
               className={cn(
                 "store-product-category",
