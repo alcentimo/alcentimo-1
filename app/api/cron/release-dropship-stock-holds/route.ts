@@ -7,8 +7,9 @@ export const dynamic = "force-dynamic";
 export const maxDuration = 60;
 
 /**
- * Libera reservas de carrito dropship vencidas (20 min) y reincorpora
- * el stock al inventario global de Alcéntimo y de las vitrinas.
+ * Barrido diario de reservas de carrito dropship vencidas (TTL 20 min).
+ * La liberación puntual ocurre también al sincronizar el carrito.
+ * Reincorpora el stock al inventario global de Alcéntimo y de las vitrinas.
  */
 export async function GET(request: Request) {
   const auth = verifyCronRequest(request);
