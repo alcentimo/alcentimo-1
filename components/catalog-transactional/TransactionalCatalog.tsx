@@ -70,6 +70,9 @@ interface TransactionalCatalogProps {
   catalogTotalCount?: number;
   enableServerPagination?: boolean;
   featuredBrands?: OfficialBrandPublic[];
+  /** Prefill del buscador (`?q=` desde la ficha de producto). */
+  initialSearchQuery?: string | null;
+  initialBrand?: string | null;
 }
 
 export function TransactionalCatalog({
@@ -92,6 +95,8 @@ export function TransactionalCatalog({
   catalogTotalCount,
   enableServerPagination = false,
   featuredBrands = [],
+  initialSearchQuery = null,
+  initialBrand = null,
 }: TransactionalCatalogProps) {
   return (
     <CatalogFulfillmentProvider
@@ -117,6 +122,8 @@ export function TransactionalCatalog({
         catalogTotalCount={catalogTotalCount}
         enableServerPagination={enableServerPagination}
         featuredBrands={featuredBrands}
+        initialSearchQuery={initialSearchQuery}
+        initialBrand={initialBrand}
       />
     </CatalogFulfillmentProvider>
   );
@@ -140,6 +147,8 @@ function TransactionalCatalogInner({
   catalogTotalCount,
   enableServerPagination = false,
   featuredBrands = [],
+  initialSearchQuery = null,
+  initialBrand = null,
 }: Omit<TransactionalCatalogProps, "locations" | "locationStocks">) {
   const liveExchangeRate = exchangeRate?.rate ?? null;
   const { showOfficialRate, showBsConversion } = catalogCurrency;
@@ -180,6 +189,8 @@ function TransactionalCatalogInner({
         catalogTotalCount={catalogTotalCount}
         enableServerPagination={enableServerPagination}
         featuredBrands={featuredBrands}
+        initialSearchQuery={initialSearchQuery}
+        initialBrand={initialBrand}
         liveExchangeRate={liveExchangeRate}
         showOfficialRate={showOfficialRate}
         showBsConversion={showBsConversion}
@@ -209,6 +220,8 @@ function TransactionalCatalogContent({
   catalogTotalCount,
   enableServerPagination = false,
   featuredBrands = [],
+  initialSearchQuery = null,
+  initialBrand = null,
   liveExchangeRate,
   showOfficialRate,
   showBsConversion,
@@ -315,6 +328,8 @@ function TransactionalCatalogContent({
 
   const browse = useCatalogBrowse(catalogProducts, {
     serverPagination: browseServerPagination,
+    initialSearchQuery,
+    initialBrand,
   });
 
   const effectiveDesign = catalogDesign;

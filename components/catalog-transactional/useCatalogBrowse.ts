@@ -14,6 +14,8 @@ import { fetchPublicCatalogProducts } from "@/lib/catalog/public-actions";
 
 interface UseCatalogBrowseOptions {
   initialCategorySlug?: string | null;
+  initialSearchQuery?: string | null;
+  initialBrand?: string | null;
   pageSize?: number;
   /** Paginación server-side para catálogos grandes. */
   serverPagination?: {
@@ -79,11 +81,15 @@ export function useCatalogBrowse(
   const [catalogTotalCount, setCatalogTotalCount] = useState(
     serverPaginationEnabled ? serverInitialTotalCount : initialProducts.length,
   );
-  const [searchQuery, setSearchQuery] = useState("");
+  const [searchQuery, setSearchQuery] = useState(
+    () => options?.initialSearchQuery?.trim() ?? "",
+  );
   const [categorySlug, setCategorySlug] = useState<string | null>(
     options?.initialCategorySlug ?? null,
   );
-  const [brand, setBrand] = useState<string | null>(null);
+  const [brand, setBrand] = useState<string | null>(
+    () => options?.initialBrand?.trim() || null,
+  );
   const [minPrice, setMinPrice] = useState("");
   const [maxPrice, setMaxPrice] = useState("");
   const [sortKey, setSortKey] = useState<CatalogSortKey>("featured");
