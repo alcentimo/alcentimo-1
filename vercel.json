@@ -18,6 +18,9 @@
     },
     "app/api/cron/apply-pending-plan-changes/route.ts": {
       "maxDuration": 60
+    },
+    "app/api/cron/release-dropship-stock-holds/route.ts": {
+      "maxDuration": 60
     }
   },
   "crons": [
@@ -68,6 +71,10 @@
     {
       "path": "/api/cron/apply-pending-plan-changes",
       "schedule": "20 6 * * *"
+    },
+    {
+      "path": "/api/cron/release-dropship-stock-holds",
+      "schedule": "*/5 * * * *"
     }
   ],
   "headers": [

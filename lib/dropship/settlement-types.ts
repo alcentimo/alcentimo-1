@@ -206,7 +206,7 @@ export interface SupplierPayoutObligationView {
 }
 
 export const DROPSHIP_CENTRAL_PAYMENT_NOTICE =
-  "Liquida a Alcéntimo el consolidado del día con un solo pago. El proveedor aparta el stock y espera la recolección; no ve el pago del cliente final.";
+  "Cuando el cliente paga, la venta queda confirmada y el costo mayorista figura como saldo pendiente a Alcéntimo. Al validar tu pago, Alcéntimo libera la orden de compra al proveedor (sin datos del cliente final).";
 
 /** Texto del panel del proveedor: Alcéntimo paga; el proveedor no cobra a nadie. */
 export const SUPPLIER_ALCENTIMO_PAYOUT_NOTICE =

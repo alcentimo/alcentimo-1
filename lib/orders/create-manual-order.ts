@@ -176,6 +176,7 @@ export async function createManualExternalOrder(
     admin,
     auth.store.id,
     enrichedOrderItems,
+    { orderId },
   );
   if (dropshipStock.error) {
     await admin.from("orders").delete().eq("id", orderId);
@@ -185,7 +186,11 @@ export async function createManualExternalOrder(
   const reserveResult = await reserveOrderInventory(admin, orderId);
   if (reserveResult.error) {
     if (dropshipStock.consumed.length > 0) {
-      await restoreDropshipStockForOrderLines(admin, enrichedOrderItems);
+      await restoreDropshipStockForOrderLines(
+        admin,
+        enrichedOrderItems,
+        orderId,
+      );
     }
     await admin.from("orders").delete().eq("id", orderId);
     return { ok: false, error: reserveResult.error };

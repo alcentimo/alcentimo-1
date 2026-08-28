@@ -33,8 +33,8 @@ function optionalText(value: unknown, max: number): string | null {
 }
 
 /**
- * Crea obligaciones de pago a mayoristas, registra saldos y avisa al proveedor
- * para apartar stock. Copia el destino del cliente final a la etiqueta de acopio.
+ * Crea obligaciones de pago a mayoristas, registra saldos y libera la
+ * orden de compra en «Por preparar» (sin datos del cliente final).
  */
 export async function fulfillApprovedDailySettlement(input: {
   settlementId: string;
@@ -121,20 +121,6 @@ export async function fulfillApprovedDailySettlement(input: {
     const totalUsd = roundMoneyDisplay(
       group.lines.reduce((sum, line) => sum + line.supplier_payout_usd, 0),
     );
-    const shipping = group.lines.find((line) => line.shipping)?.shipping ?? null;
-    const customerName =
-      shipping?.customerName?.trim() || HUB_COLLECTION_BUYER_NAME;
-    const customerPhone = shipping?.customerPhone ?? null;
-    const customerAddress =
-      shipping?.destinationLabel &&
-      shipping.destinationLabel !== "Sin destino registrado"
-        ? shipping.destinationLabel
-        : (shipping?.deliveryAddress ?? null);
-    const shippingCarrier =
-      shipping?.shippingMethod?.trim() || HUB_COLLECTION_CARRIER;
-    const shippingBranchName = shipping?.shippingBranchName ?? null;
-    const shippingBranchAddress = shipping?.shippingBranchAddress ?? null;
-    const buyerDocumentId = shipping?.customerDocumentId ?? null;
 
     const { data: existing } = await client
       .from("supplier_orders")
@@ -146,17 +132,17 @@ export async function fulfillApprovedDailySettlement(input: {
     const orderPatch = {
       settlement_id: input.settlementId,
       ship_on: shipOn,
-      payment_status: "reportado",
+      payment_status: "confirmado",
       total_usd: totalUsd,
       sender_name: senderName,
-      buyer_name: customerName,
-      buyer_document_id: buyerDocumentId,
-      buyer_phone: customerPhone,
-      buyer_address: customerAddress,
-      shipping_carrier: shippingCarrier,
-      shipping_branch_name: shippingBranchName,
-      shipping_branch_address: shippingBranchAddress,
-      notes: `${HUB_COLLECTION_NOTES} Destino del paquete: ${customerName}${buyerDocumentId ? ` · CI ${buyerDocumentId}` : ""}${customerPhone ? ` · ${customerPhone}` : ""}${customerAddress ? ` · ${customerAddress}` : ""}. Liquidación ${input.businessDate}. Recolección a partir del ${shipOn}.`,
+      buyer_name: HUB_COLLECTION_BUYER_NAME,
+      buyer_document_id: null,
+      buyer_phone: null,
+      buyer_address: null,
+      shipping_carrier: HUB_COLLECTION_CARRIER,
+      shipping_branch_name: null,
+      shipping_branch_address: null,
+      notes: `${HUB_COLLECTION_NOTES} Liquidación ${input.businessDate}. Recolección a partir del ${shipOn}.`,
       updated_at: now,
     };
 
@@ -255,13 +241,13 @@ export async function fulfillApprovedDailySettlement(input: {
       alreadyNotified,
       senderName,
       shipOn,
-      customerName,
-      customerPhone,
-      customerAddress,
-      customerDocumentId: buyerDocumentId,
-      shippingCarrier,
-      shippingBranchName,
-      shippingBranchAddress,
+      customerName: HUB_COLLECTION_BUYER_NAME,
+      customerPhone: null,
+      customerAddress: null,
+      customerDocumentId: null,
+      shippingCarrier: HUB_COLLECTION_CARRIER,
+      shippingBranchName: null,
+      shippingBranchAddress: null,
       items: notifyItems,
     });
   }

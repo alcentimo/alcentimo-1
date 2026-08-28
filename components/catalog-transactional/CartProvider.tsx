@@ -34,6 +34,7 @@ import {
   mergeGuestCart,
   syncCustomerCart,
 } from "@/lib/customers/cart-actions";
+import { syncDropshipCartHolds } from "@/lib/dropship/cart-hold-actions";
 import { createClient } from "@/lib/supabase/client";
 import { resolveCartStockCap } from "@/lib/inventory/open-stock";
 
@@ -428,6 +429,21 @@ export function CartProvider({
         clearTimeout(syncTimerRef.current);
       }
     };
+  }, [storeSlug, items, hydrated, persistMode]);
+
+  useEffect(() => {
+    if (!hydrated || syncPausedRef.current || persistMode !== "guest") {
+      return;
+    }
+    const linesToSync = cartItemsToLines(items);
+    const revisionAtSchedule = cartRevisionRef.current;
+    const timer = setTimeout(() => {
+      void (async () => {
+        if (cartRevisionRef.current !== revisionAtSchedule) return;
+        await syncDropshipCartHolds(storeSlug, linesToSync);
+      })();
+    }, SYNC_DEBOUNCE_MS);
+    return () => clearTimeout(timer);
   }, [storeSlug, items, hydrated, persistMode]);
 
   const addItem = useCallback(

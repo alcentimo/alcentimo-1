@@ -45,6 +45,7 @@ import {
   consumeDropshipStockForOrderLines,
   restoreDropshipStockForOrderLines,
 } from "@/lib/dropship/supplier-stock";
+import { readDropshipHoldSessionKey } from "@/lib/dropship/cart-hold-session";
 import { syncCustomerProfileFromCheckout } from "@/lib/customers/sync-customer-profile-from-checkout";
 
 export interface SubmitTransactionalOrderResult {
@@ -430,12 +431,17 @@ export async function submitTransactionalOrder(
     return { error: insertError.message };
   }
 
-  // Congela el stock del Hub en el momento exacto en que la orden se crea
-  // con éxito, para evitar sobreventa entre dropshippers.
+  // Aparta el stock del Hub (reserva). El descuento físico ocurre al confirmar el pago.
+  const sessionKey = await readDropshipHoldSessionKey();
   const dropshipStock = await consumeDropshipStockForOrderLines(
     admin,
     store.id,
     enrichedOrderItems,
+    {
+      orderId,
+      customerUserId,
+      sessionKey,
+    },
   );
   if (dropshipStock.error) {
     await admin.from("orders").delete().eq("id", orderId);
@@ -445,7 +451,11 @@ export async function submitTransactionalOrder(
   const reserveResult = await reserveOrderInventory(admin, orderId);
   if (reserveResult.error) {
     if (dropshipStock.consumed.length > 0) {
-      await restoreDropshipStockForOrderLines(admin, enrichedOrderItems);
+      await restoreDropshipStockForOrderLines(
+        admin,
+        enrichedOrderItems,
+        orderId,
+      );
     }
     await admin.from("orders").delete().eq("id", orderId);
     return { error: reserveResult.error };
@@ -463,7 +473,11 @@ export async function submitTransactionalOrder(
 
     if (redeemError) {
       if (dropshipStock.consumed.length > 0) {
-        await restoreDropshipStockForOrderLines(admin, enrichedOrderItems);
+        await restoreDropshipStockForOrderLines(
+          admin,
+          enrichedOrderItems,
+          orderId,
+        );
       }
       await admin.from("orders").delete().eq("id", orderId);
       return { error: redeemError.message };
@@ -472,7 +486,11 @@ export async function submitTransactionalOrder(
     const redeemed = redeemResult as { error?: string; success?: boolean } | null;
     if (redeemed?.error) {
       if (dropshipStock.consumed.length > 0) {
-        await restoreDropshipStockForOrderLines(admin, enrichedOrderItems);
+        await restoreDropshipStockForOrderLines(
+          admin,
+          enrichedOrderItems,
+          orderId,
+        );
       }
       await admin.from("orders").delete().eq("id", orderId);
       return { error: redeemed.error };

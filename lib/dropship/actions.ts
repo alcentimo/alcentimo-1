@@ -41,7 +41,7 @@ import {
   supplierImageUrls,
 } from "@/lib/supplier/product-images";
 import { syncDefaultLocationStockFromVariant } from "@/lib/locations/sync-stock";
-import { mirrorSupplierStockToLinkedStores } from "@/lib/dropship/supplier-stock";
+import { mirrorSupplierStockToLinkedStores, loadSupplierAvailableStock } from "@/lib/dropship/supplier-stock";
 import { fetchAllPagedRows } from "@/lib/supabase/fetch-all-rows";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import {
@@ -730,7 +730,11 @@ export async function importSupplierProductToStoreCatalog(
       })
       .eq("id", productId);
 
-    await mirrorSupplierStockToLinkedStores(admin, supplierId, stock);
+    await mirrorSupplierStockToLinkedStores(
+      admin,
+      supplierId,
+      await loadSupplierAvailableStock(admin, supplierId),
+    );
 
     if (!options?.skipRevalidate) {
       revalidateDropshipStoreCatalog(auth.store);
@@ -1024,7 +1028,6 @@ export async function linkStoreDropshipProduct(input: {
 
   const cost = resolvePrecioMayoristaUsd(supplier as Record<string, unknown>);
   if (cost == null) return { error: "Producto mayorista no disponible." };
-  const supplierStock = Math.max(0, Math.floor(Number(supplier.stock) || 0));
 
   const { data, error } = await admin
     .from("store_dropship_links")
@@ -1044,7 +1047,11 @@ export async function linkStoreDropshipProduct(input: {
 
   if (error) return { error: error.message };
 
-  await mirrorSupplierStockToLinkedStores(admin, supplierProductId, supplierStock);
+  await mirrorSupplierStockToLinkedStores(
+    admin,
+    supplierProductId,
+    await loadSupplierAvailableStock(admin, supplierProductId),
+  );
 
   revalidatePath("/dashboard/ajustes");
   revalidatePath("/dashboard/catalogo");

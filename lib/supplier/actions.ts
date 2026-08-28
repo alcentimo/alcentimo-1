@@ -8,7 +8,7 @@ import {
   resolveSupplierAuthEmail,
 } from "@/lib/supplier/access";
 import { recordSupplierPriceChangeAndNotify } from "@/lib/dropship/price-change";
-import { mirrorSupplierStockToLinkedStores } from "@/lib/dropship/supplier-stock";
+import { mirrorSupplierStockToLinkedStores, loadSupplierAvailableStock } from "@/lib/dropship/supplier-stock";
 import {
   normalizeSupplierProductCategory,
   type SupplierProductCategory,
@@ -414,7 +414,11 @@ export async function updateSupplierProduct(
     notifyMerchants: false,
   });
 
-  await mirrorSupplierStockToLinkedStores(admin, updated.id, updated.stock);
+  await mirrorSupplierStockToLinkedStores(
+    admin,
+    updated.id,
+    await loadSupplierAvailableStock(admin, updated.id),
+  );
 
   revalidatePath("/proveedor/dashboard");
   revalidatePath("/proveedor/dashboard/catalogo");
