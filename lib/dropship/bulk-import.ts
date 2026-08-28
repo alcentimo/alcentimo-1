@@ -14,7 +14,11 @@ import {
 import { getStoreSettingsConfig } from "@/lib/store-settings/get-store-settings";
 import { mergeStoreSettingsConfig } from "@/lib/store-settings/defaults";
 import { requireDropshipFeatureAccess } from "@/lib/dropship/feature-access";
-import { randomProductSlugSuffix } from "@/lib/products/allocate-product-slug";
+import {
+  buildProductSlugWithSuffix,
+  randomProductSlugSuffix,
+  shortProductSlugBase,
+} from "@/lib/products/allocate-product-slug";
 import { getStoreProductLimitContext } from "@/lib/plans/product-limit";
 import { getProductLimitErrorMessage } from "@/src/config/plans";
 import { buildProductMetadata } from "@/lib/products/extra-fields";
@@ -26,7 +30,6 @@ import {
 import type { ProductVariantJson } from "@/lib/products/variants";
 import { syncProductVariants } from "@/lib/products/sync-variants";
 import { getDefaultLocationId } from "@/lib/locations/sync-stock";
-import { slugify } from "@/lib/slugify";
 import {
   isSupplierProductCategory,
   normalizeSupplierProductCategory,
@@ -97,23 +100,18 @@ function mapSupplierVariantsToCatalog(
 }
 
 function allocateSlug(title: string, used: Set<string>): string {
-  const base = slugify(title) || "producto";
-  if (!used.has(base)) {
-    used.add(base);
-    return base;
-  }
+  const base = shortProductSlugBase(title);
   for (let i = 0; i < 12; i++) {
-    const candidate = `${base}-${randomProductSlugSuffix(5)}`.slice(0, 80);
+    const candidate = buildProductSlugWithSuffix(base);
     if (!used.has(candidate)) {
       used.add(candidate);
       return candidate;
     }
   }
-  const fallback =
-    `${base}-${Date.now().toString(36)}${randomProductSlugSuffix(3)}`.slice(
-      0,
-      80,
-    );
+  const fallback = buildProductSlugWithSuffix(
+    base,
+    `${Date.now().toString(36)}${randomProductSlugSuffix(3)}`,
+  );
   used.add(fallback);
   return fallback;
 }
