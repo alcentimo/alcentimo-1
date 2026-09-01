@@ -56,6 +56,11 @@ import {
   resolveSuggestedRetailUsd,
 } from "@/lib/supplier/wholesale-price";
 import {
+  compareByHubTrend,
+  getSupplierTrendScores,
+  isHotTrendScore,
+} from "@/lib/dropship/trend";
+import {
   ADMIN_SUPPLIER_PRODUCT_SELECT,
   hasSupplierCostPricePrivilege,
   resolveMerchantCatalogCostUsd,
@@ -285,6 +290,10 @@ export type MerchantSupplierCatalogProduct = {
   alreadyImported: boolean;
   linkedProductId: string | null;
   linkedProductSlug: string | null;
+  /** Popularidad/rotación en el inventario central. */
+  trendScore: number;
+  /** Destacado por demanda en el hub. */
+  isTrending: boolean;
   /** Solo admin: costo de fábrica del proveedor. */
   costoProveedorUsd?: number | null;
   /** Solo admin: precio mayorista que pagan los dropshippers. */
@@ -301,12 +310,21 @@ export async function listActiveSupplierCatalogForMerchant(): Promise<
   const privileged = sessionHasCostPrivilege(auth.authUser.email);
 
   const admin = createAdminClient();
-  const settings = await getStoreSettingsConfig(auth.store.id);
+  const [settings, trendScores] = await Promise.all([
+    getStoreSettingsConfig(auth.store.id),
+    getSupplierTrendScores(),
+  ]);
   const dropship = normalizeDropshipPricingSettings(settings.dropshipPricing);
   /** En Productos disponibles mostramos precio sugerido aunque aún no hayan tocado Ajustes. */
-  const pricingForSuggest = dropship.enabled
-    ? dropship
-    : { ...defaultDropshipPricingSettings(), enabled: true };
+  const pricingForSuggest = {
+    ...defaultDropshipPricingSettings(),
+    ...dropship,
+    enabled: true,
+    marginValue:
+      dropship.marginValue > 0
+        ? dropship.marginValue
+        : defaultDropshipPricingSettings().marginValue,
+  };
 
   const pageSize = 500;
   const catalogRows: Record<string, unknown>[] = [];
@@ -390,12 +408,20 @@ export async function listActiveSupplierCatalogForMerchant(): Promise<
     );
     const platformSuggestedRetailUsd = resolveSuggestedRetailUsd(row);
     const suggestedRetailUsd =
-      platformSuggestedRetailUsd ??
-      suggestRetailFromWholesaleCost(cost, pricingForSuggest);
+      suggestRetailFromWholesaleCost(cost, pricingForSuggest) ??
+      (platformSuggestedRetailUsd != null
+        ? resolveDropshipImportRetailUsd(
+            cost,
+            pricingForSuggest,
+            null,
+            platformSuggestedRetailUsd,
+          )
+        : null);
     const storedRetail =
       linkedProductId != null
         ? (retailResult.prices.get(linkedProductId) ?? null)
         : null;
+    const trendScore = trendScores.get(id) ?? 0;
 
     products.push({
       id,
@@ -414,6 +440,8 @@ export async function listActiveSupplierCatalogForMerchant(): Promise<
       linkedProductSlug: linkedProductId
         ? (slugByProductId.get(linkedProductId) ?? null)
         : null,
+      trendScore,
+      isTrending: false,
       ...(privileged
         ? {
             costoProveedorUsd: costInfo.costoProveedorUsd,
@@ -424,7 +452,16 @@ export async function listActiveSupplierCatalogForMerchant(): Promise<
     });
   }
 
-  products.sort((a, b) => a.title.localeCompare(b.title, "es"));
+  const maxTrend = products.reduce(
+    (max, item) => Math.max(max, item.trendScore),
+    0,
+  );
+  for (const product of products) {
+    product.isTrending = isHotTrendScore(product.trendScore, maxTrend);
+  }
+  products.sort((a, b) =>
+    compareByHubTrend(a, b, (item) => item.trendScore, (item) => item.title),
+  );
   return { products };
 }
 

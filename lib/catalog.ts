@@ -16,7 +16,11 @@ import {
   listDropshipLinkedCatalogEntriesForStoreSlug,
   type DropshipLinkedCatalogEntry,
 } from "@/lib/dropship/linked-catalog";
-import { applySupplierCategoriesToCatalogItems } from "@/lib/catalog/apply-supplier-categories";
+import {
+  applySupplierCategoriesToCatalogItems,
+  attachHubTrendToCatalogItems,
+} from "@/lib/catalog/apply-supplier-categories";
+import { getSupplierTrendScores } from "@/lib/dropship/trend";
 import { withPublicCatalogCache } from "@/lib/catalog/public-catalog-cache";
 import { listOwnBrandCatalogEntries } from "@/lib/supplier/own-store-ids";
 import {
@@ -238,6 +242,7 @@ function catalogProductsCacheKey(options: GetCatalogOptions): string[] {
     productIds,
     options.productSlug?.trim().toLowerCase() ?? "",
     "union-own",
+    "hub-trend-v1",
   ];
 }
 
@@ -315,18 +320,72 @@ async function loadCatalogProductsUncached(
   const paginated =
     limit != null && productIds == null && !productSlug?.trim();
   const searchOr = buildInventorySearchOrFilter(search ?? "") || null;
-  const useInFilter =
-    Boolean(allowedProductIds?.length) &&
-    (allowedProductIds?.length ?? 0) <= CATALOG_PRODUCT_IN_CHUNK;
+
+  const trendScores = productIds?.length
+    ? new Map<string, number>()
+    : await getSupplierTrendScores();
+  const supplierIdByProduct = new Map(
+    linkedEntries
+      .filter((entry) => Boolean(entry.supplierProductId))
+      .map((entry) => [entry.productId, entry.supplierProductId as string]),
+  );
+
+  const trendOrderedIds =
+    allowedProductIds &&
+    allowedProductIds.length > 0 &&
+    supplierIdByProduct.size > 0
+      ? [...allowedProductIds].sort((left, right) => {
+          const leftSupplier = supplierIdByProduct.get(left);
+          const rightSupplier = supplierIdByProduct.get(right);
+          const delta =
+            (rightSupplier ? (trendScores.get(rightSupplier) ?? 0) : 0) -
+            (leftSupplier ? (trendScores.get(leftSupplier) ?? 0) : 0);
+          if (delta !== 0) return delta;
+          return left.localeCompare(right);
+        })
+      : null;
+
+  const pageProductIds =
+    paginated &&
+    trendOrderedIds &&
+    !searchOr &&
+    minPriceUsd == null &&
+    maxPriceUsd == null &&
+    !(brand?.trim())
+      ? trendOrderedIds.slice(offset, offset + limit)
+      : null;
+
+  if (paginated && trendOrderedIds && (pageProductIds?.length ?? 0) === 0) {
+    return {
+      products: [],
+      exchangeRate: await getCurrentExchangeRate(),
+      totalCount: trendOrderedIds.length,
+      hasMore: false,
+    };
+  }
+
+  const useInFilter = Boolean(
+    pageProductIds?.length ||
+      (Boolean(allowedProductIds?.length) &&
+        (allowedProductIds?.length ?? 0) <= CATALOG_PRODUCT_IN_CHUNK),
+  );
+
+  const queryProductIds = pageProductIds?.length
+    ? pageProductIds
+    : useInFilter
+      ? allowedProductIds
+      : undefined;
+
+  const skipSqlRange = Boolean(pageProductIds?.length);
 
   const baseQueryOptions: Omit<CatalogProductsQueryOptions, "select" | "mode"> =
     {
       storeSlug: normalizedSlug,
       storeId: storeId?.trim() || undefined,
-      paginated,
-      offset,
+      paginated: paginated && !skipSqlRange,
+      offset: skipSqlRange ? 0 : offset,
       limit,
-      productIds: useInFilter ? allowedProductIds : undefined,
+      productIds: queryProductIds,
       productSlug: productSlug?.trim().toLowerCase() || undefined,
       searchOr,
       minPriceUsd: minPriceUsd ?? null,
@@ -378,6 +437,7 @@ async function loadCatalogProductsUncached(
     ),
     linkedEntries,
   );
+  products = attachHubTrendToCatalogItems(products, linkedEntries, trendScores);
 
   if (!useInFilter && (allowedProductIds?.length ?? 0) > 0) {
     const allowed = new Set(allowedProductIds);
@@ -396,12 +456,21 @@ async function loadCatalogProductsUncached(
     supplierGalleryByProductId,
   );
 
-  if (queryMode === "legacy") {
+  if (pageProductIds?.length) {
+    const order = new Map(
+      pageProductIds.map((id, index) => [id, index] as const),
+    );
+    products = [...products].sort(
+      (a, b) =>
+        (order.get(a.product_id) ?? Number.MAX_SAFE_INTEGER) -
+        (order.get(b.product_id) ?? Number.MAX_SAFE_INTEGER),
+    );
+  } else {
     products = sortCatalogProducts(products, "featured");
   }
 
   const totalCount = paginated
-    ? (productsResult.count ?? products.length)
+    ? (trendOrderedIds?.length ?? productsResult.count ?? products.length)
     : products.length;
 
   return {
@@ -426,7 +495,7 @@ export async function getCatalogProducts(
 
   const normalizedSlug = options.storeSlug.trim().toLowerCase();
   return withPublicCatalogCache(
-    ["public-catalog-products-v3", ...catalogProductsCacheKey(options)],
+    ["public-catalog-products-v4", ...catalogProductsCacheKey(options)],
     { slug: normalizedSlug, storeId: options.storeId },
     () => loadCatalogProductsUncached({ ...options, storeSlug: normalizedSlug }),
   );

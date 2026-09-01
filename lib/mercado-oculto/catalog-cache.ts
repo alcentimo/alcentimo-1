@@ -19,6 +19,7 @@ import {
   type MercadoProductCard,
   type MercadoSupplierFacet,
 } from "@/lib/mercado-oculto/types";
+import { getSupplierTrendScores, compareByHubTrend } from "@/lib/dropship/trend";
 import {
   applyDropshipVisibleProductFilter,
   isPublishedForDropship,
@@ -195,15 +196,25 @@ async function loadMercadoCatalogUncached(): Promise<MercadoCatalogSnapshot> {
     admin,
     rows.map((row) => String(row.id)),
   );
-  const products = rows.map((row) => {
-    const id = String(row.id);
-    const cover =
-      typeof row.image_url === "string" && row.image_url.trim()
-        ? row.image_url.trim()
-        : null;
-    const urls = supplierImageUrls(galleryByProduct.get(id) ?? [], cover);
-    return mapSupplierRowToMercadoCard(row, MORICHE_BRAND_LABEL, urls);
-  });
+  const trendScores = await getSupplierTrendScores();
+  const products = rows
+    .map((row) => {
+      const id = String(row.id);
+      const cover =
+        typeof row.image_url === "string" && row.image_url.trim()
+          ? row.image_url.trim()
+          : null;
+      const urls = supplierImageUrls(galleryByProduct.get(id) ?? [], cover);
+      return mapSupplierRowToMercadoCard(row, MORICHE_BRAND_LABEL, urls);
+    })
+    .sort((a, b) =>
+      compareByHubTrend(
+        a,
+        b,
+        (item) => trendScores.get(item.product_id) ?? 0,
+        (item) => item.product_name,
+      ),
+    );
 
   return {
     products,
@@ -215,7 +226,7 @@ async function loadMercadoCatalogUncached(): Promise<MercadoCatalogSnapshot> {
 /** Catálogo completo cacheado (~60s) para navegación SPA sin pegarle a la DB. */
 export const getCachedMercadoCatalog = unstable_cache(
   async () => loadMercadoCatalogUncached(),
-  ["mercado-oculto-catalog-v7"],
+  ["mercado-oculto-catalog-v8"],
   { revalidate: 60, tags: [MERCADO_CATALOG_CACHE_TAG] },
 );
 
