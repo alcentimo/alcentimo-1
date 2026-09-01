@@ -2,7 +2,6 @@
 
 import {
   Award,
-  BarChart3,
   Bot,
   MessageSquare,
   Package,
@@ -10,7 +9,6 @@ import {
   Truck,
   Warehouse,
 } from "lucide-react";
-import Link from "next/link";
 import type { LucideIcon } from "lucide-react";
 import type { AdminDashboardTab } from "@/lib/admin/dashboard-nav";
 import { cn } from "@/lib/cn";
@@ -95,7 +93,6 @@ export function AdminDashboardShell({
   return (
     <div className="admin-dashboard-layout">
       <aside className="admin-dashboard-sidebar">
-        <p className="admin-dashboard-sidebar-title">Centro de control</p>
         <nav className="admin-dashboard-nav" aria-label="Secciones de administración">
           {ADMIN_NAV_ITEMS.map((item) => {
             const Icon = item.icon;
@@ -111,7 +108,7 @@ export function AdminDashboardShell({
                   active && "admin-dashboard-nav-item-active",
                 )}
               >
-                <Icon className="h-4 w-4 shrink-0" aria-hidden="true" />
+                <Icon className="h-4 w-4 shrink-0 opacity-70" aria-hidden="true" />
                 <span className="min-w-0 flex-1 text-left">{item.label}</span>
                 {badge > 0 ? (
                   <span className="admin-dashboard-nav-badge">{badge}</span>
@@ -120,31 +117,13 @@ export function AdminDashboardShell({
             );
           })}
         </nav>
-
-        <div className="admin-dashboard-sidebar-footer space-y-3">
-          <Link
-            href="/mercado-oculto"
-            className="flex w-full items-center justify-center rounded-xl bg-teal-700 px-3 py-2.5 text-sm font-semibold text-white transition hover:bg-teal-800"
-          >
-            Mercado oculto
-          </Link>
-          <div className="flex items-center gap-2 text-xs text-zinc-500 dark:text-zinc-400">
-            <BarChart3 className="h-3.5 w-3.5" aria-hidden="true" />
-            Gestión centralizada
-          </div>
-        </div>
       </aside>
 
       <div className="admin-dashboard-content">
         <header className="admin-dashboard-content-header">
-          <div>
-            <h2 className="text-lg font-semibold tracking-tight text-zinc-900 dark:text-zinc-50">
-              {activeMeta.label}
-            </h2>
-            <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
-              {activeMeta.description}
-            </p>
-          </div>
+          <h1 className="text-[1.375rem] font-medium tracking-tight text-zinc-900 dark:text-zinc-50">
+            {activeMeta.label}
+          </h1>
         </header>
         <div className="admin-dashboard-content-body">{children}</div>
       </div>
