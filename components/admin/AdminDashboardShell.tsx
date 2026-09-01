@@ -3,6 +3,7 @@
 import {
   Award,
   Bot,
+  Gift,
   MessageSquare,
   Package,
   Users,
@@ -58,6 +59,13 @@ export const ADMIN_NAV_ITEMS: AdminNavItem[] = [
     description:
       "Agencias nacionales y envío gratis global para todas las vitrinas.",
     icon: Package,
+  },
+  {
+    id: "giftcards",
+    label: "Tarjetas de regalo",
+    description:
+      "Emisión y saldo exclusivo de la vitrina del administrador.",
+    icon: Gift,
   },
   {
     id: "soporte",

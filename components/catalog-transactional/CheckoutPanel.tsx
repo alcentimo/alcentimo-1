@@ -34,6 +34,10 @@ import {
 } from "@/lib/promotions/actions";
 import { calculatePromotionDiscountUsd } from "@/lib/promotions/discount";
 import type { AppliedPromotion } from "@/lib/promotions/types";
+import { useGiftCardsEnabled } from "@/components/catalog-transactional/GiftCardStorefrontProvider";
+import { validateGiftCardCode } from "@/lib/gift-cards/actions";
+import { giftCardApplyAmount } from "@/lib/gift-cards/code";
+import type { AppliedGiftCard } from "@/lib/gift-cards/types";
 import {
   FREE_SHIPPING_VE_LABEL,
   NATIONAL_SHIPPING_TRUST_COPY,
@@ -140,6 +144,7 @@ export function CheckoutPanel({
   const { items, subtotalUsd, updateQuantity, removeItem, clearCart } =
     useCart();
   const { autoApply } = usePromotionContext();
+  const giftCardsEnabled = useGiftCardsEnabled();
   const customerSession = useCustomerSessionOptional();
   const { accountsEnabled } = useCustomerAccountMode();
   const { mode: fulfillmentModeFromContext, multiLocation } = useCatalogFulfillment();
@@ -172,6 +177,11 @@ export function CheckoutPanel({
     useState<AppliedPromotion | null>(null);
   const [promotionError, setPromotionError] = useState<string | null>(null);
   const [promotionPending, startPromotionTransition] = useTransition();
+  const [giftCardInput, setGiftCardInput] = useState("");
+  const [appliedGiftCard, setAppliedGiftCard] =
+    useState<AppliedGiftCard | null>(null);
+  const [giftCardError, setGiftCardError] = useState<string | null>(null);
+  const [giftCardPending, startGiftCardTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
   const [touchedFields, setTouchedFields] = useState<
@@ -400,7 +410,11 @@ export function CheckoutPanel({
     [purchaseInfo.shippingPricing, selectedShipping, merchandiseUsd],
   );
 
-  const totalUsd = merchandiseUsd + shippingQuote.chargeUsd;
+  const preGiftTotalUsd = merchandiseUsd + shippingQuote.chargeUsd;
+  const giftCardUsd = appliedGiftCard
+    ? giftCardApplyAmount(appliedGiftCard.currentBalanceUsd, preGiftTotalUsd)
+    : 0;
+  const totalUsd = Math.max(0, preGiftTotalUsd - giftCardUsd);
   const totalLocal =
     showBsConversion && exchangeRate && exchangeRate > 0
       ? totalUsd * exchangeRate
@@ -450,6 +464,29 @@ export function CheckoutPanel({
     setAppliedPromotion(null);
     setPromotionInput("");
     setPromotionError(null);
+  }
+
+  function handleApplyGiftCard() {
+    setGiftCardError(null);
+    startGiftCardTransition(async () => {
+      const result = await validateGiftCardCode(storeSlug, giftCardInput);
+      if (result.error || !result.code || !(result.currentBalanceUsd ?? 0)) {
+        setAppliedGiftCard(null);
+        setGiftCardError(result.error ?? "Tarjeta de regalo no válida.");
+        return;
+      }
+      setAppliedGiftCard({
+        code: result.code,
+        currentBalanceUsd: result.currentBalanceUsd ?? 0,
+      });
+      setGiftCardInput(result.code);
+    });
+  }
+
+  function handleRemoveGiftCard() {
+    setAppliedGiftCard(null);
+    setGiftCardInput("");
+    setGiftCardError(null);
   }
 
   const selectedPaymentDetails = useMemo(() => {
@@ -526,12 +563,12 @@ export function CheckoutPanel({
   const paymentValidationInput = useMemo(
     () => ({
       itemsCount: items.length,
-      paymentsCount: paymentOptions.length,
+      paymentsCount: totalUsd <= 0 ? 0 : paymentOptions.length,
       selectedPayment,
       hasProofFile: Boolean(proofFile),
       requiresProofFile: false as const,
     }),
-    [items.length, paymentOptions.length, selectedPayment, proofFile],
+    [items.length, paymentOptions.length, selectedPayment, proofFile, totalUsd],
   );
 
   const stepValidation = useMemo(
@@ -745,6 +782,9 @@ export function CheckoutPanel({
     }
     if (appliedPromotion) {
       formData.set("promotionCode", appliedPromotion.code);
+    }
+    if (appliedGiftCard) {
+      formData.set("giftCardCode", appliedGiftCard.code);
     }
     if (selectedShipping) formData.set("shippingMethod", selectedShipping);
     if (selectedPayment) formData.set("paymentMethod", selectedPayment);
@@ -1027,6 +1067,61 @@ export function CheckoutPanel({
                     ) : null}
                   </div>
                 )}
+
+                {giftCardsEnabled ? (
+                  <div className="txn-checkout-promo mt-4">
+                    <p className="txn-checkout-section-title">
+                      Tarjeta de regalo
+                    </p>
+                    {appliedGiftCard ? (
+                      <div className="txn-checkout-promo-applied">
+                        <div>
+                          <p className="font-medium text-emerald-800 dark:text-emerald-300">
+                            {appliedGiftCard.code}
+                          </p>
+                          <p className="text-xs text-emerald-700/80 dark:text-emerald-400/80">
+                            Saldo {formatUsd(appliedGiftCard.currentBalanceUsd)}
+                            {giftCardUsd > 0
+                              ? ` · se aplican ${formatUsd(giftCardUsd)}`
+                              : ""}
+                          </p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={handleRemoveGiftCard}
+                          className="text-xs font-medium text-zinc-500 hover:text-zinc-800"
+                        >
+                          Quitar
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="flex gap-2">
+                        <input
+                          type="text"
+                          value={giftCardInput}
+                          onChange={(event) =>
+                            setGiftCardInput(event.target.value.toUpperCase())
+                          }
+                          placeholder="Código de tarjeta"
+                          className="txn-input flex-1 uppercase"
+                          disabled={giftCardPending}
+                          autoComplete="off"
+                        />
+                        <button
+                          type="button"
+                          onClick={handleApplyGiftCard}
+                          disabled={!giftCardInput.trim() || giftCardPending}
+                          className="txn-promo-apply-btn"
+                        >
+                          {giftCardPending ? "…" : "Aplicar"}
+                        </button>
+                      </div>
+                    )}
+                    {giftCardError ? (
+                      <p className="mt-1 text-xs text-red-600">{giftCardError}</p>
+                    ) : null}
+                  </div>
+                ) : null}
               </section>
             ) : null}
 
@@ -1513,6 +1608,7 @@ export function CheckoutPanel({
             ) : null}
 
             {(discountUsd > 0 && appliedPromotion) ||
+            giftCardUsd > 0 ||
             (checkoutStep >= 3 &&
               ((selectedShipping && shippingQuote.appliesPaidShipping) ||
                 (shippingHint && selectedShipping))) ? (
@@ -1533,6 +1629,12 @@ export function CheckoutPanel({
                       <strong>-{formatUsd(discountUsd)}</strong>
                     </div>
                   </>
+                ) : null}
+                {giftCardUsd > 0 && appliedGiftCard ? (
+                  <div className="txn-checkout-total txn-checkout-total-discount !border-0 !px-0 !py-0">
+                    <span>Tarjeta de regalo ({appliedGiftCard.code})</span>
+                    <strong>-{formatUsd(giftCardUsd)}</strong>
+                  </div>
                 ) : null}
                 {checkoutStep >= 3 &&
                 selectedShipping &&
