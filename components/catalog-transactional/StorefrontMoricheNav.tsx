@@ -26,8 +26,8 @@ interface StorefrontMoricheNavProps {
 }
 
 /**
- * Accesos superiores estilo Mercado Libre:
- * Categorías · Pedidos · Carrito · Cuenta | Entrar + Crear cuenta
+ * Accesos superiores de la plantilla marketplace:
+ * Pedidos · Carrito · Cuenta | Entrar + Crear cuenta
  */
 export function StorefrontMoricheNav({
   storeSlug,

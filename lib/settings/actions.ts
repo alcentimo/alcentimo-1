@@ -8,7 +8,10 @@ import {
   normalizeStoreSettingsConfig,
 } from "@/lib/store-settings/defaults";
 import { normalizeHex6 } from "@/lib/store-settings/color-contrast";
-import { normalizeCatalogLayout } from "@/lib/store-settings/catalog-theme";
+import {
+  normalizeCatalogLayout,
+  STANDARD_CATALOG_THEME_ID,
+} from "@/lib/store-settings/catalog-theme";
 import { sanitizePromoBannerForStorage } from "@/lib/store-settings/promo-banner";
 import { normalizeCatalogFaqDraft } from "@/lib/store-settings/catalog-faq";
 import { sanitizeCatalogHeaderForStorage } from "@/lib/store-settings/catalog-header";
@@ -132,7 +135,7 @@ export async function saveCatalogDesignSettings(
   const current = await getStoreSettingsConfig(auth.store.id);
   const normalized = normalizeStoreSettingsConfig({ catalogDesign: design });
   const catalogDesign: CatalogDesignSettings = {
-    theme: normalized.catalogDesign.theme,
+    theme: STANDARD_CATALOG_THEME_ID,
     saleMode: normalized.catalogDesign.saleMode,
     visibility: normalized.catalogDesign.visibility,
     layout: normalizeCatalogLayout(

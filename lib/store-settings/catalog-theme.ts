@@ -102,7 +102,8 @@ export function normalizeCatalogVisibility(
 }
 
 /**
- * Catálogo público unificado: un solo layout marketplace (estilo Moriche).
+ * Catálogo público unificado: un solo layout marketplace (barra de búsqueda,
+ * categorías visuales y grilla) para todas las tiendas de dropshippers.
  * Los ids históricos se normalizan a `minimal` para no romper datos guardados.
  */
 export const STANDARD_CATALOG_THEME_ID: CatalogThemeId = "minimal";
