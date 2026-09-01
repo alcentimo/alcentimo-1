@@ -1,11 +1,16 @@
 import type { CatalogListItem } from "@/lib/database.types";
 import { parseVariantsJson } from "@/lib/products/variants";
+import { isGiftCardCatalogItem } from "@/lib/gift-cards/catalog";
 
 /** Ajusta el stock visible de un producto según la sucursal / modo de cumplimiento. */
 export function applyLocationStockToProduct(
   product: CatalogListItem,
   getAvailableStock: (variantId: string | null | undefined, fallback: number) => number,
 ): CatalogListItem {
+  if (isGiftCardCatalogItem(product)) {
+    return product;
+  }
+
   const parsedVariants = parseVariantsJson(product.product_variants);
 
   if (parsedVariants.length > 0) {

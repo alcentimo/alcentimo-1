@@ -10,6 +10,7 @@ import type { CatalogVariantOption } from "@/lib/products/variants";
 import type { CartModifierSelection } from "@/lib/catalog/cart-types";
 import { MercadoProductGallery } from "@/components/mercado-oculto/MercadoProductGallery";
 import { RubroCatalogVariantSlot } from "@/components/rubros/RubroCatalogVariantSlot";
+import { GiftCardAmountPicker } from "@/components/catalog/GiftCardAmountPicker";
 import { fetchCatalogProductDetail } from "@/lib/catalog/fetch-catalog-product-detail";
 import {
   resolveCatalogProductImages,
@@ -32,7 +33,13 @@ import {
   getCatalogVariantOptions,
   hasMultipleVariants,
   isProductOutOfStock,
+  parseVariantsJson,
 } from "@/lib/products/variants";
+import {
+  clampGiftCardCustomAmount,
+  isGiftCardCatalogItem,
+  isGiftCardCustomVariant,
+} from "@/lib/gift-cards/catalog";
 import { getLowStockThreshold } from "@/lib/inventory/stock-status";
 import {
   resolveCartStockCap,
@@ -233,7 +240,16 @@ export function CatalogProductDetailPanel({
   );
 
   const [selectedVariantId, setSelectedVariantId] = useState(
-    () => variantOptions[0]?.id ?? product.default_variant_id,
+    () => {
+      const gift = isGiftCardCatalogItem(product);
+      if (gift) {
+        const preferred = variantOptions.find((option) =>
+          option.name.replace(/[^0-9.]/g, "") === "25",
+        );
+        return preferred?.id ?? variantOptions[0]?.id ?? product.default_variant_id;
+      }
+      return variantOptions[0]?.id ?? product.default_variant_id;
+    },
   );
   const [selectedModifiers, setSelectedModifiers] = useState<
     CartModifierSelection[]
@@ -308,14 +324,15 @@ export function CatalogProductDetailPanel({
         cartItemKey(product.product_id, selectedVariantId, selectedModifiers),
     )?.quantity ?? 0;
 
+  const isGiftCard = isGiftCardCatalogItem(product);
   const previewQty = Math.max(1, contextCartQuantity || 1);
   const activePricing = resolveUnitPriceUsd({
     retailUsd: product.price_usd ?? 0,
-    wholesalePriceUsd: product.wholesale_price_usd,
-    wholesaleMinQty: product.wholesale_min_qty,
+    wholesalePriceUsd: isGiftCard ? null : product.wholesale_price_usd,
+    wholesaleMinQty: isGiftCard ? null : product.wholesale_min_qty,
     quantity: previewQty,
     priceExtraUsd: (selectedVariant?.priceExtraUsd ?? 0) + modifiersExtra,
-    wholesaleEnabled,
+    wholesaleEnabled: isGiftCard ? false : wholesaleEnabled,
   });
   const displayPriceUsd = activePricing.unitPriceUsd;
 
@@ -327,8 +344,26 @@ export function CatalogProductDetailPanel({
     : product.available_stock;
   const stockCap = resolveCartStockCap(displayStock);
   const remaining = Math.max(0, stockCap - contextCartQuantity);
+  const giftCustomSelected = useMemo(() => {
+    if (!isGiftCard) return false;
+    const parsed = parseVariantsJson(product.product_variants);
+    const json = parsed.find((variant) => variant.id === selectedVariantId);
+    return (
+      isGiftCardCustomVariant(json?.attributes) ||
+      /otro monto/i.test(selectedVariant?.name ?? "")
+    );
+  }, [isGiftCard, product.product_variants, selectedVariantId, selectedVariant?.name]);
+
+  const giftCustomValid =
+    !giftCustomSelected ||
+    clampGiftCardCustomAmount(modifiersExtra) != null;
+
   const canAddMore =
-    !outOfStock && remaining > 0 && onAddToCart && selectedVariant;
+    !outOfStock &&
+    remaining > 0 &&
+    onAddToCart &&
+    selectedVariant &&
+    giftCustomValid;
   const inCart = contextCartQuantity > 0;
 
   const hasDiscount = isProductOnSale(product.compare_at_usd, product.price_usd);
@@ -345,7 +380,7 @@ export function CatalogProductDetailPanel({
   const foodHasModifiers =
     isAlimentos &&
     hasFoodModifiers(parseFoodModifiersFromMetadata(product.metadata ?? null));
-  const showOrderOptions = showVariantSelector || foodHasModifiers;
+  const showOrderOptions = showVariantSelector || foodHasModifiers || isGiftCard;
 
   const attributeEntries = useMemo(() => {
     const attrs = product.default_attributes ?? {};
@@ -610,17 +645,28 @@ export function CatalogProductDetailPanel({
 
             {showOrderOptions ? (
               <div className="product-detail-options">
-                <RubroCatalogVariantSlot
-                  rubro={storeRubro}
-                  product={product}
-                  variantOptions={variantOptions}
-                  selectedVariantId={selectedVariantId}
-                  onSelect={setSelectedVariantId}
-                  selectedModifiers={selectedModifiers}
-                  onModifiersChange={setSelectedModifiers}
-                  showVariants={showVariantSelector}
-                  density="detail"
-                />
+                {isGiftCard ? (
+                  <GiftCardAmountPicker
+                    product={product}
+                    variantOptions={variantOptions}
+                    selectedVariantId={selectedVariantId}
+                    onSelectVariant={setSelectedVariantId}
+                    selectedModifiers={selectedModifiers}
+                    onModifiersChange={setSelectedModifiers}
+                  />
+                ) : (
+                  <RubroCatalogVariantSlot
+                    rubro={storeRubro}
+                    product={product}
+                    variantOptions={variantOptions}
+                    selectedVariantId={selectedVariantId}
+                    onSelect={setSelectedVariantId}
+                    selectedModifiers={selectedModifiers}
+                    onModifiersChange={setSelectedModifiers}
+                    showVariants={showVariantSelector}
+                    density="detail"
+                  />
+                )}
               </div>
             ) : null}
 

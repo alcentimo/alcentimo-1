@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { CustomerOrdersList } from "@/components/customers/CustomerOrdersList";
+import { CustomerGiftCardWallet } from "@/components/customers/CustomerGiftCardWallet";
 import { StorefrontAccountChrome } from "@/components/catalog-transactional/StorefrontAccountChrome";
 import { getPublicCatalogPageData } from "@/lib/catalog/get-public-catalog-page-data";
 import { getPublicCatalogThemeContext } from "@/lib/catalog/get-public-catalog-theme";
@@ -68,6 +69,10 @@ export default async function CustomerAccountPage({
             envío en tiempo real.
           </p>
         </header>
+
+        <div className="mb-6">
+          <CustomerGiftCardWallet storeSlug={store.slug} />
+        </div>
 
         <div className="card-panel">
           <CustomerOrdersList

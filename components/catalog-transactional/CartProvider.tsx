@@ -22,6 +22,7 @@ import {
   mergeCartItemsPreferLocal,
 } from "@/lib/catalog/cart-lines";
 import { getCatalogVariantOptions } from "@/lib/products/variants";
+import { giftCardWholesaleEnabled } from "@/lib/gift-cards/catalog";
 import {
   clearStoredCart,
   readStoredCart,
@@ -100,7 +101,7 @@ function refreshCartItemPricing(
     variant,
     quantity,
     item.modifiers ?? [],
-    wholesaleEnabled,
+    giftCardWholesaleEnabled(item.product, wholesaleEnabled),
   );
   if (
     next.quantity === item.quantity &&
@@ -499,7 +500,13 @@ export function CartProvider({
         // Append inmutable: +1 unidad en una sola línea por clave.
         return [
           ...deduped,
-          buildCartItem(product, variant, 1, modifiers, wholesaleEnabled),
+          buildCartItem(
+            product,
+            variant,
+            1,
+            modifiers,
+            giftCardWholesaleEnabled(product, wholesaleEnabled),
+          ),
         ];
       });
     },

@@ -27,6 +27,10 @@ export interface OrderLineItem {
   supplier_product_id?: string | null;
   /** Momento en que se congeló el costo. */
   cost_locked_at?: string;
+  /** Línea de tarjeta de regalo digital (sin dropship). */
+  is_gift_card?: boolean;
+  /** Códigos emitidos al confirmar la compra (uno por unidad). */
+  issued_gift_card_codes?: string[];
 }
 
 export interface CatalogOrder {

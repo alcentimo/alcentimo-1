@@ -23,6 +23,7 @@ import type { StoreLocation, VariantLocationStock } from "@/lib/locations/types"
 import { listFeaturedOfficialBrands } from "@/lib/official-brands/public";
 import type { OfficialBrandPublic } from "@/lib/official-brands/types";
 import { normalizeStoreRubro } from "@/src/config/categories";
+import { ensureAdminGiftCardCatalogProduct } from "@/lib/gift-cards/ensure-catalog-product";
 
 export interface PublicCatalogPageData extends CatalogPageData {
   store: Store;
@@ -127,6 +128,12 @@ export async function getPublicCatalogPageData(
   const slug = normalizeStoreSlug(storeSlug);
   const store = await getPublicStoreBySlug(slug);
   if (!store) return null;
+
+  await ensureAdminGiftCardCatalogProduct({
+    storeId: store.id,
+    storeSlug: slug,
+    ownerId: store.owner_id,
+  });
 
   const categorySlug = options?.categorySlug?.trim().toLowerCase() ?? "";
   const categoryFilter = Boolean(options?.categoryFilter);

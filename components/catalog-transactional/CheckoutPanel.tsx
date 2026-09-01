@@ -39,6 +39,7 @@ import { validateGiftCardCode } from "@/lib/gift-cards/actions";
 import { applyGiftCardToWallet } from "@/lib/gift-cards/wallet-actions";
 import { giftCardApplyAmount } from "@/lib/gift-cards/code";
 import type { AppliedGiftCard } from "@/lib/gift-cards/types";
+import { cartItemsAreGiftCardsOnly } from "@/lib/gift-cards/catalog";
 import {
   FREE_SHIPPING_VE_LABEL,
   NATIONAL_SHIPPING_TRUST_COPY,
@@ -144,6 +145,7 @@ export function CheckoutPanel({
   const pathname = usePathname();
   const { items, subtotalUsd, updateQuantity, removeItem, clearCart } =
     useCart();
+  const digitalGiftOnly = cartItemsAreGiftCardsOnly(items);
   const { autoApply } = usePromotionContext();
   const giftCardStorefront = useGiftCardStorefront();
   const giftCardsEnabled = giftCardStorefront.enabled;
@@ -169,6 +171,7 @@ export function CheckoutPanel({
     hasPaymentProof: boolean;
     expectsPaymentProof: boolean;
     wasGuest: boolean;
+    issuedGiftCardCodes?: string[];
   } | null>(null);
   const [selectedShipping, setSelectedShipping] = useState("");
   const [selectedPayment, setSelectedPayment] = useState(() =>
@@ -404,15 +407,25 @@ export function CheckoutPanel({
 
   const merchandiseUsd = Math.max(0, subtotalUsd - discountUsd);
 
-  const shippingQuote = useMemo(
-    () =>
-      resolveShippingQuote({
+  const shippingQuote = useMemo(() => {
+    if (digitalGiftOnly) {
+      return resolveShippingQuote({
         pricing: purchaseInfo.shippingPricing,
-        method: selectedShipping,
+        method: null,
         merchandiseUsd,
-      }),
-    [purchaseInfo.shippingPricing, selectedShipping, merchandiseUsd],
-  );
+      });
+    }
+    return resolveShippingQuote({
+      pricing: purchaseInfo.shippingPricing,
+      method: selectedShipping,
+      merchandiseUsd,
+    });
+  }, [
+    digitalGiftOnly,
+    purchaseInfo.shippingPricing,
+    selectedShipping,
+    merchandiseUsd,
+  ]);
 
   const preGiftTotalUsd = merchandiseUsd + shippingQuote.chargeUsd;
   const guestGiftUsd = appliedGiftCard
@@ -438,7 +451,9 @@ export function CheckoutPanel({
     : checkoutStep === 1
       ? "Completar pedido"
       : checkoutStep === 2
-        ? "Continuar a envío"
+        ? digitalGiftOnly
+          ? "Continuar al pago"
+          : "Continuar a envío"
         : checkoutStep === 3
           ? "Continuar al pago"
           : "Confirmar Pedido";
@@ -446,7 +461,7 @@ export function CheckoutPanel({
   const stepTitles: Record<CheckoutStep, string> = {
     1: "Tu carrito",
     2: "Tus datos",
-    3: "Envío",
+    3: digitalGiftOnly ? "Entrega" : "Envío",
     4: "Pago",
   };
 
@@ -546,7 +561,7 @@ export function CheckoutPanel({
   const shippingValidationInput = useMemo(
     () => ({
       itemsCount: items.length,
-      shippingOptionsCount: shippingOptions.length,
+      shippingOptionsCount: digitalGiftOnly ? 0 : shippingOptions.length,
       selectedShipping,
       isNationalCarrierSelected,
       shippingBranchCode,
@@ -561,6 +576,7 @@ export function CheckoutPanel({
     }),
     [
       items.length,
+      digitalGiftOnly,
       shippingOptions.length,
       selectedShipping,
       isNationalCarrierSelected,
@@ -654,6 +670,10 @@ export function CheckoutPanel({
       onBackToCart();
       return;
     }
+    if (checkoutStep === 4 && digitalGiftOnly) {
+      goToStep(2);
+      return;
+    }
     goToStep((checkoutStep - 1) as CheckoutStep);
   }
 
@@ -745,6 +765,10 @@ export function CheckoutPanel({
     }
 
     if (checkoutStep < 4) {
+      if (checkoutStep === 2 && digitalGiftOnly) {
+        goToStep(4);
+        return;
+      }
       goToStep((checkoutStep + 1) as CheckoutStep);
       return;
     }
@@ -780,7 +804,15 @@ export function CheckoutPanel({
           variantName: String(item.variantName ?? "").trim() || "Estándar",
           quantity: Math.max(1, Math.floor(Number(item.quantity) || 1)),
           unitPriceUsd: Number(item.unitPriceUsd) || 0,
-          wholesaleApplied: Boolean(item.wholesaleApplied),
+          modifiersExtraUsd: Math.max(
+            0,
+            Number(
+              item.modifiers?.reduce(
+                (sum, row) => sum + (row.priceExtraUsd || 0),
+                0,
+              ) ?? 0,
+            ) || 0,
+          ),
         }))
         .filter((line) => line.productId.length > 0);
     }
@@ -817,46 +849,52 @@ export function CheckoutPanel({
     if (loggedInForWallet && !useStoreCredit) {
       formData.set("skipStoreCredit", "1");
     }
-    if (selectedShipping) formData.set("shippingMethod", selectedShipping);
     if (selectedPayment) formData.set("paymentMethod", selectedPayment);
 
-    if (isPickupSelected) {
-      formData.set("fulfillmentType", "pickup");
-      if (hasPickupPoints && pickupPointId) {
-        formData.set("pickupPointId", pickupPointId);
-      }
-      if (fulfillmentNotes.trim()) {
-        formData.set("fulfillmentNotes", fulfillmentNotes.trim());
-      }
-    } else if (isLocalDeliverySelected) {
-      formData.set("fulfillmentType", "delivery");
-      if (hasDeliveryZones) {
-        if (deliveryZoneId) formData.set("deliveryZoneId", deliveryZoneId);
-        if (meetingPointId) formData.set("meetingPointId", meetingPointId);
+    if (!digitalGiftOnly) {
+      if (selectedShipping) formData.set("shippingMethod", selectedShipping);
+
+      if (isPickupSelected) {
+        formData.set("fulfillmentType", "pickup");
+        if (hasPickupPoints && pickupPointId) {
+          formData.set("pickupPointId", pickupPointId);
+        }
         if (fulfillmentNotes.trim()) {
           formData.set("fulfillmentNotes", fulfillmentNotes.trim());
         }
-        if (deliveryAddress.trim()) {
+      } else if (isLocalDeliverySelected) {
+        formData.set("fulfillmentType", "delivery");
+        if (hasDeliveryZones) {
+          if (deliveryZoneId) formData.set("deliveryZoneId", deliveryZoneId);
+          if (meetingPointId) formData.set("meetingPointId", meetingPointId);
+          if (fulfillmentNotes.trim()) {
+            formData.set("fulfillmentNotes", fulfillmentNotes.trim());
+          }
+          if (deliveryAddress.trim()) {
+            formData.set("deliveryAddress", deliveryAddress.trim());
+          }
+        } else if (deliveryAddress.trim()) {
           formData.set("deliveryAddress", deliveryAddress.trim());
         }
-      } else if (deliveryAddress.trim()) {
-        formData.set("deliveryAddress", deliveryAddress.trim());
-      }
-    } else if (isNationalCarrierSelected) {
-      formData.set("fulfillmentType", "shipping");
-      if (shippingBranchCode) {
-        formData.set("shippingBranchCode", shippingBranchCode);
-        const branch = getCarrierBranchById(shippingBranchCode);
-        if (branch) {
-          formData.set("shippingBranchName", branch.name);
-          formData.set("shippingBranchAddress", formatCarrierBranchAddress(branch));
+      } else if (isNationalCarrierSelected) {
+        formData.set("fulfillmentType", "shipping");
+        if (shippingBranchCode) {
+          formData.set("shippingBranchCode", shippingBranchCode);
+          const branch = getCarrierBranchById(shippingBranchCode);
+          if (branch) {
+            formData.set("shippingBranchName", branch.name);
+            formData.set(
+              "shippingBranchAddress",
+              formatCarrierBranchAddress(branch),
+            );
+          }
         }
+      } else {
+        formData.set("fulfillmentType", activeFulfillmentMode);
       }
-    } else {
-      formData.set("fulfillmentType", activeFulfillmentMode);
-    }
 
-    if (locationId) formData.set("locationId", locationId);
+      if (locationId) formData.set("locationId", locationId);
+    }
 
     // Capturar si había comprobante / si el método lo espera, antes de limpiar.
     const submittedWithProof = Boolean(proofFile && proofFile.size > 0);
@@ -932,6 +970,7 @@ export function CheckoutPanel({
           hasPaymentProof: submittedWithProof,
           expectsPaymentProof: submittedExpectsProof,
           wasGuest,
+          issuedGiftCardCodes: result.issuedGiftCardCodes,
         });
         return;
       }
@@ -951,6 +990,7 @@ export function CheckoutPanel({
           hasPaymentProof={successOrder.hasPaymentProof}
           expectsPaymentProof={successOrder.expectsPaymentProof}
           wasGuest={successOrder.wasGuest}
+          issuedGiftCardCodes={successOrder.issuedGiftCardCodes}
           onClose={() => {
             setSuccessOrder(null);
             onClose();
@@ -1022,7 +1062,7 @@ export function CheckoutPanel({
           <div className="txn-checkout-scroll" key={checkoutStep}>
             {checkoutStep === 1 ? (
               <section aria-labelledby="checkout-products-heading">
-                {multiLocation ? (
+                {multiLocation && !digitalGiftOnly ? (
                   <div className="px-6 pt-4">
                     <CatalogLocationPicker showFulfillmentModes />
                   </div>
@@ -1100,7 +1140,7 @@ export function CheckoutPanel({
                 )}
 
                 {giftCardsEnabled ? (
-                  <div className="txn-checkout-promo mt-4">
+                  <div className="txn-checkout-promo mt-4 rounded-xl border-2 border-teal-200 bg-teal-50/80 p-4 dark:border-teal-800 dark:bg-teal-950/30">
                     <p className="txn-checkout-section-title">
                       Tarjeta de regalo / saldo a favor
                     </p>
@@ -1343,7 +1383,21 @@ export function CheckoutPanel({
 
             {checkoutStep === 3 ? (
               <section aria-labelledby="checkout-shipping-heading">
-                {shippingOptions.length > 0 ||
+                {digitalGiftOnly ? (
+                  <div className="txn-checkout-options !border-t-0 px-6 py-5">
+                    <h3
+                      id="checkout-shipping-heading"
+                      className="txn-checkout-section-title"
+                    >
+                      Producto digital
+                    </h3>
+                    <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-300">
+                      Las tarjetas de regalo no se envían. Al confirmar el
+                      pedido verás el código para abonarlo en tu perfil o
+                      compartirlo.
+                    </p>
+                  </div>
+                ) : shippingOptions.length > 0 ||
                 isNationalCarrierSelected ||
                 isLocalDeliverySelected ||
                 (isPickupSelected && hasPickupPoints) ? (

@@ -12,6 +12,12 @@ import {
   isPublishedForDropship,
   resolvePrecioMayoristaUsd,
 } from "@/lib/supplier/wholesale-price";
+import {
+  clampGiftCardCustomAmount,
+  isGiftCardCustomVariant,
+  isGiftCardMetadata,
+  GIFT_CARD_PRODUCT_SLUG,
+} from "@/lib/gift-cards/catalog";
 
 export async function resolveOrderLinesWithPricing(
   admin: SupabaseClient,
@@ -35,7 +41,7 @@ export async function resolveOrderLinesWithPricing(
   const productIds = [...new Set(lines.map((line) => line.productId))];
   const { data: products, error: productsError } = await admin
     .from("products")
-    .select("id, variants")
+    .select("id, variants, metadata, slug")
     .eq("store_id", storeId)
     .in("id", productIds);
 
@@ -49,7 +55,7 @@ export async function resolveOrderLinesWithPricing(
 
   const { data: variantRows, error: variantRowsError } = await admin
     .from("product_variants")
-    .select("id, product_id, name, is_default")
+    .select("id, product_id, name, is_default, attributes")
     .in("product_id", productIds)
     .eq("is_active", true);
 
@@ -160,6 +166,15 @@ export async function resolveOrderLinesWithPricing(
     { qty: number; title: string; stock: number }
   >();
   for (const line of lines) {
+    const product = productMap.get(line.productId) as
+      | { id: string; variants: unknown; metadata?: unknown; slug?: string }
+      | undefined;
+    if (!product) continue;
+    const giftCard =
+      isGiftCardMetadata(
+        (product.metadata as Record<string, unknown> | null) ?? null,
+      ) || product.slug === GIFT_CARD_PRODUCT_SLUG;
+    if (giftCard) continue;
     const dropship = dropshipCostByProduct.get(line.productId);
     if (!dropship) continue;
     const qty = Math.max(1, Math.floor(line.quantity));
@@ -187,10 +202,17 @@ export async function resolveOrderLinesWithPricing(
   const costLockedAt = new Date().toISOString();
 
   for (const line of lines) {
-    const product = productMap.get(line.productId);
+    const product = productMap.get(line.productId) as
+      | { id: string; variants: unknown; metadata?: unknown; slug?: string }
+      | undefined;
     if (!product) {
       return { items: [], error: "Uno de los productos ya no está disponible." };
     }
+
+    const isGiftCard =
+      isGiftCardMetadata(
+        (product.metadata as Record<string, unknown> | null) ?? null,
+      ) || product.slug === GIFT_CARD_PRODUCT_SLUG;
 
     const defaultVariantId = defaultVariantByProduct.get(line.productId);
     if (!defaultVariantId) {
@@ -232,17 +254,38 @@ export async function resolveOrderLinesWithPricing(
           variant.name.trim().toLowerCase() ===
             inventoryVariantRow.name.trim().toLowerCase(),
       );
-    const priceExtraUsd =
-      (jsonVariant?.price_extra_usd ?? 0) +
-      Math.max(0, Number(line.modifiersExtraUsd ?? 0) || 0);
+
+    let priceExtraUsd = jsonVariant?.price_extra_usd ?? 0;
+    if (isGiftCard) {
+      const custom =
+        isGiftCardCustomVariant(inventoryVariantRow?.attributes) ||
+        isGiftCardCustomVariant(jsonVariant?.attributes);
+      if (custom) {
+        const clamped = clampGiftCardCustomAmount(
+          Number(line.modifiersExtraUsd ?? 0),
+        );
+        if (clamped == null) {
+          return {
+            items: [],
+            error:
+              "Indica un monto válido para la tarjeta de regalo (entre $5 y $500).",
+          };
+        }
+        priceExtraUsd = clamped;
+      }
+    } else {
+      priceExtraUsd += Math.max(0, Number(line.modifiersExtraUsd ?? 0) || 0);
+    }
 
     const pricing = resolveUnitPriceUsd({
       retailUsd: defaultPricing.amount_usd,
-      wholesalePriceUsd: defaultPricing.wholesale_price_usd,
-      wholesaleMinQty: defaultPricing.wholesale_min_qty,
+      wholesalePriceUsd: isGiftCard
+        ? null
+        : defaultPricing.wholesale_price_usd,
+      wholesaleMinQty: isGiftCard ? null : defaultPricing.wholesale_min_qty,
       quantity: line.quantity,
       priceExtraUsd,
-      wholesaleEnabled,
+      wholesaleEnabled: isGiftCard ? false : wholesaleEnabled,
     });
 
     const tolerance = 0.02;
@@ -253,7 +296,9 @@ export async function resolveOrderLinesWithPricing(
       };
     }
 
-    const dropship = dropshipCostByProduct.get(line.productId);
+    const dropship = isGiftCard
+      ? undefined
+      : dropshipCostByProduct.get(line.productId);
     const item: OrderLineItem = {
       product_id: line.productId,
       variant_id: inventoryVariantId,
@@ -264,6 +309,7 @@ export async function resolveOrderLinesWithPricing(
       line_total_usd: pricing.unitPriceUsd * line.quantity,
       pricing_tier: pricing.wholesaleApplied ? "wholesale" : "retail",
       retail_unit_price_usd: pricing.retailUnitUsd,
+      ...(isGiftCard ? { is_gift_card: true } : {}),
     };
 
     if (dropship) {

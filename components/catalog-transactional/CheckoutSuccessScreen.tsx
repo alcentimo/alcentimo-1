@@ -27,6 +27,7 @@ interface CheckoutSuccessScreenProps {
   expectsPaymentProof?: boolean;
   /** True solo si el pedido se hizo sin sesión de cliente. */
   wasGuest: boolean;
+  issuedGiftCardCodes?: string[];
   onClose: () => void;
 }
 
@@ -42,6 +43,7 @@ export function CheckoutSuccessScreen({
   hasPaymentProof = false,
   expectsPaymentProof = true,
   wasGuest,
+  issuedGiftCardCodes = [],
   onClose,
 }: CheckoutSuccessScreenProps) {
   const pathname = usePathname();
@@ -116,6 +118,23 @@ export function CheckoutSuccessScreen({
           Total: <strong className="tabular-nums">{formatUsd(totalUsd)}</strong>
         </p>
       </div>
+
+      {issuedGiftCardCodes.length > 0 ? (
+        <div className="mt-4 w-full rounded-xl border-2 border-teal-200 bg-teal-50 px-4 py-3 text-left dark:border-teal-800 dark:bg-teal-950/40">
+          <p className="text-sm font-semibold text-teal-900 dark:text-teal-100">
+            Códigos de tu tarjeta de regalo
+          </p>
+          <p className="mt-1 text-xs text-teal-800/80 dark:text-teal-200/80">
+            Guárdalos o abónalos en Mi perfil. Cada código es de un solo uso
+            para cargar saldo.
+          </p>
+          <ul className="mt-2 space-y-1 font-mono text-sm font-semibold tracking-wide text-teal-950 dark:text-teal-50">
+            {issuedGiftCardCodes.map((code) => (
+              <li key={code}>{code}</li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
 
       <div className="mt-4 w-full rounded-xl border border-zinc-200/80 bg-zinc-50/80 px-4 py-3 text-left text-xs leading-relaxed text-zinc-600 dark:border-zinc-800 dark:bg-zinc-900/40 dark:text-zinc-300">
         <p className="font-medium text-zinc-800 dark:text-zinc-100">
