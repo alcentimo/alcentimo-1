@@ -331,6 +331,7 @@ function TransactionalCatalogContent({
     serverPagination: browseServerPagination,
     initialSearchQuery,
     initialBrand,
+    syncSearchToUrl: !previewMode,
   });
 
   const effectiveDesign = catalogDesign;
@@ -412,6 +413,7 @@ function TransactionalCatalogContent({
         eyebrow={identityEyebrow}
         searchQuery={browse.searchQuery}
         onSearchQueryChange={browse.setSearchQuery}
+        onSearchSubmit={browse.commitSearchQuery}
         categories={categoryOptions}
         activeCategoryId={browse.categorySlug}
         onSelectCategory={browse.setCategorySlug}

@@ -144,6 +144,7 @@ function CatalogCategoriesViewInner({
   const browse = useCatalogBrowse(catalogProducts, {
     initialCategorySlug: selectedCategorySlug,
     serverPagination: browseServerPagination,
+    syncSearchToUrl: true,
   });
 
   const handleSelectBrand = useCallback(
@@ -264,6 +265,7 @@ function CatalogCategoriesPageContent({
         eyebrow="Categorías"
         searchQuery={browse.searchQuery}
         onSearchQueryChange={browse.setSearchQuery}
+        onSearchSubmit={browse.commitSearchQuery}
         categories={categoryOptions}
         activeCategoryId={browse.categorySlug}
         onSelectCategory={browse.setCategorySlug}

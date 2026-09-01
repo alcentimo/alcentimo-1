@@ -105,7 +105,7 @@ export function StorefrontCatalogListing({
     [pathname, storeSlug],
   );
   const isDepartmentView = Boolean(
-    browse.searchQuery.trim() ||
+    browse.appliedSearchQuery.trim() ||
       browse.categorySlug ||
       browse.brand ||
       browse.minPrice ||
@@ -137,8 +137,8 @@ export function StorefrontCatalogListing({
     )?.name ??
       browse.brand);
 
-  const resultsTitle = browse.searchQuery.trim()
-    ? `Resultados para “${browse.searchQuery.trim()}”`
+  const resultsTitle = browse.appliedSearchQuery.trim()
+    ? `Resultados para “${browse.appliedSearchQuery.trim()}”`
     : activeBrandName
       ? `Marca ${activeBrandName}`
       : activeCategoryName

@@ -6,6 +6,7 @@ import {
   browseCatalogProducts,
   CATALOG_INITIAL_FETCH,
   CATALOG_PAGE_SIZE,
+  CATALOG_SEARCH_DEBOUNCE_MS,
   hasActiveCatalogBrowseFilters,
   hasActiveCatalogContentFilters,
   type CatalogSortKey,
@@ -22,6 +23,8 @@ interface UseCatalogBrowseOptions {
     storeSlug: string;
     initialTotalCount: number;
   };
+  /** Escribe `?q=` con history.replaceState (no en vista previa del dashboard). */
+  syncSearchToUrl?: boolean;
 }
 
 function mergeCatalogProducts(
@@ -68,6 +71,7 @@ export function useCatalogBrowse(
   const serverInitialTotalCount =
     options?.serverPagination?.initialTotalCount ?? initialProducts.length;
   const serverPaginationEnabled = serverStoreSlug != null;
+  const syncSearchToUrl = options?.syncSearchToUrl === true;
 
   const initialProductsRef = useRef(initialProducts);
   initialProductsRef.current = initialProducts;
@@ -84,6 +88,7 @@ export function useCatalogBrowse(
   const [searchQuery, setSearchQuery] = useState(
     () => options?.initialSearchQuery?.trim() ?? "",
   );
+  const [appliedSearchQuery, setAppliedSearchQuery] = useState(searchQuery);
   const [categorySlug, setCategorySlug] = useState<string | null>(
     options?.initialCategorySlug ?? null,
   );
@@ -104,8 +109,35 @@ export function useCatalogBrowse(
   const loadMoreInFlightRef = useRef(false);
   const [filterRetryNonce, setFilterRetryNonce] = useState(0);
 
+  useEffect(() => {
+    if (searchQuery === appliedSearchQuery) return;
+    const timer = window.setTimeout(() => {
+      setAppliedSearchQuery(searchQuery);
+    }, CATALOG_SEARCH_DEBOUNCE_MS);
+    return () => window.clearTimeout(timer);
+  }, [appliedSearchQuery, searchQuery]);
+
+  const commitSearchQuery = useCallback(() => {
+    setAppliedSearchQuery(searchQuery);
+  }, [searchQuery]);
+
+  useEffect(() => {
+    if (!syncSearchToUrl || typeof window === "undefined") return;
+    const url = new URL(window.location.href);
+    const next = appliedSearchQuery.trim();
+    const current = url.searchParams.get("q") ?? "";
+    if (next === current) return;
+    if (next) url.searchParams.set("q", next);
+    else url.searchParams.delete("q");
+    window.history.replaceState(
+      window.history.state,
+      "",
+      `${url.pathname}${url.search}${url.hash}`,
+    );
+  }, [appliedSearchQuery, syncSearchToUrl]);
+
   const hasServerContentFilters = hasActiveCatalogContentFilters(
-    searchQuery,
+    appliedSearchQuery,
     categorySlug,
     minPrice,
     maxPrice,
@@ -137,7 +169,7 @@ export function useCatalogBrowse(
 
   useEffect(() => {
     setVisibleCount(pageSize);
-  }, [searchQuery, categorySlug, brand, minPrice, maxPrice, sortKey, pageSize]);
+  }, [appliedSearchQuery, categorySlug, brand, minPrice, maxPrice, sortKey, pageSize]);
 
   useEffect(() => {
     if (!serverPaginationEnabled || hasServerContentFilters) return;
@@ -159,7 +191,9 @@ export function useCatalogBrowse(
     if (!serverPaginationEnabled || !hasServerContentFilters) return;
 
     const requestId = ++fetchRequestId.current;
-    const timer = window.setTimeout(async () => {
+    let cancelled = false;
+
+    void (async () => {
       setLoadingFilter(true);
       setFetchError(null);
       setFetchErrorSource(null);
@@ -171,12 +205,12 @@ export function useCatalogBrowse(
           limit: CATALOG_INITIAL_FETCH,
           categorySlug,
           brand,
-          search: searchQuery,
+          search: appliedSearchQuery,
           minPrice,
           maxPrice,
         });
 
-        if (requestId !== fetchRequestId.current) return;
+        if (cancelled || requestId !== fetchRequestId.current) return;
 
         if (result.error) {
           setFetchError(result.error);
@@ -187,23 +221,23 @@ export function useCatalogBrowse(
         setAllProducts(result.products);
         setCatalogTotalCount(result.totalCount);
       } finally {
-        if (requestId === fetchRequestId.current) {
+        if (!cancelled && requestId === fetchRequestId.current) {
           setLoadingFilter(false);
         }
       }
-    }, 300);
+    })();
 
     return () => {
-      window.clearTimeout(timer);
+      cancelled = true;
     };
   }, [
+    appliedSearchQuery,
     categorySlug,
     brand,
     filterRetryNonce,
     hasServerContentFilters,
     maxPrice,
     minPrice,
-    searchQuery,
     serverPaginationEnabled,
     serverStoreSlug,
   ]);
@@ -212,7 +246,7 @@ export function useCatalogBrowse(
     () =>
       browseCatalogProducts(allProducts, {
         searchQuery:
-          serverPaginationEnabled && hasServerContentFilters ? "" : searchQuery,
+          serverPaginationEnabled && hasServerContentFilters ? "" : appliedSearchQuery,
         categorySlug:
           serverPaginationEnabled && hasServerContentFilters ? null : categorySlug,
         brand:
@@ -231,7 +265,7 @@ export function useCatalogBrowse(
       hasServerContentFilters,
       maxPrice,
       minPrice,
-      searchQuery,
+      appliedSearchQuery,
       serverPaginationEnabled,
       sortKey,
       visibleCount,
@@ -239,7 +273,7 @@ export function useCatalogBrowse(
   );
 
   const hasActiveFilters = hasActiveCatalogBrowseFilters(
-    searchQuery,
+    searchQuery.trim() ? searchQuery : appliedSearchQuery,
     categorySlug,
     sortKey,
     minPrice,
@@ -270,7 +304,7 @@ export function useCatalogBrowse(
         limit: pageSize,
         categorySlug: hasServerContentFilters ? categorySlug : undefined,
         brand: hasServerContentFilters ? brand : undefined,
-        search: hasServerContentFilters ? searchQuery : undefined,
+        search: hasServerContentFilters ? appliedSearchQuery : undefined,
         minPrice: hasServerContentFilters ? minPrice : undefined,
         maxPrice: hasServerContentFilters ? maxPrice : undefined,
       });
@@ -298,7 +332,7 @@ export function useCatalogBrowse(
     maxPrice,
     minPrice,
     pageSize,
-    searchQuery,
+    appliedSearchQuery,
     serverPaginationEnabled,
     serverStoreSlug,
   ]);
@@ -339,6 +373,7 @@ export function useCatalogBrowse(
 
   function clearFilters() {
     setSearchQuery("");
+    setAppliedSearchQuery("");
     setCategorySlug(null);
     setBrand(null);
     setMinPrice("");
@@ -353,7 +388,9 @@ export function useCatalogBrowse(
 
   return {
     searchQuery,
+    appliedSearchQuery,
     setSearchQuery,
+    commitSearchQuery,
     categorySlug,
     setCategorySlug,
     brand,

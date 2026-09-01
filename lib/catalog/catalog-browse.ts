@@ -17,6 +17,9 @@ export const CATALOG_PAGE_SIZE = 20;
 /** Productos cargados en el primer render del catálogo público (SSR). */
 export const CATALOG_INITIAL_FETCH = 48;
 
+/** Espera tras la última tecla antes de filtrar / consultar / sincronizar `?q=`. */
+export const CATALOG_SEARCH_DEBOUNCE_MS = 400;
+
 export const CATALOG_SORT_OPTIONS: ReadonlyArray<{
   value: CatalogSortKey;
   label: string;
