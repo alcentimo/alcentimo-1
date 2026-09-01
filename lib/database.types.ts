@@ -625,6 +625,8 @@ export interface CatalogListItem {
   blur_hash: string | null;
   image_alt: string | null;
   gallery_images?: import("@/lib/products/product-gallery-types").CatalogProductGalleryImage[] | null;
+  /** Popularidad/rotación del SKU en el inventario central (dropship). */
+  hub_trend_score?: number;
 }
 
 export type CategoryInsert = {

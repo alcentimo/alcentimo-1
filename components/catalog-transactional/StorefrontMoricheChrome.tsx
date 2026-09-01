@@ -1,6 +1,7 @@
 "use client";
 
 import type { CSSProperties, ReactNode } from "react";
+import { useEffect } from "react";
 import { usePathname } from "next/navigation";
 import { MercadoBrandHeader } from "@/components/mercado-oculto/MercadoBrandHeader";
 import { StorefrontMoricheNav } from "@/components/catalog-transactional/StorefrontMoricheNav";
@@ -11,6 +12,7 @@ import { buildMercadoBrandCssVars } from "@/lib/mercado-oculto/brand-css-vars";
 import { getStoreCatalogBasePath } from "@/lib/store-host";
 import type { CatalogCategoryOption } from "@/lib/catalog/extract-categories";
 import type { CatalogBrandOption } from "@/lib/catalog/product-brand";
+import { StorefrontHeroStage } from "@/components/catalog-transactional/StorefrontHeroStage";
 import { cn } from "@/lib/cn";
 
 export interface StorefrontMoricheChromeProps {
@@ -74,6 +76,14 @@ export function StorefrontMoricheChrome({
   const markText = storeName.trim().slice(0, 1) || "T";
   const lead = storeDescription?.trim() || null;
 
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (window.location.hash !== "#storefront-categorias") return;
+    document
+      .getElementById("storefront-categorias")
+      ?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, [pathname, categories.length]);
+
   return (
     <div
       className={cn(
@@ -103,7 +113,7 @@ export function StorefrontMoricheChrome({
           nav={<StorefrontMoricheNav storeSlug={storeSlug} />}
         />
 
-        {banner}
+        {banner ? <StorefrontHeroStage>{banner}</StorefrontHeroStage> : null}
 
         {lead ? (
           <p className="storefront-mp-lead">{lead}</p>

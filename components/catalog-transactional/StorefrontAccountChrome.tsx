@@ -41,7 +41,7 @@ export function StorefrontAccountChrome({
   return (
     <div
       className={cn(
-        "mercado-shell storefront-moriche-shell storefront-moriche-shell--account",
+        "mercado-shell storefront-moriche-shell storefront-moriche-shell--account storefront-mp-shell",
         className,
       )}
       style={{ ...brandVars, ...style }}

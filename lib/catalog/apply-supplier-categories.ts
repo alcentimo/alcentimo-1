@@ -28,3 +28,27 @@ export function applySupplierCategoriesToCatalogItems(
     };
   });
 }
+
+export function attachHubTrendToCatalogItems(
+  products: CatalogListItem[],
+  entries: DropshipLinkedCatalogEntry[],
+  scores: Map<string, number>,
+): CatalogListItem[] {
+  if (products.length === 0 || entries.length === 0) return products;
+  const supplierByProduct = new Map<string, string>();
+  for (const entry of entries) {
+    if (entry.supplierProductId) {
+      supplierByProduct.set(entry.productId, entry.supplierProductId);
+    }
+  }
+  if (supplierByProduct.size === 0) return products;
+
+  return products.map((product) => {
+    const supplierId = supplierByProduct.get(product.product_id);
+    if (!supplierId) return product;
+    return {
+      ...product,
+      hub_trend_score: scores.get(supplierId) ?? 0,
+    };
+  });
+}
