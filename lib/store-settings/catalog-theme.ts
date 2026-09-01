@@ -187,7 +187,7 @@ export function getCatalogThemeStyle(
   const style: Record<string, string> = {
     ...preset.cssVars,
     ...accentVars,
-    ["--txn-page-bg"]: pageBg,
+    ["--txn-page-bg"]: "#ebebeb",
     ["--sf-brand"]: accentPrimary,
     ["--sf-brand-soft"]: `color-mix(in srgb, ${accentPrimary} 14%, white)`,
     ["--sf-brand-ink"]: `color-mix(in srgb, ${accentPrimary} 72%, #0a0a0a)`,

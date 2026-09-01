@@ -111,6 +111,7 @@ export function StorefrontMoricheChrome({
             />
           }
           nav={<StorefrontMoricheNav storeSlug={storeSlug} />}
+          className="storefront-mp-header"
         />
 
         {banner ? <StorefrontHeroStage>{banner}</StorefrontHeroStage> : null}

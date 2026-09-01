@@ -3,13 +3,19 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import type { MouseEvent } from "react";
-import { Cpu, Home, Search, User } from "lucide-react";
+import { Cpu, Home, Search, ShoppingCart, User } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { cn } from "@/lib/cn";
 import { getStoreCatalogBasePath } from "@/lib/store-host";
 import { useCatalogShellNavigationOptional } from "@/components/catalog-transactional/CatalogShellNavigation";
+import { useCartOptional } from "@/components/catalog-transactional/CartProvider";
 
-export type CatalogTabId = "inicio" | "buscar" | "armar-pc" | "perfil";
+export type CatalogTabId =
+  | "inicio"
+  | "buscar"
+  | "armar-pc"
+  | "carrito"
+  | "perfil";
 
 interface CatalogTabBarProps {
   storeSlug: string;
@@ -24,13 +30,14 @@ interface CatalogTabDefinition {
   label: string;
   segment?: CatalogTabSegment;
   icon: LucideIcon;
-  action?: "search" | "profile";
+  action?: "search" | "profile" | "cart";
 }
 
 const BASE_TABS: CatalogTabDefinition[] = [
   { id: "inicio", label: "Inicio", segment: "", icon: Home },
   { id: "buscar", label: "Buscar", icon: Search, action: "search" },
-  { id: "perfil", label: "Perfil", icon: User, action: "profile" },
+  { id: "carrito", label: "Carrito", icon: ShoppingCart, action: "cart" },
+  { id: "perfil", label: "Cuenta", icon: User, action: "profile" },
 ];
 
 const PC_BUILDER_TAB: CatalogTabDefinition = {
@@ -42,8 +49,7 @@ const PC_BUILDER_TAB: CatalogTabDefinition = {
 
 function buildTabs(pcBuilderEnabled: boolean): CatalogTabDefinition[] {
   if (!pcBuilderEnabled) return BASE_TABS;
-  // Inicio · Buscar · Arma PC · Perfil (máx. 4; el carrito vive en el FAB)
-  return [BASE_TABS[0], BASE_TABS[1], PC_BUILDER_TAB, BASE_TABS[2]];
+  return [BASE_TABS[0], PC_BUILDER_TAB, BASE_TABS[2], BASE_TABS[3]];
 }
 
 function isCatalogHomePath(pathname: string, base: string): boolean {
@@ -65,7 +71,9 @@ function resolveActiveTab(
   pcBuilderEnabled: boolean,
   searchActive: boolean,
   profileOpen: boolean,
+  cartActive: boolean,
 ): CatalogTabId {
+  if (cartActive) return "carrito";
   if (profileOpen) return "perfil";
   if (searchActive) return "buscar";
 
@@ -105,14 +113,18 @@ export function CatalogTabBar({
   const pathname = usePathname();
   const router = useRouter();
   const shellNav = useCatalogShellNavigationOptional();
+  const cart = useCartOptional();
+  const itemCount = cart?.itemCount ?? 0;
   const searchActive = shellNav?.searchActive ?? false;
   const profileOpen = shellNav?.profileOpen ?? false;
+  const cartActive = shellNav?.cartActive ?? false;
   const activeTab = resolveActiveTab(
     pathname,
     storeSlug,
     pcBuilderEnabled,
     searchActive,
     profileOpen,
+    cartActive,
   );
   const base = getStoreCatalogBasePath(storeSlug, { pathname });
   const tabs = buildTabs(pcBuilderEnabled);
@@ -152,7 +164,7 @@ export function CatalogTabBar({
 
   return (
     <nav
-      className="catalog-tab-bar safe-area-bottom"
+      className="catalog-tab-bar catalog-tab-bar--marketplace safe-area-bottom"
       aria-label="Navegación del catálogo"
     >
       <div
@@ -178,6 +190,34 @@ export function CatalogTabBar({
                 aria-label="Buscar en el catálogo"
               >
                 <Icon className="h-5 w-5 shrink-0" aria-hidden="true" />
+                <span>{label}</span>
+              </button>
+            );
+          }
+
+          if (action === "cart") {
+            return (
+              <button
+                key={id}
+                type="button"
+                onClick={() => shellNav?.openCart()}
+                className={cn(
+                  "catalog-tab-item catalog-tab-item--cart",
+                  isActive && "catalog-tab-item-active",
+                )}
+                aria-current={isActive ? "page" : undefined}
+                aria-label={
+                  itemCount > 0
+                    ? `Carrito, ${itemCount} artículos`
+                    : "Carrito de compras"
+                }
+              >
+                <span className="catalog-tab-icon-wrap">
+                  <Icon className="h-5 w-5 shrink-0" aria-hidden="true" />
+                  {itemCount > 0 ? (
+                    <span className="catalog-tab-cart-badge">{itemCount}</span>
+                  ) : null}
+                </span>
                 <span>{label}</span>
               </button>
             );

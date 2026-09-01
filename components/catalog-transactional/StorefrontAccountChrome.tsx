@@ -53,6 +53,7 @@ export function StorefrontAccountChrome({
         brandMarkText={markText}
         logoUrl={logoUrl}
         nav={<StorefrontMoricheNav storeSlug={storeSlug} compact />}
+        className="storefront-mp-header"
       />
       <main className="mercado-main mercado-mp-main storefront-account-main">
         {children}

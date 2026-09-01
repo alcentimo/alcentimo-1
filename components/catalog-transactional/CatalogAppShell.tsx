@@ -7,6 +7,7 @@ import { CatalogCustomerRegisterSheet } from "@/components/catalog-transactional
 import { CatalogStoreProfileSheet } from "@/components/catalog-transactional/CatalogStoreProfileSheet";
 import { CatalogChatWidget } from "@/components/catalog-transactional/CatalogChatWidget";
 import { CatalogWhatsAppQuickChat } from "@/components/catalog-transactional/CatalogWhatsAppQuickChat";
+import { CatalogTabBar } from "@/components/catalog-transactional/CatalogTabBar";
 import { CustomerPromoBanner } from "@/components/catalog-transactional/CustomerPromoBanner";
 import { InstallPwaBanner } from "@/components/catalog-transactional/InstallPwaBanner";
 import { PwaServiceWorkerRegister } from "@/components/catalog-transactional/PwaServiceWorkerRegister";
@@ -37,8 +38,7 @@ interface CatalogAppShellProps {
 }
 
 /**
- * Shell del catálogo público. Sin tab bar inferior (Inicio/Buscar/Perfil):
- * la navegación vive en la cabecera marketplace unificada.
+ * Shell del catálogo público: cabecera marketplace + barra inferior en móvil.
  */
 export function CatalogAppShell({
   storeSlug,
@@ -51,7 +51,7 @@ export function CatalogAppShell({
   supportAvatarAnimated = false,
   supportMerchantName = null,
   storeRubro: _storeRubro = null,
-  enablePcBuilder: _enablePcBuilder = false,
+  enablePcBuilder = false,
   assistantEnabled = false,
   whatsappPhone = null,
   whatsappChatWelcome = null,
@@ -71,9 +71,13 @@ export function CatalogAppShell({
             storeLogoUrl={storeLogoUrl}
           />
           <CustomerPromoBanner promotion={guestBanner} />
-          <div className="catalog-shell-content catalog-shell-content--moriche">
+          <div className="catalog-shell-content catalog-shell-content--moriche catalog-shell-content--marketplace">
             {children}
           </div>
+          <CatalogTabBar
+            storeSlug={storeSlug}
+            pcBuilderEnabled={enablePcBuilder}
+          />
           {assistantEnabled ? (
             <CatalogChatWidget
               storeSlug={storeSlug}
