@@ -103,6 +103,20 @@ const DropshipSettlementsPanel = dynamic(
   },
 );
 
+const AdminGiftCardsPanel = dynamic(
+  () =>
+    import("@/components/admin/AdminGiftCardsPanel").then((m) => ({
+      default: m.AdminGiftCardsPanel,
+    })),
+  {
+    loading: () => (
+      <p className="text-sm text-zinc-500 dark:text-zinc-400">
+        Cargando tarjetas de regalo…
+      </p>
+    ),
+  },
+);
+
 const AdminShippingPanel = dynamic(
   () =>
     import("@/components/admin/AdminShippingPanel").then((m) => ({
@@ -250,6 +264,8 @@ export function AdminDashboardTabs({
       {activeTab === "envios" ? (
         <AdminShippingPanel initialShipping={dropshipShipping} />
       ) : null}
+
+      {activeTab === "giftcards" ? <AdminGiftCardsPanel /> : null}
 
       {activeTab === "soporte" ? (
         messagesError ? (

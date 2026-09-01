@@ -471,6 +471,30 @@ export interface Coupon {
   updated_at: string;
 }
 
+export type GiftCardStatus = "active" | "disabled" | "depleted";
+
+export interface GiftCard {
+  id: string;
+  store_id: string;
+  code: string;
+  initial_balance_usd: number;
+  current_balance_usd: number;
+  status: GiftCardStatus;
+  note: string | null;
+  created_by: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface GiftCardRedemption {
+  id: string;
+  gift_card_id: string;
+  store_id: string;
+  order_id: string | null;
+  amount_usd: number;
+  created_at: string;
+}
+
 export type CouponInsert = {
   id?: string;
   store_id: string;
@@ -794,6 +818,8 @@ export interface Order {
   payment_proof_url: string | null;
   estado: OrderEstadoDb;
   tracking_number?: string | null;
+  gift_card_code?: string | null;
+  gift_card_usd?: number | null;
   created_at: string;
 }
 
@@ -1183,6 +1209,28 @@ export interface Database {
         Update: Partial<CouponInsert>;
         Relationships: [];
       };
+      gift_cards: {
+        Row: GiftCard;
+        Insert: Omit<GiftCard, "id" | "created_at" | "updated_at"> & {
+          id?: string;
+          note?: string | null;
+          created_by?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: Partial<GiftCard>;
+        Relationships: [];
+      };
+      gift_card_redemptions: {
+        Row: GiftCardRedemption;
+        Insert: Omit<GiftCardRedemption, "id" | "created_at"> & {
+          id?: string;
+          order_id?: string | null;
+          created_at?: string;
+        };
+        Update: Partial<GiftCardRedemption>;
+        Relationships: [];
+      };
       promotions: {
         Row: Promotion;
         Insert: Omit<Promotion, "id" | "created_at" | "updated_at" | "use_count"> & {
@@ -1373,6 +1421,15 @@ export interface Database {
           p_user_id: string;
         };
         Returns: { error?: string; success?: boolean };
+      };
+      redeem_gift_card_for_order: {
+        Args: {
+          p_code: string;
+          p_store_id: string;
+          p_order_id: string;
+          p_amount: number;
+        };
+        Returns: { error?: string; success?: boolean; applied_usd?: number; remaining_usd?: number };
       };
     };
     Enums: {

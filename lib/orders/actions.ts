@@ -32,6 +32,10 @@ import { normalizeWhatsAppPhone } from "@/lib/catalog/whatsapp-order";
 import { reserveOrderInventory } from "@/lib/orders/order-inventory";
 import { enrichOrderItemsWithStockUnits } from "@/lib/orders/stationery-inventory";
 import { calculatePromotionDiscountUsd } from "@/lib/promotions/discount";
+import { validateGiftCardCode } from "@/lib/gift-cards/actions";
+import { isPlatformAdminOwnedStore } from "@/lib/gift-cards/admin-store";
+import { giftCardApplyAmount, normalizeGiftCardCode } from "@/lib/gift-cards/code";
+import { GIFT_CARD_STORE_DENIED_MESSAGE } from "@/lib/gift-cards/types";
 import type { SubmitOrderLineInput } from "@/lib/orders/types";
 import { createClient } from "@/lib/supabase/server";
 import { requireAuthStore } from "@/lib/auth/require-dashboard-auth";
@@ -69,6 +73,9 @@ export async function submitTransactionalOrder(
   const paymentMethodRaw = String(formData.get("paymentMethod") ?? "").trim();
   const shippingMethodRaw = String(formData.get("shippingMethod") ?? "").trim();
   const promotionCodeRaw = String(formData.get("promotionCode") ?? "").trim();
+  const giftCardCodeRaw = normalizeGiftCardCode(
+    String(formData.get("giftCardCode") ?? ""),
+  );
   const locationIdRaw = String(formData.get("locationId") ?? "").trim();
   const fulfillmentTypeRaw = String(formData.get("fulfillmentType") ?? "").trim();
   const deliveryAddressRaw = String(formData.get("deliveryAddress") ?? "").trim();
@@ -304,6 +311,30 @@ export async function submitTransactionalOrder(
   });
   const orderTotalUsd = merchandiseUsd + shippingQuote.chargeUsd;
 
+  let giftCardUsd = 0;
+  if (giftCardCodeRaw) {
+    const adminStore = await isPlatformAdminOwnedStore(
+      store.id,
+      store.owner_id,
+    );
+    if (!adminStore) {
+      return { error: GIFT_CARD_STORE_DENIED_MESSAGE };
+    }
+    const giftValidation = await validateGiftCardCode(storeSlug, giftCardCodeRaw);
+    if (giftValidation.error || !giftValidation.code) {
+      return { error: giftValidation.error ?? "Tarjeta de regalo no válida." };
+    }
+    giftCardUsd = giftCardApplyAmount(
+      giftValidation.currentBalanceUsd ?? 0,
+      orderTotalUsd,
+    );
+    if (giftCardUsd <= 0) {
+      return { error: "Esta tarjeta de regalo no tiene saldo." };
+    }
+  }
+
+  const amountDueUsd = Math.max(0, orderTotalUsd - giftCardUsd);
+
   const orderId = crypto.randomUUID();
 
   let paymentProofUrl: string | null = null;
@@ -379,7 +410,8 @@ export async function submitTransactionalOrder(
     });
   }
 
-  const expectsPaymentProof = paymentMethodRequiresProof(paymentMethodRaw);
+  const expectsPaymentProof =
+    amountDueUsd > 0 && paymentMethodRequiresProof(paymentMethodRaw);
   const initialEstado =
     expectsPaymentProof && !paymentProofUrl ? "por_pagar" : "pendiente";
   // null = falta comprobante; "" = método sin comprobante (efectivo, etc.).
@@ -393,11 +425,13 @@ export async function submitTransactionalOrder(
     customer_name: customerName,
     customer_phone: customerPhone,
     items: enrichedOrderItems,
-    total_usd: orderTotalUsd,
+    total_usd: amountDueUsd,
     payment_proof_url: storedProofUrl,
     estado: initialEstado,
     location_id: resolvedLocationId,
     fulfillment_type: fulfillmentType,
+    gift_card_code: giftCardUsd > 0 ? giftCardCodeRaw : null,
+    gift_card_usd: giftCardUsd > 0 ? giftCardUsd : null,
     shipping_method: shippingMethodRaw || null,
     shipping_branch_code: isNationalCarrierKey(shippingMethodRaw)
       ? shippingBranchCode
@@ -497,9 +531,50 @@ export async function submitTransactionalOrder(
     }
   }
 
-  const paymentLabel = paymentMethodRaw
-    ? getPaymentMethod(paymentMethodRaw as PaymentMethodKey).label
-    : undefined;
+  if (giftCardUsd > 0) {
+    const { data: giftRedeem, error: giftRedeemError } = await admin.rpc(
+      "redeem_gift_card_for_order" as never,
+      {
+        p_code: giftCardCodeRaw,
+        p_store_id: store.id,
+        p_order_id: orderId,
+        p_amount: giftCardUsd,
+      } as never,
+    );
+
+    const failGift = async (message: string) => {
+      if (dropshipStock.consumed.length > 0) {
+        await restoreDropshipStockForOrderLines(
+          admin,
+          enrichedOrderItems,
+          orderId,
+        );
+      }
+      await admin.from("orders").delete().eq("id", orderId);
+      return { error: message };
+    };
+
+    if (giftRedeemError) {
+      return failGift(giftRedeemError.message);
+    }
+
+    const redeemedGift = giftRedeem as {
+      error?: string;
+      success?: boolean;
+    } | null;
+    if (!redeemedGift || redeemedGift.error || !redeemedGift.success) {
+      return failGift(
+        redeemedGift?.error ?? "No se pudo canjear la tarjeta de regalo.",
+      );
+    }
+  }
+
+  const paymentLabel =
+    amountDueUsd <= 0
+      ? "Tarjeta de regalo"
+      : paymentMethodRaw
+        ? getPaymentMethod(paymentMethodRaw as PaymentMethodKey).label
+        : undefined;
   const carrierLabel = shippingMethodRaw
     ? getShippingMethod(shippingMethodRaw as ShippingCarrierKey).label
     : undefined;
@@ -524,7 +599,7 @@ export async function submitTransactionalOrder(
   let totalBsLabel: string | undefined;
   try {
     const rateRow = await getDisplayableUsdExchangeRate(admin);
-    totalBsLabel = buildOrderTotalBsLabel(orderTotalUsd, rateRow?.rate);
+    totalBsLabel = buildOrderTotalBsLabel(amountDueUsd, rateRow?.rate);
   } catch {
     totalBsLabel = undefined;
   }
@@ -539,7 +614,7 @@ export async function submitTransactionalOrder(
       line_total_usd: item.line_total_usd,
       pricing_tier: item.pricing_tier,
     })),
-    totalUsd: orderTotalUsd,
+    totalUsd: amountDueUsd,
     totalBsLabel,
     orderRef: orderId,
     orderShareUrl: buildOrderSharePublicUrl(store.slug, orderId, {
@@ -551,6 +626,8 @@ export async function submitTransactionalOrder(
     shippingChargeLabel: shippingModalityLabel,
     discountUsd: discountUsd > 0 ? discountUsd : undefined,
     promotionLabel,
+    giftCardUsd: giftCardUsd > 0 ? giftCardUsd : undefined,
+    giftCardCode: giftCardUsd > 0 ? giftCardCodeRaw : undefined,
     locationName: resolvedLocationName ?? undefined,
     locationAddress: resolvedLocationAddress ?? undefined,
     deliveryAddress: resolvedFulfillmentAddress ?? undefined,
