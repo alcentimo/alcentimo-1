@@ -34,6 +34,7 @@ import { ProductImageGallery } from "@/components/catalog/ProductImageGallery";
 import { Button } from "@/components/ui/button";
 import { Select } from "@/components/ui/select";
 import { formatUsd } from "@/lib/format";
+import { DropshipMarginBreakdown } from "@/components/dashboard/DropshipMarginBreakdown";
 import { urlsToCatalogGalleryImages } from "@/lib/products/product-gallery-types";
 import {
   SUPPLIER_PRODUCT_CATEGORIES,
@@ -367,7 +368,6 @@ export function AvailableProductsPanel({
       const nextProduct: MerchantSupplierCatalogProduct = {
         ...product,
         retailPriceUsd: result.retailUsd,
-        suggestedRetailUsd: result.retailUsd,
         alreadyImported: true,
         linkedProductId: result.linkedProductId ?? product.linkedProductId,
       };
@@ -513,7 +513,6 @@ export function AvailableProductsPanel({
             linkedProductId,
             linkedProductSlug: result.productSlug ?? product.linkedProductSlug,
             retailPriceUsd: result.retailUsd ?? product.retailPriceUsd,
-            suggestedRetailUsd: result.retailUsd ?? product.suggestedRetailUsd,
           });
         }
         onImported?.(linkedProductId);
@@ -616,8 +615,9 @@ export function AvailableProductsPanel({
           <p className="mt-1 text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">
             Explora el catálogo mayorista y añade productos a tu tienda. Solo lo
             que selecciones aquí aparece en tu vitrina pública — sin inventario
-            manual. El precio de venta que fijes en cada tarjeta es el que
-            verán tus clientes.
+            manual. Al activar un producto se rellena un precio de venta
+            comercial (costo + margen) y ves costo, sugerido y ganancia neta en
+            dólares. Los más populares del hub aparecen primero.
           </p>
         </div>
         {products.length > 0 ? (
@@ -874,10 +874,6 @@ export function AvailableProductsPanel({
             const saving = Boolean(savingIds[product.id]);
             const selected = Boolean(selectedIds[product.id]);
             const retailParsed = parseUsdAmount(draft.retail, { min: 0 });
-            const profitUsd =
-              retailParsed != null
-                ? retailParsed - product.wholesalePriceUsd
-                : null;
 
             return (
               <li
@@ -907,6 +903,11 @@ export function AvailableProductsPanel({
                       <p className="mt-1 inline-flex rounded-full bg-zinc-100 px-2 py-0.5 text-[11px] font-medium text-zinc-600 dark:bg-zinc-900 dark:text-zinc-300">
                         {supplierCategoryLabel(product.category)}
                       </p>
+                      {product.isTrending ? (
+                        <span className="ml-1.5 inline-flex rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-amber-800 dark:bg-amber-950/60 dark:text-amber-200">
+                          Tendencia
+                        </span>
+                      ) : null}
                       {product.description ? (
                         <p className="mt-2 line-clamp-2 text-xs leading-relaxed text-zinc-500">
                           {product.description}
@@ -916,54 +917,53 @@ export function AvailableProductsPanel({
                   </div>
 
                   <div className="mt-auto space-y-3">
-                    <div className="rounded-xl border border-zinc-100 bg-zinc-50/80 p-3 dark:border-zinc-800 dark:bg-zinc-900/50">
-                      <div className="flex items-baseline justify-between gap-3">
-                        <span className="text-[11px] font-medium uppercase tracking-wide text-zinc-400">
-                          Costo mayorista
-                        </span>
-                        <span className="text-sm font-medium tabular-nums text-zinc-600 dark:text-zinc-300">
-                          {formatUsd(product.wholesalePriceUsd)}
+                    <DropshipMarginBreakdown
+                      costUsd={product.wholesalePriceUsd}
+                      suggestedRetailUsd={product.suggestedRetailUsd}
+                      retailUsd={retailParsed}
+                      costLabel="Costo del producto"
+                    />
+                    {product.usesSupplierCostPrice &&
+                    product.precioMayoristaUsd != null ? (
+                      <div className="flex items-baseline justify-between px-1 text-[11px] text-zinc-500">
+                        <span>Precio mayorista</span>
+                        <span className="tabular-nums">
+                          {formatUsd(product.precioMayoristaUsd)}
                         </span>
                       </div>
+                    ) : null}
 
-                      <div className="mt-3 grid grid-cols-2 gap-2 border-t border-zinc-200/80 pt-3 dark:border-zinc-700/80">
-                        <label className="space-y-1.5">
-                          <span className="block text-[11px] font-semibold text-zinc-700 dark:text-zinc-200">
-                            Precio de venta
-                          </span>
-                          <CatalogMoneyInput
-                            prefix="$"
-                            value={draft.retail}
-                            disabled={saving || busy}
-                            aria-label={`Precio de venta de ${product.title}`}
-                            onChange={(value) => onRetailChange(product, value)}
-                            onBlur={() => void persistPrice(product.id)}
-                          />
-                        </label>
-                        <label className="space-y-1.5">
-                          <span className="block text-[11px] font-semibold text-zinc-700 dark:text-zinc-200">
-                            Ganancia %
-                          </span>
-                          <CatalogMoneyInput
-                            suffix="%"
-                            value={draft.marginPercent}
-                            disabled={
-                              saving || busy || product.wholesalePriceUsd <= 0
-                            }
-                            aria-label={`Ganancia de ${product.title}`}
-                            onChange={(value) =>
-                              onMarginPercentChange(product, value)
-                            }
-                            onBlur={() => void persistPrice(product.id)}
-                          />
-                        </label>
-                      </div>
-
-                      {profitUsd != null && profitUsd > 0 ? (
-                        <p className="mt-2.5 inline-flex rounded-full bg-emerald-50 px-2.5 py-1 text-[11px] font-semibold text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300">
-                          +{formatUsd(profitUsd)} de ganancia por unidad
-                        </p>
-                      ) : null}
+                    <div className="grid grid-cols-2 gap-2">
+                      <label className="space-y-1.5">
+                        <span className="block text-[11px] font-semibold text-zinc-700 dark:text-zinc-200">
+                          Precio de venta
+                        </span>
+                        <CatalogMoneyInput
+                          prefix="$"
+                          value={draft.retail}
+                          disabled={saving || busy}
+                          aria-label={`Precio de venta de ${product.title}`}
+                          onChange={(value) => onRetailChange(product, value)}
+                          onBlur={() => void persistPrice(product.id)}
+                        />
+                      </label>
+                      <label className="space-y-1.5">
+                        <span className="block text-[11px] font-semibold text-zinc-700 dark:text-zinc-200">
+                          Ganancia %
+                        </span>
+                        <CatalogMoneyInput
+                          suffix="%"
+                          value={draft.marginPercent}
+                          disabled={
+                            saving || busy || product.wholesalePriceUsd <= 0
+                          }
+                          aria-label={`Ganancia de ${product.title}`}
+                          onChange={(value) =>
+                            onMarginPercentChange(product, value)
+                          }
+                          onBlur={() => void persistPrice(product.id)}
+                        />
+                      </label>
                     </div>
 
                     <div className="flex min-h-5 items-center gap-2">

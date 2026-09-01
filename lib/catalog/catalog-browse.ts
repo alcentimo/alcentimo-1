@@ -175,6 +175,9 @@ export function sortCatalogProducts(
       return sorted.sort((a, b) => {
         const stockOrder = compareCatalogStockAvailability(a, b);
         if (stockOrder !== 0) return stockOrder;
+        const trendA = a.hub_trend_score ?? 0;
+        const trendB = b.hub_trend_score ?? 0;
+        if (trendA !== trendB) return trendB - trendA;
         if (a.sort_order !== b.sort_order) {
           return a.sort_order - b.sort_order;
         }

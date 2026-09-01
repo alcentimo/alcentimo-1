@@ -9,6 +9,8 @@ import { normalizePublicationStatus } from "@/lib/supplier/wholesale-price";
 export type DropshipLinkedCatalogEntry = {
   productId: string;
   supplierCategory: SupplierProductCategory;
+  /** SKU del inventario central (hub) cuando el producto es dropship. */
+  supplierProductId?: string;
 };
 
 type LinkedCatalogQueryOptions = {
@@ -183,6 +185,7 @@ export async function listDropshipLinkedCatalogEntriesForStoreId(
       entries.push({
         productId,
         supplierCategory: categoryBySupplierId.get(supplierProductId) ?? "otros",
+        supplierProductId,
       });
     }
 

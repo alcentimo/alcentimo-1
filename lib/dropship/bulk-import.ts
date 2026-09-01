@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { requireAuthStore } from "@/lib/auth/require-dashboard-auth";
 import { revalidatePublicCatalogCache } from "@/lib/catalog/public-catalog-cache";
+import { getSupplierTrendScores, compareByHubTrend } from "@/lib/dropship/trend";
 import {
   defaultDropshipPricingSettings,
   normalizeDropshipPricingSettings,
@@ -361,6 +362,15 @@ export async function importSupplierProductsBulkToStore(input?: {
       if (category && row.category !== category) return false;
       return !alreadyLinked.has(row.id);
     });
+    const trendScores = await getSupplierTrendScores();
+    eligible.sort((a, b) =>
+      compareByHubTrend(
+        a,
+        b,
+        (item) => trendScores.get(item.id) ?? 0,
+        (item) => item.title,
+      ),
+    );
     const alreadyInStore = (supplierRows ?? []).filter((row) => {
       if (category && row.category !== category) return false;
       return alreadyLinked.has(row.id);
