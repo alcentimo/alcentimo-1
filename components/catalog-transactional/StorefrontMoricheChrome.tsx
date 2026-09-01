@@ -40,9 +40,10 @@ export interface StorefrontMoricheChromeProps {
 }
 
 /**
- * Shell marketplace de la vitrina pública:
+ * Shell marketplace único de las tiendas públicas de dropshippers:
  * cabecera fija (logo + buscador + Carrito / Pedidos / Cuenta),
- * banner, categorías visuales y listado.
+ * banner, categorías visuales y listado. Color, logo y banner vienen
+ * de la configuración de cada tienda.
  */
 export function StorefrontMoricheChrome({
   storeSlug,

@@ -24,7 +24,7 @@ interface StorefrontMoricheNavProps {
 }
 
 /**
- * Accesos superiores estilo Mercado Libre / Mercado Oculto:
+ * Accesos superiores de la plantilla marketplace:
  * Pedidos · Carrito · Cuenta | Entrar + Crear cuenta
  */
 export function StorefrontMoricheNav({

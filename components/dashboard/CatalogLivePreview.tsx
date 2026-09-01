@@ -6,7 +6,6 @@ import type { CatalogPreviewSettings } from "@/lib/catalog/catalog-preview-types
 import { CartProvider } from "@/components/catalog-transactional/CartProvider";
 import { PromotionProvider } from "@/components/catalog-transactional/PromotionProvider";
 import { TransactionalCatalog } from "@/components/catalog-transactional/TransactionalCatalog";
-import { CatalogTabBar } from "@/components/catalog-transactional/CatalogTabBar";
 import { CatalogChatWidget } from "@/components/catalog-transactional/CatalogChatWidget";
 import { CatalogWhatsAppQuickChat } from "@/components/catalog-transactional/CatalogWhatsAppQuickChat";
 import { CatalogShellNavigationProvider } from "@/components/catalog-transactional/CatalogShellNavigation";
@@ -17,7 +16,6 @@ import {
   getCatalogRubroClass,
   getCatalogThemeStyle,
 } from "@/lib/store-settings/catalog-theme";
-import { storeHasPCBuilderFromStore } from "@/lib/rubros/modules/tecnologia/pc-builder";
 import { CatalogStoreBrandingProvider } from "@/components/catalog/CatalogStoreBrandingContext";
 import { cn } from "@/lib/cn";
 
@@ -152,16 +150,6 @@ export function CatalogLivePreview({
                   settings.purchaseInfo.whatsappChatWelcome
                 }
               />
-            ) : null}
-            {interactive ? (
-              <div
-                className="catalog-live-preview-tab-bar catalog-live-preview-tab-bar--interactive"
-              >
-                <CatalogTabBar
-                  storeSlug={store.slug}
-                  pcBuilderEnabled={storeHasPCBuilderFromStore(store)}
-                />
-              </div>
             ) : null}
           </CatalogStoreBrandingProvider>
         </CatalogPreviewPortalProvider>

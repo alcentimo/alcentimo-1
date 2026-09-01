@@ -38,7 +38,7 @@ interface CatalogAppShellProps {
 
 /**
  * Shell del catálogo público. Sin tab bar inferior (Inicio/Buscar/Perfil):
- * la navegación vive en la cabecera Moriche, igual que Mercado Oculto.
+ * la navegación vive en la cabecera marketplace unificada.
  */
 export function CatalogAppShell({
   storeSlug,

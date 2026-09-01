@@ -410,11 +410,12 @@ export function DesignTab({
     <div className="design-studio-accordions">
       <div className="design-marketplace-lock mb-3 rounded-xl border border-emerald-200/80 bg-emerald-50/70 px-3 py-2.5 dark:border-emerald-900/50 dark:bg-emerald-950/30">
         <p className="text-sm font-semibold text-emerald-900 dark:text-emerald-100">
-          Vitrina fija: Mercado Oculto
+          Plantilla marketplace unificada
         </p>
         <p className="mt-0.5 text-xs leading-relaxed text-emerald-800/80 dark:text-emerald-200/80">
-          Todas las tiendas usan el mismo layout Moriche. Solo personalizas
-          color, logo y banner.
+          Todas las tiendas públicas usan el mismo layout (barra de búsqueda,
+          categorías visuales y tarjetas). Solo personalizas color, logo y
+          banner.
         </p>
       </div>
 
@@ -577,7 +578,8 @@ export function DesignTab({
                     Branding
                   </p>
                   <p className="mt-1 text-xs leading-relaxed text-zinc-500">
-                    Color, logo y banner. La estructura visual es fija (Moriche).
+                    Color, logo y banner. La estructura visual es la plantilla
+                    marketplace de todas las tiendas.
                   </p>
                 </div>
                 {controlsPanel}
@@ -665,13 +667,14 @@ export function DesignTab({
             Editor de diseño del catálogo
           </h2>
           <p className="mt-1 text-sm leading-relaxed text-zinc-500">
-            Vitrina Moriche fija. Personaliza color de marca, logo y banner; la
-            vista previa usa el mismo componente que tu tienda pública.
+            Plantilla marketplace fija para todas las tiendas. Personaliza color
+            de marca, logo y banner; la vista previa usa el mismo componente que
+            tu tienda pública.
           </p>
           <dl className="design-studio-entry-meta mt-3">
             <div>
               <dt>Modelo</dt>
-              <dd>Mercado Oculto</dd>
+              <dd>Marketplace</dd>
             </div>
             <div>
               <dt>Color</dt>

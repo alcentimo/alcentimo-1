@@ -40,6 +40,7 @@ import {
   normalizeCatalogAccessSettings,
 } from "@/lib/catalog-access/types";
 import { lockPlatformOwnedShippingFields } from "@/lib/platform/dropship-shipping";
+import { STANDARD_CATALOG_THEME_ID } from "@/lib/store-settings/catalog-theme";
 
 const SHIPPING_CARRIER_KEYS: ShippingCarrierKey[] = [
   "mrw",
@@ -208,7 +209,7 @@ export function defaultStoreSettingsConfig(): StoreSettingsConfig {
       closeTime: DEFAULT_CLOSE_TIME,
     },
     catalogDesign: {
-      theme: "minimal",
+      theme: STANDARD_CATALOG_THEME_ID,
       saleMode: "quick",
       layout: "grid",
       visibility: {
@@ -418,25 +419,7 @@ export function normalizeStoreSettingsConfig(raw: unknown): StoreSettingsConfig 
       closeTime: fallbackClose,
     },
     catalogDesign: {
-      theme:
-        designRaw.theme === "classic"
-          ? "immersive"
-          : designRaw.theme === "minimal" ||
-              designRaw.theme === "impact" ||
-              designRaw.theme === "immersive" ||
-              designRaw.theme === "boutique" ||
-              designRaw.theme === "rail" ||
-              designRaw.theme === "mosaic" ||
-              designRaw.theme === "profile" ||
-              designRaw.theme === "compact" ||
-              designRaw.theme === "fashion-pure" ||
-              designRaw.theme === "fashion-nocturne" ||
-              designRaw.theme === "fashion-editorial" ||
-              designRaw.theme === "fashion-luxe"
-            ? designRaw.theme
-            : designRaw.layout === "list"
-              ? "immersive"
-              : defaults.catalogDesign.theme,
+      theme: STANDARD_CATALOG_THEME_ID,
       saleMode:
         designRaw.saleMode === "showcase" || designRaw.saleMode === "quick"
           ? designRaw.saleMode
