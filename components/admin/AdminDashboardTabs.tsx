@@ -1,6 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
+import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { AdminDashboardShell } from "@/components/admin/AdminDashboardShell";
 import { AdminStoresPanel } from "@/components/admin/AdminStoresPanel";
@@ -158,6 +159,7 @@ export function AdminDashboardTabs({
   legacyTabParam = null,
   initialStoresSection = null,
 }: AdminDashboardTabsProps) {
+  const router = useRouter();
   const [activeTab, setActiveTab] = useState<AdminDashboardTab>(() =>
     resolveAdminDashboardTab(
       typeof initialTab === "string" ? initialTab : initialTab,
@@ -187,6 +189,10 @@ export function AdminDashboardTabs({
   };
 
   function setTab(tab: AdminDashboardTab) {
+    if (tab === "tienda") {
+      router.push("/admin/tienda/catalogo");
+      return;
+    }
     setActiveTab(tab);
     if (tab === "proveedor") setSupplierPanelMounted(true);
     const params = new URLSearchParams(window.location.search);

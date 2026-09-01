@@ -61,6 +61,15 @@ export default async function AdminDashboardPage({
   }
 
   const params = await searchParams;
+  const tabParam = Array.isArray(params.tab) ? params.tab[0] : params.tab;
+  if (
+    tabParam === "tienda" ||
+    tabParam === "mi-tienda" ||
+    tabParam === "tienda-propia" ||
+    tabParam === "mercado-oculto"
+  ) {
+    redirect("/admin/tienda/catalogo");
+  }
   const legacyTabParam = resolveLegacyTabParam(params.tab);
   const initialTab = resolveInitialTab(params.tab);
   const initialStoresSection = resolveLegacyTabParam(params.section);
