@@ -5,6 +5,10 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { isPlatformAdminOwnedStore } from "@/lib/gift-cards/admin-store";
 import { normalizeGiftCardCode, roundGiftUsd } from "@/lib/gift-cards/code";
 import {
+  consumeGiftCardRateLimit,
+  recordGiftCardAttemptFailure,
+} from "@/lib/gift-cards/rate-limit";
+import {
   GIFT_CARD_STORE_DENIED_MESSAGE,
   type GiftCard,
 } from "@/lib/gift-cards/types";
@@ -51,6 +55,9 @@ export async function validateGiftCardCode(
     return { error: GIFT_CARD_STORE_DENIED_MESSAGE };
   }
 
+  const rate = await consumeGiftCardRateLimit(store.id);
+  if (!rate.ok) return { error: rate.error };
+
   const admin = createAdminClient();
   const { data, error } = await admin
     .from("gift_cards")
@@ -59,19 +66,26 @@ export async function validateGiftCardCode(
     .maybeSingle();
 
   if (error) return { error: error.message };
-  if (!data) return { error: "Tarjeta de regalo no válida." };
+  if (!data) {
+    await recordGiftCardAttemptFailure(store.id);
+    return { error: "Tarjeta de regalo no válida." };
+  }
 
   const card = mapGiftCard(data as Record<string, unknown>);
   if (card.store_id !== store.id) {
+    await recordGiftCardAttemptFailure(store.id);
     return { error: GIFT_CARD_STORE_DENIED_MESSAGE };
   }
   if (card.status === "disabled") {
+    await recordGiftCardAttemptFailure(store.id);
     return { error: "Esta tarjeta de regalo está desactivada." };
   }
   if (card.status === "depleted" || card.current_balance_usd <= 0) {
+    await recordGiftCardAttemptFailure(store.id);
     return { error: "Esta tarjeta de regalo no tiene saldo." };
   }
   if (card.status !== "active") {
+    await recordGiftCardAttemptFailure(store.id);
     return { error: "Esta tarjeta de regalo no está disponible." };
   }
 
