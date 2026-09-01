@@ -81,9 +81,11 @@ async function requireDropshipStore() {
 }
 
 function merchantCatalogSelect(privileged: boolean) {
-  return privileged
-    ? ADMIN_SUPPLIER_PRODUCT_SELECT
-    : DROPSHIP_SUPPLIER_PRODUCT_SELECT;
+  return (
+    privileged
+      ? ADMIN_SUPPLIER_PRODUCT_SELECT
+      : DROPSHIP_SUPPLIER_PRODUCT_SELECT
+  ) as typeof DROPSHIP_SUPPLIER_PRODUCT_SELECT;
 }
 
 function sessionHasCostPrivilege(email?: string | null) {
