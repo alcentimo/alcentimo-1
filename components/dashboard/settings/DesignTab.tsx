@@ -413,8 +413,8 @@ export function DesignTab({
           Vitrina fija: Mercado Oculto
         </p>
         <p className="mt-0.5 text-xs leading-relaxed text-emerald-800/80 dark:text-emerald-200/80">
-          Todas las tiendas usan el mismo layout Moriche. Solo personalizas
-          color, logo y banner.
+          Todas las tiendas usan el mismo layout marketplace (estilo Mercado
+          Libre). Solo personalizas color, logo y banners.
         </p>
       </div>
 
@@ -577,7 +577,8 @@ export function DesignTab({
                     Branding
                   </p>
                   <p className="mt-1 text-xs leading-relaxed text-zinc-500">
-                    Color, logo y banner. La estructura visual es fija (Moriche).
+                    Color, logo y banners. La estructura visual es fija
+                    (marketplace).
                   </p>
                 </div>
                 {controlsPanel}
@@ -665,8 +666,8 @@ export function DesignTab({
             Editor de diseño del catálogo
           </h2>
           <p className="mt-1 text-sm leading-relaxed text-zinc-500">
-            Vitrina Moriche fija. Personaliza color de marca, logo y banner; la
-            vista previa usa el mismo componente que tu tienda pública.
+            Vitrina marketplace fija. Personaliza color de marca, logo y banner;
+            la vista previa usa el mismo componente que tu tienda pública.
           </p>
           <dl className="design-studio-entry-meta mt-3">
             <div>

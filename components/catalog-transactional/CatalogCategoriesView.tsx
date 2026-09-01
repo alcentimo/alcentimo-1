@@ -32,6 +32,7 @@ import {
 import { CatalogLocationPicker } from "@/components/catalog-transactional/CatalogLocationPicker";
 import { CatalogPromoBannerCarousel } from "@/components/catalog-transactional/CatalogPromoBannerCarousel";
 import { StorefrontCatalogListing } from "@/components/catalog-transactional/StorefrontCatalogListing";
+import { StorefrontCoverBanner } from "@/components/catalog-transactional/StorefrontCoverBanner";
 import { StorefrontMoricheChrome } from "@/components/catalog-transactional/StorefrontMoricheChrome";
 import { mapCatalogListItemToMercadoCard } from "@/lib/catalog/map-catalog-to-mercado-card";
 import { officialBrandsToCatalogOptions } from "@/lib/catalog/product-brand";
@@ -272,12 +273,7 @@ function CatalogCategoriesPageContent({
         pending={browse.loadingFilter}
         banner={
           <>
-            {coverUrl ? (
-              <div className="storefront-mo-cover-banner">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={coverUrl} alt="" className="storefront-mo-cover-img" />
-              </div>
-            ) : null}
+            <StorefrontCoverBanner url={coverUrl} storeName={store.name} />
             <CatalogPromoBannerCarousel
               promoBanner={catalogDesign.promoBanner}
               storeName={store.name}

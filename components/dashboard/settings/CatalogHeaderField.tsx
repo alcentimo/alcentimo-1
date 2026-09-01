@@ -39,7 +39,7 @@ export function CatalogHeaderField({
   return (
     <div className="design-header-field space-y-3">
       <p className="text-xs leading-relaxed text-zinc-500">
-        Imagen de portada bajo el hero de búsqueda. Resumen:{" "}
+        Imagen de portada en el hero bajo el buscador. Resumen:{" "}
         {catalogHeaderSummary(header)}.
       </p>
 

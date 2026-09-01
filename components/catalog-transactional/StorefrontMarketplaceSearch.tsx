@@ -37,7 +37,7 @@ export function StorefrontMarketplaceSearch({
         type="search"
         value={value}
         onChange={(event) => onChange(event.target.value)}
-        placeholder={`Buscar productos, marcas y más…`}
+        placeholder="Buscar productos, marcas y más…"
         aria-label={`Buscar en ${storeName}`}
         className="storefront-mp-search-input"
         disabled={pending}
