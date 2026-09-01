@@ -10704,6 +10704,10 @@ button.customer-promo-banner-link {
   right: auto;
 }
 
+.catalog-live-preview-tab-bar .catalog-tab-bar--marketplace {
+  display: block;
+}
+
 /* Contener overlays fijos dentro del marco interactivo (landing / demos) */
 .catalog-live-preview-root--interactive .catalog-cart-fab {
   position: absolute;
@@ -11071,8 +11075,24 @@ button.customer-promo-banner-link {
   padding-bottom: 0;
 }
 
+.catalog-shell-content--marketplace {
+  padding-bottom: calc(3.75rem + env(safe-area-inset-bottom, 0px));
+}
+
+@media (min-width: 768px) {
+  .catalog-shell-content--marketplace {
+    padding-bottom: 0;
+  }
+}
+
 .catalog-tab-bar {
   @apply fixed inset-x-0 bottom-0 z-40 border-t border-neutral-200/90 bg-white/96 backdrop-blur-md;
+}
+
+@media (min-width: 768px) {
+  .catalog-tab-bar--marketplace {
+    display: none;
+  }
 }
 
 .catalog-tab-bar-inner {
@@ -11094,7 +11114,15 @@ button.customer-promo-banner-link {
 .catalog-tab-item-active {
   color: var(--txn-primary, #0d9488);
   @apply font-semibold;
-  background-color: color-mix(in srgb, var(--txn-primary, #0d9488) 10%, transparent);
+  background-color: transparent;
+}
+
+.catalog-tab-icon-wrap {
+  @apply relative inline-flex;
+}
+
+.catalog-tab-cart-badge {
+  @apply absolute -right-2.5 -top-1.5 min-w-[1.05rem] rounded-full bg-red-500 px-1 text-[10px] font-bold leading-4 text-white;
 }
 
 .catalog-profile-sheet .catalog-profile-close {
@@ -13810,7 +13838,8 @@ button.mercado-mp-card-btn {
 
 .storefront-mo-cover-img,
 .storefront-hero-cover-img {
-  @apply h-44 w-full rounded-xl object-cover shadow-[0_8px_28px_rgba(0,0,0,0.12)] sm:h-64 lg:h-[17.5rem];
+  @apply h-36 w-full rounded-md object-cover shadow-none sm:h-52 lg:h-[15rem];
+  border: 1px solid #e6e6e6;
 }
 
 .storefront-hero-stage {
@@ -13822,8 +13851,9 @@ button.mercado-mp-card-btn {
 }
 
 .storefront-hero-stage .txn-promo-banner-viewport {
-  @apply max-w-none rounded-xl shadow-[0_8px_28px_rgba(0,0,0,0.1)];
-  height: 11rem;
+  @apply max-w-none rounded-md shadow-none;
+  height: 8.5rem;
+  border: 1px solid #e6e6e6;
 }
 
 @media (min-width: 768px) {
@@ -13835,21 +13865,52 @@ button.mercado-mp-card-btn {
 /* ——— Vitrina marketplace (dropshippers · estilo Mercado Libre) ——— */
 
 .storefront-mp-shell {
-  background: var(--mo-page, #ededed);
+  background: #ebebeb;
+  font-family: var(--mo-sans);
 }
 
 .storefront-mp-shell .mercado-mp-header {
-  @apply border-b-0 shadow-[0_1px_0_rgba(0,0,0,0.08)];
+  @apply border-b-0 shadow-[0_1px_0_rgba(0,0,0,0.06)];
   background: var(--mo-forest);
   backdrop-filter: none;
 }
 
 .storefront-mp-shell .mercado-mp-header-top {
-  @apply gap-3 py-3 sm:py-3.5;
+  @apply gap-2 py-2 sm:gap-4 sm:py-2.5;
+}
+
+.storefront-mp-shell .mercado-mp-header-top--search {
+  display: grid;
+  grid-template-columns: minmax(0, auto) 1fr;
+  grid-template-areas:
+    "brand nav"
+    "search search";
+  align-items: center;
+}
+
+.storefront-mp-shell .mercado-mp-brand {
+  grid-area: brand;
+  order: unset;
+  flex: 0 0 auto;
+  min-width: 0;
+}
+
+.storefront-mp-shell .storefront-mp-search {
+  grid-area: search;
+  order: unset;
+  width: 100%;
+  max-width: none;
+}
+
+.storefront-mp-shell .mercado-mp-nav {
+  grid-area: nav;
+  order: unset;
+  margin-left: 0;
+  justify-content: flex-end;
 }
 
 .storefront-mp-shell .mercado-brand-mark {
-  @apply h-11 w-11 rounded-lg bg-white text-sm font-bold text-[var(--mo-emerald)] shadow-none;
+  @apply h-9 w-9 rounded-md bg-white text-sm font-bold text-[var(--mo-emerald)] shadow-none sm:h-10 sm:w-10;
 }
 
 .storefront-mp-shell .mercado-brand-mark--logo {
@@ -13858,22 +13919,19 @@ button.mercado-mp-card-btn {
 
 .storefront-mp-shell .mercado-title {
   font-family: var(--mo-sans);
-  @apply text-[15px] font-bold tracking-tight sm:text-base;
+  @apply text-[14px] font-semibold tracking-tight sm:text-[15px];
 }
 
 .storefront-mp-shell .mercado-mp-brand-kicker {
-  @apply text-[9px] font-semibold uppercase tracking-[0.16em];
-  color: color-mix(in srgb, var(--mo-header-fg) 72%, transparent);
+  display: none;
 }
 
-.storefront-mp-shell .mercado-mp-brand {
-  order: 1;
-  flex: 0 0 auto;
-}
-
-.storefront-mp-shell .mercado-mp-nav {
-  order: 2;
-  margin-left: auto;
+@media (min-width: 768px) {
+  .storefront-mp-shell .mercado-mp-brand-kicker {
+    display: block;
+    @apply text-[9px] font-semibold uppercase tracking-[0.16em];
+    color: color-mix(in srgb, var(--mo-header-fg) 72%, transparent);
+  }
 }
 
 .storefront-mp-shell .mercado-mp-nav .mercado-nav-link {
@@ -13891,84 +13949,112 @@ button.mercado-mp-card-btn {
   color: var(--mo-header-fg);
 }
 
+@media (max-width: 767px) {
+  .storefront-mp-shell .mercado-mp-nav {
+    display: none;
+  }
+
+  .storefront-mp-shell .mercado-mp-header-top--search {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas:
+      "brand"
+      "search";
+  }
+}
+
 .storefront-mp-search {
-  @apply flex min-w-0 items-center overflow-hidden rounded-sm bg-white shadow-[0_1px_2px_rgba(0,0,0,0.18)];
-  order: 3;
-  width: 100%;
+  @apply flex min-w-0 items-center overflow-hidden rounded-[2px] bg-white shadow-[0_1px_2px_rgba(0,0,0,0.2)];
 }
 
 .storefront-mp-search-icon {
-  @apply flex h-11 w-11 shrink-0 items-center justify-center text-zinc-400;
+  @apply hidden h-10 w-10 shrink-0 items-center justify-center text-zinc-400 sm:flex;
 }
 
 .storefront-mp-search-input {
-  @apply min-w-0 flex-1 border-0 bg-transparent py-2.5 text-[15px] text-zinc-900 outline-none placeholder:text-zinc-400;
+  @apply min-w-0 flex-1 border-0 bg-transparent px-3 py-2 text-[15px] text-zinc-900 outline-none placeholder:text-zinc-400 sm:px-0;
 }
 
 .storefront-mp-search-btn {
-  @apply inline-flex h-11 shrink-0 items-center justify-center rounded-none bg-[var(--mo-emerald-hover)] px-5 text-sm font-semibold text-white transition hover:brightness-95 disabled:opacity-60;
+  @apply inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-none bg-[var(--mo-emerald-hover)] text-[var(--mo-header-fg,#fff)] transition hover:brightness-95 disabled:opacity-60 sm:h-10 sm:w-auto sm:px-5;
+}
+
+.storefront-mp-search-btn-label {
+  @apply hidden text-sm font-semibold sm:inline;
+}
+
+.storefront-mp-search-btn-icon {
+  @apply sm:hidden;
 }
 
 @media (min-width: 768px) {
-  .storefront-mp-search {
-    order: 2;
-    width: auto;
-    flex: 1 1 0%;
-    max-width: 52rem;
+  .storefront-mp-shell .mercado-mp-header-top--search {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    grid-template-areas: "brand search nav";
   }
 
-  .storefront-mp-shell .mercado-mp-nav {
-    order: 3;
-    margin-left: 0;
+  .storefront-mp-search {
+    max-width: 52rem;
+    margin-inline: auto;
   }
 }
 
 .storefront-mp-lead {
-  @apply mx-auto max-w-7xl px-4 pt-3 text-sm leading-relaxed text-[var(--mo-muted)] sm:px-6 lg:px-8;
+  @apply mx-auto max-w-7xl px-4 pt-3 text-[13px] leading-relaxed text-zinc-600 sm:px-6 lg:px-8;
 }
 
 .storefront-cat-rail {
-  @apply mx-auto w-full max-w-7xl scroll-mt-24 px-4 py-5 sm:px-6 lg:px-8;
+  @apply mx-auto w-full max-w-7xl scroll-mt-24 px-3 py-3 sm:px-6 sm:py-4 lg:px-8;
+  background: #fff;
+  border-bottom: 1px solid #e6e6e6;
+}
+
+.storefront-mp-pin .storefront-cat-rail {
+  @apply border-b border-zinc-200 bg-white/95 py-2;
 }
 
 .storefront-cat-rail-head {
-  @apply mb-3;
+  @apply mb-2;
 }
 
 .storefront-cat-rail-head h2 {
-  @apply m-0 text-lg font-semibold tracking-tight text-[var(--mo-ink)];
+  @apply m-0 text-sm font-semibold tracking-tight text-zinc-900 sm:text-base;
 }
 
 .storefront-cat-rail-head p {
-  @apply m-0 mt-0.5 text-xs text-[var(--mo-muted)];
+  display: none;
 }
 
 .storefront-cat-rail-track {
-  @apply m-0 grid list-none grid-cols-3 gap-2 p-0 sm:grid-cols-4 sm:gap-3 md:grid-cols-6 lg:grid-cols-8;
+  @apply m-0 flex list-none gap-2 overflow-x-auto p-0 pb-1 [scrollbar-width:none];
+}
+
+.storefront-cat-rail-track::-webkit-scrollbar {
+  display: none;
 }
 
 .storefront-cat-rail-track > li {
-  @apply min-w-0;
+  @apply min-w-0 shrink-0;
 }
 
 .storefront-cat-card {
-  @apply flex h-full w-full cursor-pointer flex-col items-center gap-2 rounded-xl border border-zinc-200/90 bg-white px-2 py-3.5 text-center shadow-[0_1px_2px_rgba(0,0,0,0.04)] transition hover:-translate-y-0.5 hover:border-[var(--mo-emerald)] hover:shadow-md;
+  @apply flex w-[4.75rem] cursor-pointer flex-col items-center gap-1.5 rounded-lg border border-transparent bg-transparent px-1 py-1.5 text-center transition hover:bg-zinc-50 sm:w-20;
 }
 
 .storefront-cat-card.is-active {
-  @apply border-[var(--mo-emerald)] bg-[var(--mo-emerald-soft)] shadow-[0_8px_20px_color-mix(in_srgb,var(--mo-emerald)_18%,transparent)];
+  @apply border-zinc-200 bg-white shadow-[0_1px_2px_rgba(0,0,0,0.06)];
 }
 
 .storefront-cat-card-icon {
-  @apply flex h-12 w-12 items-center justify-center rounded-full bg-[var(--mo-emerald-soft)] text-[var(--mo-emerald)];
+  @apply flex h-11 w-11 items-center justify-center rounded-full bg-[#f5f5f5] text-zinc-700;
 }
 
 .storefront-cat-card.is-active .storefront-cat-card-icon {
-  @apply bg-[var(--mo-emerald)] text-white;
+  background: color-mix(in srgb, var(--sf-brand, var(--mo-emerald)) 14%, white);
+  color: var(--sf-brand, var(--mo-emerald));
 }
 
 .storefront-cat-card-label {
-  @apply line-clamp-2 text-[12px] font-semibold leading-tight text-[var(--mo-ink)];
+  @apply line-clamp-2 text-[11px] font-medium leading-tight text-zinc-700;
 }
 
 .storefront-brand-rail {
@@ -14031,8 +14117,20 @@ button.mercado-mp-card-btn {
   scroll-margin-top: 5.5rem;
 }
 
+.storefront-mp-results-head {
+  @apply mb-3 flex items-end justify-between gap-3;
+}
+
+.storefront-mp-results-title {
+  @apply m-0 text-base font-semibold tracking-tight text-zinc-900 sm:text-lg;
+}
+
+.storefront-mp-results-meta {
+  @apply m-0 mt-0.5 text-xs text-zinc-500;
+}
+
 .storefront-mp-filters-mobile {
-  @apply rounded-[1.5rem] border border-white/70 bg-[color-mix(in_srgb,var(--mo-surface)_82%,transparent)] shadow-sm;
+  @apply rounded-md border border-[#e6e6e6] bg-white shadow-none;
 }
 
 .storefront-mp-filters-toggle {
@@ -14047,6 +14145,10 @@ button.mercado-mp-card-btn {
   @apply border-0 bg-transparent p-4 pt-0 shadow-none;
 }
 
+.storefront-mp-shell .mercado-mp-grid {
+  @apply grid-cols-2 gap-2 sm:grid-cols-3 sm:gap-3 xl:grid-cols-5;
+}
+
 .storefront-mp-shell .mercado-mp-card-media {
   aspect-ratio: 1 / 1;
 }
@@ -14056,11 +14158,56 @@ button.mercado-mp-card-btn {
 }
 
 .storefront-mp-shell .mercado-mp-card-price-hint {
-  @apply ml-0;
+  @apply ml-0 text-[11px] font-normal text-zinc-500;
 }
 
 .storefront-mp-shell .mercado-mp-card {
-  @apply rounded-md border-zinc-200/90 shadow-[0_1px_2px_rgba(0,0,0,0.06)] hover:rounded-md hover:-translate-y-0 hover:shadow-[0_8px_20px_rgba(0,0,0,0.1)];
+  @apply rounded-[4px] border border-[#e6e6e6] bg-white shadow-none backdrop-blur-none transition-shadow duration-150 hover:-translate-y-0 hover:border-[#d8d8d8] hover:shadow-[0_1px_2px_rgba(0,0,0,0.08)];
+}
+
+.storefront-mp-shell .mercado-mp-card-body {
+  @apply gap-1 p-3;
+  display: flex;
+  flex-direction: column;
+}
+
+.storefront-mp-shell .mercado-mp-card-pricing {
+  order: -1;
+  @apply mt-0;
+}
+
+.storefront-mp-shell .mercado-mp-card-title {
+  font-family: var(--mo-sans);
+  @apply text-[13px] font-normal leading-snug tracking-normal text-zinc-600;
+}
+
+.storefront-mp-shell .mercado-mp-card-title:hover,
+.storefront-mp-shell .group:hover .mercado-mp-card-title {
+  @apply text-zinc-800;
+}
+
+.storefront-mp-shell .mercado-mp-card-price {
+  font-family: var(--mo-sans);
+  @apply text-[22px] font-normal tracking-tight text-zinc-900;
+}
+
+.storefront-mp-shell .mercado-mp-card-price-label,
+.storefront-mp-shell .mercado-mp-card-actions,
+.storefront-mp-shell .mercado-mp-status-stock,
+.storefront-mp-shell .mercado-mp-card-supplier {
+  display: none;
+}
+
+.storefront-mp-shell .mercado-mp-card-brand {
+  @apply text-[11px] font-normal uppercase tracking-normal text-zinc-500;
+}
+
+.storefront-mp-shell .mercado-mp-status {
+  @apply rounded-sm uppercase tracking-normal;
+}
+
+.storefront-mp-empty {
+  @apply rounded-md border-[#e6e6e6] bg-white shadow-none;
 }
 
 .mercado-mp-card-price-hint {
@@ -14093,6 +14240,10 @@ button.mercado-mp-card-btn {
   }
 }
 
+.design-studio-phone--moriche .mercado-nav-label {
+  display: none !important;
+}
+
 .storefront-moriche-shell .mercado-hero,
 .storefront-moriche-shell .mercado-hero-search,
 .storefront-moriche-shell .mercado-hero-collections,
@@ -14118,7 +14269,7 @@ button.mercado-mp-card-btn {
 }
 
 .design-studio-phone--moriche .mercado-nav-label {
-  @apply inline;
+  display: none !important;
 }
 
 .design-studio-phone--moriche .mercado-hero-title {
@@ -14132,14 +14283,40 @@ button.mercado-mp-card-btn {
 
 .design-studio-phone--moriche .storefront-mp-search {
   @apply w-full max-w-none;
+  grid-area: search;
 }
 
-.design-studio-phone--moriche .mercado-mp-header-top--search {
-  @apply flex-wrap;
+.design-studio-phone--moriche .storefront-mp-shell .mercado-mp-header-top--search {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-areas:
+    "brand"
+    "search";
+}
+
+.design-studio-phone--moriche .storefront-mp-shell .mercado-mp-nav {
+  display: none;
+}
+
+.design-studio-phone--moriche .storefront-mp-search-btn-label {
+  display: none;
+}
+
+.design-studio-phone--moriche .storefront-mp-search-btn-icon {
+  display: block;
+}
+
+.design-studio-phone--moriche .storefront-mp-search-icon {
+  display: none;
+}
+
+.design-studio-phone--moriche .storefront-mp-search-btn {
+  width: 2.5rem;
+  padding-inline: 0;
 }
 
 .design-studio-phone--moriche .storefront-cat-rail-track {
-  @apply grid-cols-3 gap-2;
+  @apply flex;
 }
 
 .design-studio-preview-frame--moriche .design-reference-badge,

@@ -1,6 +1,8 @@
 "use client";
 
+import { useCallback, useRef } from "react";
 import { Search } from "lucide-react";
+import { useRegisterCatalogSearchFocus } from "@/components/catalog-transactional/CatalogShellNavigation";
 
 interface StorefrontMarketplaceSearchProps {
   storeName: string;
@@ -18,6 +20,17 @@ export function StorefrontMarketplaceSearch({
   onSubmit,
   pending = false,
 }: StorefrontMarketplaceSearchProps) {
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  const focusInput = useCallback(() => {
+    const input = inputRef.current;
+    if (!input) return;
+    input.scrollIntoView({ behavior: "smooth", block: "center" });
+    window.setTimeout(() => input.focus({ preventScroll: true }), 160);
+  }, []);
+
+  useRegisterCatalogSearchFocus(focusInput);
+
   return (
     <form
       className="storefront-mp-search"
@@ -34,6 +47,8 @@ export function StorefrontMarketplaceSearch({
         <Search className="h-5 w-5" />
       </span>
       <input
+        ref={inputRef}
+        id="catalog-browse-search"
         type="search"
         value={value}
         onChange={(event) => onChange(event.target.value)}
@@ -49,7 +64,8 @@ export function StorefrontMarketplaceSearch({
         className="storefront-mp-search-btn"
         disabled={pending}
       >
-        Buscar
+        <Search className="storefront-mp-search-btn-icon h-5 w-5" aria-hidden="true" />
+        <span className="storefront-mp-search-btn-label">Buscar</span>
       </button>
     </form>
   );

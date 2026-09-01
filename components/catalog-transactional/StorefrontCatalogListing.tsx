@@ -218,10 +218,10 @@ export function StorefrontCatalogListing({
               priceHint={rateLabel}
               formatPriceSecondary={priceSecondary}
               ctaLabel="Ver producto"
-              metaInStock="Listo para pedir"
-              metaOutOfStock="Sin stock por ahora"
-              emptyTitle="Nada en esta vitrina"
-              emptyDescription="Probá otra categoría, marca o limpiá la búsqueda."
+              metaInStock="Envío a todo el país"
+              metaOutOfStock="Sin stock"
+              emptyTitle="No hay productos"
+              emptyDescription="Prueba otra categoría, marca o limpia la búsqueda."
             />
             {extraAfterGrid}
           </div>
@@ -253,29 +253,14 @@ export function StorefrontCatalogListing({
 
   return (
     <div id="storefront-resultados" className="storefront-mp-listing">
-      <div className="mercado-mp-results-head">
+      <div className="mercado-mp-results-head storefront-mp-results-head">
         <div>
-          <p className="mercado-section-label">
-            {isDepartmentView
-              ? browse.brand
-                ? "Escaparate de marca"
-                : "Búsqueda y departamentos"
-              : "Vitrina"}
-          </p>
-          <h2 className="mercado-heading text-xl sm:text-2xl">{resultsTitle}</h2>
-          <p className="mercado-subheading mt-1">
-            {rateLabel
-              ? `Precios en USD · ${rateLabel}`
-              : "Precios en USD · Compra protegida"}
+          <h2 className="storefront-mp-results-title">{resultsTitle}</h2>
+          <p className="storefront-mp-results-meta">
+            {browse.totalCount} producto{browse.totalCount === 1 ? "" : "s"}
+            {rateLabel ? ` · ${rateLabel}` : ""}
           </p>
         </div>
-        <p className="mercado-mp-results-count" aria-live="polite">
-          <strong>{browse.totalCount}</strong>
-          <span>
-            {" "}
-            producto{browse.totalCount === 1 ? "" : "s"}
-          </span>
-        </p>
       </div>
 
       {isDepartmentView ? (

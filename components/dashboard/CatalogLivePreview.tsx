@@ -8,6 +8,7 @@ import { PromotionProvider } from "@/components/catalog-transactional/PromotionP
 import { TransactionalCatalog } from "@/components/catalog-transactional/TransactionalCatalog";
 import { CatalogChatWidget } from "@/components/catalog-transactional/CatalogChatWidget";
 import { CatalogWhatsAppQuickChat } from "@/components/catalog-transactional/CatalogWhatsAppQuickChat";
+import { CatalogTabBar } from "@/components/catalog-transactional/CatalogTabBar";
 import { CatalogShellNavigationProvider } from "@/components/catalog-transactional/CatalogShellNavigation";
 import { CatalogPreviewPortalProvider } from "@/components/dashboard/CatalogPreviewPortalContext";
 import { CustomerAccountModeProvider } from "@/components/catalog-transactional/CustomerAccountModeContext";
@@ -92,80 +93,82 @@ export function CatalogLivePreview({
     "";
 
   const content = (
-    <PromotionProvider value={{ guestBanner: null, autoApply: null }}>
-      <CartProvider
-        storeSlug={store.slug}
-        storeId={store.id}
-        userId={null}
-        isCustomer={false}
-        wholesaleEnabled={settings.catalogCurrency.wholesaleEnabled}
-      >
-        <CatalogPreviewPortalProvider
-          className={cn(
-            "catalog-live-preview-root txn-catalog-root",
-            interactive && "catalog-live-preview-root--interactive",
-            getCatalogRubroClass(store.rubro_tienda),
-            themeClasses,
-          )}
-          style={themeStyle}
-        >
-          <CatalogStoreBrandingProvider
-            logoUrl={
-              store.pwa_icon_192_url ??
-              store.pwa_icon_512_url ??
-              store.logo_url ??
-              null
-            }
-            storeName={store.name}
-          >
-            <div className="catalog-live-preview-scroll">
-              <TransactionalCatalog
-                store={store}
-                products={products}
-                exchangeRate={exchangeRateRow}
-                purchaseInfo={settings.purchaseInfo}
-                catalogDesign={settings.catalogDesign}
-                catalogCurrency={settings.catalogCurrency}
-                previewMode
-                enableCart={interactive}
-                referenceMode={referenceMode}
-                showReferenceCta={showReferenceCta}
-              />
-            </div>
-            {interactive && assistantEnabled ? (
-              <CatalogChatWidget
-                storeSlug={store.slug}
-                storeName={store.name}
-                merchantName={store.name}
-                whatsappPhone={phone || null}
-                demoMode={assistantDemoMode}
-              />
-            ) : null}
-            {interactive && phone ? (
-              <CatalogWhatsAppQuickChat
-                storeName={store.name}
-                whatsappPhone={phone}
-                welcomeMessage={
-                  whatsappChatWelcome ??
-                  settings.purchaseInfo.whatsappChatWelcome
-                }
-              />
-            ) : null}
-          </CatalogStoreBrandingProvider>
-        </CatalogPreviewPortalProvider>
-      </CartProvider>
-    </PromotionProvider>
-  );
-
-  if (!interactive) {
-    return content;
-  }
-
-  return (
     <CustomerAccountModeProvider accountMode="hibrido">
       <CatalogShellNavigationProvider storeSlug={store.slug}>
-        {content}
+        <PromotionProvider value={{ guestBanner: null, autoApply: null }}>
+          <CartProvider
+            storeSlug={store.slug}
+            storeId={store.id}
+            userId={null}
+            isCustomer={false}
+            wholesaleEnabled={settings.catalogCurrency.wholesaleEnabled}
+          >
+            <CatalogPreviewPortalProvider
+              className={cn(
+                "catalog-live-preview-root txn-catalog-root",
+                interactive && "catalog-live-preview-root--interactive",
+                getCatalogRubroClass(store.rubro_tienda),
+                themeClasses,
+              )}
+              style={themeStyle}
+            >
+              <CatalogStoreBrandingProvider
+                logoUrl={
+                  store.pwa_icon_192_url ??
+                  store.pwa_icon_512_url ??
+                  store.logo_url ??
+                  null
+                }
+                storeName={store.name}
+              >
+                <div className="catalog-live-preview-scroll">
+                  <TransactionalCatalog
+                    store={store}
+                    products={products}
+                    exchangeRate={exchangeRateRow}
+                    purchaseInfo={settings.purchaseInfo}
+                    catalogDesign={settings.catalogDesign}
+                    catalogCurrency={settings.catalogCurrency}
+                    previewMode
+                    enableCart={interactive}
+                    referenceMode={referenceMode}
+                    showReferenceCta={showReferenceCta}
+                  />
+                </div>
+                <div
+                  className={cn(
+                    "catalog-live-preview-tab-bar",
+                    interactive && "catalog-live-preview-tab-bar--interactive",
+                  )}
+                >
+                  <CatalogTabBar storeSlug={store.slug} />
+                </div>
+                {interactive && assistantEnabled ? (
+                  <CatalogChatWidget
+                    storeSlug={store.slug}
+                    storeName={store.name}
+                    merchantName={store.name}
+                    whatsappPhone={phone || null}
+                    demoMode={assistantDemoMode}
+                  />
+                ) : null}
+                {interactive && phone ? (
+                  <CatalogWhatsAppQuickChat
+                    storeName={store.name}
+                    whatsappPhone={phone}
+                    welcomeMessage={
+                      whatsappChatWelcome ??
+                      settings.purchaseInfo.whatsappChatWelcome
+                    }
+                  />
+                ) : null}
+              </CatalogStoreBrandingProvider>
+            </CatalogPreviewPortalProvider>
+          </CartProvider>
+        </PromotionProvider>
       </CatalogShellNavigationProvider>
     </CustomerAccountModeProvider>
   );
+
+  return content;
 }

@@ -47,8 +47,7 @@ interface StorefrontCategoryRailProps {
 }
 
 /**
- * Categorías visuales tipo marketplace: grilla de tarjetas con icono.
- * Un clic filtra el catálogo del dropshipper.
+ * Carrusel de categorías estilo marketplace (icono + etiqueta, scroll horizontal).
  */
 export function StorefrontCategoryRail({
   categories,
@@ -65,7 +64,6 @@ export function StorefrontCategoryRail({
     >
       <div className="storefront-cat-rail-head">
         <h2 id="storefront-cat-rail-title">Categorías</h2>
-        <p>Elegí un departamento y filtrá el catálogo al instante</p>
       </div>
       <ul className="storefront-cat-rail-track">
         <li>
@@ -78,7 +76,7 @@ export function StorefrontCategoryRail({
             onClick={() => onSelectCategory(null)}
           >
             <span className="storefront-cat-card-icon" aria-hidden="true">
-              <LayoutGrid className="h-6 w-6" />
+              <LayoutGrid className="h-5 w-5" />
             </span>
             <span className="storefront-cat-card-label">Todas</span>
           </button>
@@ -96,7 +94,7 @@ export function StorefrontCategoryRail({
                 onClick={() => onSelectCategory(category.slug)}
               >
                 <span className="storefront-cat-card-icon" aria-hidden="true">
-                  <Icon className="h-6 w-6" />
+                  <Icon className="h-5 w-5" />
                 </span>
                 <span className="storefront-cat-card-label">{category.name}</span>
               </button>

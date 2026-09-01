@@ -30,7 +30,7 @@ export function buildMercadoBrandCssVars(
     ["--mo-warm"]: `color-mix(in srgb, ${primary} 28%, #c4a574)`,
     ["--mo-warm-soft"]: `color-mix(in srgb, ${primary} 10%, #f4ebe1)`,
     ["--mo-gold"]: `color-mix(in srgb, ${primary} 22%, #9a7b4f)`,
-    ["--mo-page"]: "#ededed",
+    ["--mo-page"]: "#ebebeb",
     ["--sf-brand"]: primary,
     ["--txn-primary"]: primary,
   } as CSSProperties;
