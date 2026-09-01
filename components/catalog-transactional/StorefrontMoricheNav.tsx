@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
+  LayoutGrid,
   ShoppingBag,
   ShoppingCart,
   UserPlus,
@@ -11,6 +12,7 @@ import {
 import { cn } from "@/lib/cn";
 import { buildCustomerRegisterPath } from "@/lib/customers/middleware-access";
 import {
+  getStoreCatalogBasePath,
   getStoreCustomerAccountPath,
 } from "@/lib/store-host";
 import { useCartOptional } from "@/components/catalog-transactional/CartProvider";
@@ -24,8 +26,8 @@ interface StorefrontMoricheNavProps {
 }
 
 /**
- * Accesos superiores estilo Mercado Libre / Mercado Oculto:
- * Pedidos · Carrito · Cuenta | Entrar + Crear cuenta
+ * Accesos superiores estilo Mercado Libre:
+ * Categorías · Pedidos · Carrito · Cuenta | Entrar + Crear cuenta
  */
 export function StorefrontMoricheNav({
   storeSlug,
@@ -37,6 +39,7 @@ export function StorefrontMoricheNav({
   const shellNav = useCatalogShellNavigationOptional();
   const customerSession = useCustomerSessionOptional();
 
+  const catalogHref = getStoreCatalogBasePath(storeSlug, { pathname });
   const accountHref = getStoreCustomerAccountPath(storeSlug, "cuenta", {
     pathname,
   });
@@ -53,6 +56,15 @@ export function StorefrontMoricheNav({
     pathname === profileHref ||
     pathname.startsWith(`${profileHref}/`);
 
+  function goToCategories() {
+    const target = document.getElementById("storefront-categorias");
+    if (target) {
+      target.scrollIntoView({ behavior: "smooth", block: "start" });
+      return;
+    }
+    router.push(`${catalogHref}#storefront-categorias`);
+  }
+
   function goToOrders() {
     if (isCustomer) {
       router.push(accountHref);
@@ -67,6 +79,15 @@ export function StorefrontMoricheNav({
 
   return (
     <>
+      <button
+        type="button"
+        className="mercado-nav-link"
+        onClick={goToCategories}
+      >
+        <LayoutGrid className="h-4 w-4" aria-hidden="true" />
+        <span className="mercado-nav-label">Categorías</span>
+      </button>
+
       <button
         type="button"
         className={cn("mercado-nav-link", onAccount && "mercado-nav-link-active")}

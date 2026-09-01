@@ -47,7 +47,7 @@ interface StorefrontCategoryRailProps {
 }
 
 /**
- * Categorías visuales tipo marketplace: tarjetas deslizables con icono.
+ * Categorías visuales tipo marketplace: grilla de tarjetas con icono.
  * Un clic filtra el catálogo del dropshipper.
  */
 export function StorefrontCategoryRail({
@@ -59,12 +59,13 @@ export function StorefrontCategoryRail({
 
   return (
     <section
+      id="storefront-categorias"
       className="storefront-cat-rail"
       aria-labelledby="storefront-cat-rail-title"
     >
       <div className="storefront-cat-rail-head">
         <h2 id="storefront-cat-rail-title">Categorías</h2>
-        <p>Filtrá por departamento con un clic</p>
+        <p>Elegí un departamento y filtrá el catálogo al instante</p>
       </div>
       <ul className="storefront-cat-rail-track">
         <li>
