@@ -33,6 +33,10 @@ import { reserveOrderInventory } from "@/lib/orders/order-inventory";
 import { enrichOrderItemsWithStockUnits } from "@/lib/orders/stationery-inventory";
 import { calculatePromotionDiscountUsd } from "@/lib/promotions/discount";
 import { validateGiftCardCode } from "@/lib/gift-cards/actions";
+import {
+  applyGiftCardToWallet,
+  getCustomerStoreCredit,
+} from "@/lib/gift-cards/wallet-actions";
 import { isPlatformAdminOwnedStore } from "@/lib/gift-cards/admin-store";
 import { giftCardApplyAmount, normalizeGiftCardCode } from "@/lib/gift-cards/code";
 import { GIFT_CARD_STORE_DENIED_MESSAGE } from "@/lib/gift-cards/types";
@@ -76,6 +80,8 @@ export async function submitTransactionalOrder(
   const giftCardCodeRaw = normalizeGiftCardCode(
     String(formData.get("giftCardCode") ?? ""),
   );
+  const skipStoreCredit =
+    String(formData.get("skipStoreCredit") ?? "").trim() === "1";
   const locationIdRaw = String(formData.get("locationId") ?? "").trim();
   const fulfillmentTypeRaw = String(formData.get("fulfillmentType") ?? "").trim();
   const deliveryAddressRaw = String(formData.get("deliveryAddress") ?? "").trim();
@@ -312,28 +318,50 @@ export async function submitTransactionalOrder(
   const orderTotalUsd = merchandiseUsd + shippingQuote.chargeUsd;
 
   let giftCardUsd = 0;
+  let storeCreditUsd = 0;
+  const adminStore = await isPlatformAdminOwnedStore(store.id, store.owner_id);
+
   if (giftCardCodeRaw) {
-    const adminStore = await isPlatformAdminOwnedStore(
-      store.id,
-      store.owner_id,
-    );
     if (!adminStore) {
       return { error: GIFT_CARD_STORE_DENIED_MESSAGE };
     }
-    const giftValidation = await validateGiftCardCode(storeSlug, giftCardCodeRaw);
-    if (giftValidation.error || !giftValidation.code) {
-      return { error: giftValidation.error ?? "Tarjeta de regalo no válida." };
-    }
-    giftCardUsd = giftCardApplyAmount(
-      giftValidation.currentBalanceUsd ?? 0,
-      orderTotalUsd,
-    );
-    if (giftCardUsd <= 0) {
-      return { error: "Esta tarjeta de regalo no tiene saldo." };
+    if (customerUserId) {
+      const walletResult = await applyGiftCardToWallet(storeSlug, giftCardCodeRaw);
+      if (walletResult.error) {
+        return { error: walletResult.error };
+      }
+    } else {
+      const giftValidation = await validateGiftCardCode(
+        storeSlug,
+        giftCardCodeRaw,
+      );
+      if (giftValidation.error || !giftValidation.code) {
+        return {
+          error: giftValidation.error ?? "Tarjeta de regalo no válida.",
+        };
+      }
+      giftCardUsd = giftCardApplyAmount(
+        giftValidation.currentBalanceUsd ?? 0,
+        orderTotalUsd,
+      );
+      if (giftCardUsd <= 0) {
+        return { error: "Esta tarjeta de regalo no tiene saldo." };
+      }
     }
   }
 
-  const amountDueUsd = Math.max(0, orderTotalUsd - giftCardUsd);
+  if (customerUserId && adminStore && !skipStoreCredit) {
+    const credit = await getCustomerStoreCredit(storeSlug);
+    if (credit.error) {
+      return { error: credit.error };
+    }
+    storeCreditUsd = giftCardApplyAmount(
+      credit.balanceUsd ?? 0,
+      Math.max(0, orderTotalUsd - giftCardUsd),
+    );
+  }
+
+  const amountDueUsd = Math.max(0, orderTotalUsd - giftCardUsd - storeCreditUsd);
 
   const orderId = crypto.randomUUID();
 
@@ -432,6 +460,7 @@ export async function submitTransactionalOrder(
     fulfillment_type: fulfillmentType,
     gift_card_code: giftCardUsd > 0 ? giftCardCodeRaw : null,
     gift_card_usd: giftCardUsd > 0 ? giftCardUsd : null,
+    store_credit_usd: storeCreditUsd > 0 ? storeCreditUsd : null,
     shipping_method: shippingMethodRaw || null,
     shipping_branch_code: isNationalCarrierKey(shippingMethodRaw)
       ? shippingBranchCode
@@ -569,9 +598,49 @@ export async function submitTransactionalOrder(
     }
   }
 
+  if (storeCreditUsd > 0 && customerUserId) {
+    const { data: creditRedeem, error: creditRedeemError } = await admin.rpc(
+      "apply_store_credit_for_order" as never,
+      {
+        p_store_id: store.id,
+        p_user_id: customerUserId,
+        p_order_id: orderId,
+        p_amount: storeCreditUsd,
+      } as never,
+    );
+
+    const failCredit = async (message: string) => {
+      if (dropshipStock.consumed.length > 0) {
+        await restoreDropshipStockForOrderLines(
+          admin,
+          enrichedOrderItems,
+          orderId,
+        );
+      }
+      await admin.from("orders").delete().eq("id", orderId);
+      return { error: message };
+    };
+
+    if (creditRedeemError) {
+      return failCredit(creditRedeemError.message);
+    }
+
+    const redeemedCredit = creditRedeem as {
+      error?: string;
+      success?: boolean;
+    } | null;
+    if (!redeemedCredit || redeemedCredit.error || !redeemedCredit.success) {
+      return failCredit(
+        redeemedCredit?.error ?? "No se pudo aplicar el saldo a favor.",
+      );
+    }
+  }
+
   const paymentLabel =
     amountDueUsd <= 0
-      ? "Tarjeta de regalo"
+      ? storeCreditUsd > 0
+        ? "Saldo a favor"
+        : "Tarjeta de regalo"
       : paymentMethodRaw
         ? getPaymentMethod(paymentMethodRaw as PaymentMethodKey).label
         : undefined;
@@ -628,6 +697,7 @@ export async function submitTransactionalOrder(
     promotionLabel,
     giftCardUsd: giftCardUsd > 0 ? giftCardUsd : undefined,
     giftCardCode: giftCardUsd > 0 ? giftCardCodeRaw : undefined,
+    storeCreditUsd: storeCreditUsd > 0 ? storeCreditUsd : undefined,
     locationName: resolvedLocationName ?? undefined,
     locationAddress: resolvedLocationAddress ?? undefined,
     deliveryAddress: resolvedFulfillmentAddress ?? undefined,

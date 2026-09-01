@@ -19,7 +19,18 @@ export interface GiftCardRedemption {
   store_id: string;
   order_id: string | null;
   amount_usd: number;
+  user_id?: string | null;
+  kind?: "order" | "wallet";
   created_at: string;
+}
+
+export interface CustomerStoreCredit {
+  id: string;
+  store_id: string;
+  user_id: string;
+  balance_usd: number;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface AppliedGiftCard {

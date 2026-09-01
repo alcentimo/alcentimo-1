@@ -34,6 +34,7 @@ export interface TransactionalOrderWhatsAppMessageInput {
   promotionLabel?: string;
   giftCardUsd?: number;
   giftCardCode?: string;
+  storeCreditUsd?: number;
   locationName?: string;
   locationAddress?: string;
   deliveryAddress?: string;
@@ -152,6 +153,12 @@ export function buildTransactionalOrderWhatsAppMessage(
   if (input.giftCardUsd != null && input.giftCardUsd > 0) {
     body.push(
       `🎁 Tarjeta de regalo${input.giftCardCode ? ` (${sanitizeCustomerText(input.giftCardCode)})` : ""}: -${formatUsd(input.giftCardUsd)}`,
+    );
+  }
+
+  if (input.storeCreditUsd != null && input.storeCreditUsd > 0) {
+    body.push(
+      `🎁 Saldo a favor: -${formatUsd(input.storeCreditUsd)}`,
     );
   }
 

@@ -21,6 +21,7 @@ import { getStoreManifestTheme } from "@/lib/pwa/get-store-manifest-theme";
 import { GiftCardStorefrontProvider } from "@/components/catalog-transactional/GiftCardStorefrontProvider";
 import { getPublicStoreBySlug } from "@/lib/stores";
 import { isPlatformAdminOwnedStore } from "@/lib/gift-cards/admin-store";
+import { getCustomerStoreCredit } from "@/lib/gift-cards/wallet-actions";
 import { getOpenAiApiKey } from "@/lib/env/server";
 import { getPublicStoreSettingsConfig } from "@/lib/store-settings/get-public-store-settings";
 import { getStorefrontSupportBranding } from "@/lib/catalog/get-storefront-support-branding";
@@ -120,6 +121,10 @@ export default async function TransactionalCatalogLayout({
   const giftCardsEnabled = store
     ? await isPlatformAdminOwnedStore(store.id, store.owner_id)
     : false;
+  const storeCreditUsd =
+    giftCardsEnabled && customerSession.userId
+      ? ((await getCustomerStoreCredit(storeSlug)).balanceUsd ?? 0)
+      : 0;
   const promotionContext = await getCatalogPromotionContext(
     storeSlug,
     customerSession.isCustomer,
@@ -184,7 +189,10 @@ export default async function TransactionalCatalogLayout({
         wholesaleEnabled={wholesaleEnabled}
       >
         <PromotionProvider value={promotionContext}>
-          <GiftCardStorefrontProvider enabled={giftCardsEnabled}>
+          <GiftCardStorefrontProvider
+            enabled={giftCardsEnabled}
+            initialStoreCreditUsd={storeCreditUsd}
+          >
           <CustomerSessionProvider
             storeSlug={storeSlug}
             initial={{

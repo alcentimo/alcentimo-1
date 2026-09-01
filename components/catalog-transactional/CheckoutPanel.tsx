@@ -34,8 +34,9 @@ import {
 } from "@/lib/promotions/actions";
 import { calculatePromotionDiscountUsd } from "@/lib/promotions/discount";
 import type { AppliedPromotion } from "@/lib/promotions/types";
-import { useGiftCardsEnabled } from "@/components/catalog-transactional/GiftCardStorefrontProvider";
+import { useGiftCardStorefront } from "@/components/catalog-transactional/GiftCardStorefrontProvider";
 import { validateGiftCardCode } from "@/lib/gift-cards/actions";
+import { applyGiftCardToWallet } from "@/lib/gift-cards/wallet-actions";
 import { giftCardApplyAmount } from "@/lib/gift-cards/code";
 import type { AppliedGiftCard } from "@/lib/gift-cards/types";
 import {
@@ -144,7 +145,9 @@ export function CheckoutPanel({
   const { items, subtotalUsd, updateQuantity, removeItem, clearCart } =
     useCart();
   const { autoApply } = usePromotionContext();
-  const giftCardsEnabled = useGiftCardsEnabled();
+  const giftCardStorefront = useGiftCardStorefront();
+  const giftCardsEnabled = giftCardStorefront.enabled;
+  const walletCreditUsd = giftCardStorefront.storeCreditUsd;
   const customerSession = useCustomerSessionOptional();
   const { accountsEnabled } = useCustomerAccountMode();
   const { mode: fulfillmentModeFromContext, multiLocation } = useCatalogFulfillment();
@@ -182,6 +185,7 @@ export function CheckoutPanel({
     useState<AppliedGiftCard | null>(null);
   const [giftCardError, setGiftCardError] = useState<string | null>(null);
   const [giftCardPending, startGiftCardTransition] = useTransition();
+  const [useStoreCredit, setUseStoreCredit] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
   const [touchedFields, setTouchedFields] = useState<
@@ -411,10 +415,19 @@ export function CheckoutPanel({
   );
 
   const preGiftTotalUsd = merchandiseUsd + shippingQuote.chargeUsd;
-  const giftCardUsd = appliedGiftCard
+  const guestGiftUsd = appliedGiftCard
     ? giftCardApplyAmount(appliedGiftCard.currentBalanceUsd, preGiftTotalUsd)
     : 0;
-  const totalUsd = Math.max(0, preGiftTotalUsd - giftCardUsd);
+  const afterGuestUsd = Math.max(0, preGiftTotalUsd - guestGiftUsd);
+  const loggedInForWallet = Boolean(
+    customerSession?.isAuthenticated || customerSession?.isCustomer,
+  );
+  const storeCreditApplyUsd =
+    giftCardsEnabled && loggedInForWallet && useStoreCredit
+      ? giftCardApplyAmount(walletCreditUsd, afterGuestUsd)
+      : 0;
+  const giftCardUsd = guestGiftUsd;
+  const totalUsd = Math.max(0, afterGuestUsd - storeCreditApplyUsd);
   const totalLocal =
     showBsConversion && exchangeRate && exchangeRate > 0
       ? totalUsd * exchangeRate
@@ -469,6 +482,19 @@ export function CheckoutPanel({
   function handleApplyGiftCard() {
     setGiftCardError(null);
     startGiftCardTransition(async () => {
+      if (loggedInForWallet) {
+        const result = await applyGiftCardToWallet(storeSlug, giftCardInput);
+        if (result.error || result.balanceUsd == null) {
+          setGiftCardError(result.error ?? "Tarjeta de regalo no válida.");
+          return;
+        }
+        giftCardStorefront.setStoreCreditUsd(result.balanceUsd);
+        setUseStoreCredit(true);
+        setGiftCardInput("");
+        setAppliedGiftCard(null);
+        return;
+      }
+
       const result = await validateGiftCardCode(storeSlug, giftCardInput);
       if (result.error || !result.code || !(result.currentBalanceUsd ?? 0)) {
         setAppliedGiftCard(null);
@@ -785,6 +811,11 @@ export function CheckoutPanel({
     }
     if (appliedGiftCard) {
       formData.set("giftCardCode", appliedGiftCard.code);
+    } else if (loggedInForWallet && giftCardInput.trim()) {
+      formData.set("giftCardCode", giftCardInput.trim());
+    }
+    if (loggedInForWallet && !useStoreCredit) {
+      formData.set("skipStoreCredit", "1");
     }
     if (selectedShipping) formData.set("shippingMethod", selectedShipping);
     if (selectedPayment) formData.set("paymentMethod", selectedPayment);
@@ -1071,8 +1102,33 @@ export function CheckoutPanel({
                 {giftCardsEnabled ? (
                   <div className="txn-checkout-promo mt-4">
                     <p className="txn-checkout-section-title">
-                      Tarjeta de regalo
+                      Tarjeta de regalo / saldo a favor
                     </p>
+                    {loggedInForWallet && walletCreditUsd > 0 ? (
+                      <div className="txn-checkout-promo-applied mb-3">
+                        <div>
+                          <p className="font-medium text-emerald-800 dark:text-emerald-300">
+                            Saldo en tu cuenta
+                          </p>
+                          <p className="text-xs text-emerald-700/80 dark:text-emerald-400/80">
+                            {formatUsd(walletCreditUsd)} disponibles
+                            {useStoreCredit && storeCreditApplyUsd > 0
+                              ? ` · se aplican ${formatUsd(storeCreditApplyUsd)} a este pedido`
+                              : useStoreCredit
+                                ? ""
+                                : " · no se usará en este pedido"}
+                          </p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setUseStoreCredit((value) => !value)}
+                          className="text-xs font-medium text-zinc-500 hover:text-zinc-800"
+                        >
+                          {useStoreCredit ? "No usar" : "Usar saldo"}
+                        </button>
+                      </div>
+                    ) : null}
+
                     {appliedGiftCard ? (
                       <div className="txn-checkout-promo-applied">
                         <div>
@@ -1102,7 +1158,11 @@ export function CheckoutPanel({
                           onChange={(event) =>
                             setGiftCardInput(event.target.value.toUpperCase())
                           }
-                          placeholder="Código de tarjeta"
+                          placeholder={
+                            loggedInForWallet
+                              ? "Añadir código a tu cuenta"
+                              : "Código de tarjeta"
+                          }
                           className="txn-input flex-1 uppercase"
                           disabled={giftCardPending}
                           autoComplete="off"
@@ -1113,13 +1173,30 @@ export function CheckoutPanel({
                           disabled={!giftCardInput.trim() || giftCardPending}
                           className="txn-promo-apply-btn"
                         >
-                          {giftCardPending ? "…" : "Aplicar"}
+                          {giftCardPending ? "…" : "Cargar"}
                         </button>
                       </div>
                     )}
                     {giftCardError ? (
                       <p className="mt-1 text-xs text-red-600">{giftCardError}</p>
                     ) : null}
+                    {loggedInForWallet ? (
+                      <p className="mt-1 text-xs text-zinc-500">
+                        El código se abona a tu perfil y se descuenta
+                        automáticamente en este y los siguientes pedidos.{" "}
+                        <Link
+                          href={getStoreCustomerAccountPath(storeSlug, "perfil")}
+                          className="font-medium text-teal-700 hover:underline"
+                        >
+                          Ver saldo en mi perfil
+                        </Link>
+                      </p>
+                    ) : (
+                      <p className="mt-1 text-xs text-zinc-500">
+                        Inicia sesión para guardar el saldo en tu cuenta y no
+                        tener que ingresar el código en cada compra.
+                      </p>
+                    )}
                   </div>
                 ) : null}
               </section>
@@ -1609,6 +1686,7 @@ export function CheckoutPanel({
 
             {(discountUsd > 0 && appliedPromotion) ||
             giftCardUsd > 0 ||
+            storeCreditApplyUsd > 0 ||
             (checkoutStep >= 3 &&
               ((selectedShipping && shippingQuote.appliesPaidShipping) ||
                 (shippingHint && selectedShipping))) ? (
@@ -1634,6 +1712,12 @@ export function CheckoutPanel({
                   <div className="txn-checkout-total txn-checkout-total-discount !border-0 !px-0 !py-0">
                     <span>Tarjeta de regalo ({appliedGiftCard.code})</span>
                     <strong>-{formatUsd(giftCardUsd)}</strong>
+                  </div>
+                ) : null}
+                {storeCreditApplyUsd > 0 ? (
+                  <div className="txn-checkout-total txn-checkout-total-discount !border-0 !px-0 !py-0">
+                    <span>Saldo a favor</span>
+                    <strong>-{formatUsd(storeCreditApplyUsd)}</strong>
                   </div>
                 ) : null}
                 {checkoutStep >= 3 &&
