@@ -13,6 +13,7 @@ import {
   GIFT_CARD_VIRTUAL_STOCK,
 } from "@/lib/gift-cards/catalog";
 import { upsertVariantLocationStock } from "@/lib/locations/sync-stock";
+import type { OrderLineItem } from "@/lib/orders/types";
 
 const PRODUCT_NAME = "Tarjeta de regalo";
 const CATEGORY_NAME = "Tarjetas de regalo";
@@ -28,7 +29,25 @@ export async function ensureAdminGiftCardCatalogProduct(input: {
   );
   if (!adminOwned) return;
 
-  const admin = createAdminClient();
+  try {
+    const admin = createAdminClient();
+    await ensureAdminGiftCardCatalogProductWithClient(admin, input);
+  } catch (error) {
+    console.error(
+      "[gift-card-catalog]",
+      error instanceof Error ? error.message : error,
+    );
+  }
+}
+
+async function ensureAdminGiftCardCatalogProductWithClient(
+  admin: ReturnType<typeof createAdminClient>,
+  input: {
+    storeId: string;
+    storeSlug: string;
+    ownerId?: string | null;
+  },
+): Promise<void> {
   const { data: existing, error: existingError } = await admin
     .from("products")
     .select("id")
@@ -203,16 +222,8 @@ export async function ensureAdminGiftCardCatalogProduct(input: {
 export async function issuePurchasedGiftCards(input: {
   storeId: string;
   orderId: string;
-  items: Array<{
-    product_id: string;
-    product_name: string;
-    variant_name: string;
-    quantity: number;
-    unit_price_usd: number;
-    is_gift_card?: boolean;
-    issued_gift_card_codes?: string[];
-  }>;
-}): Promise<{ items: typeof input.items; codes: string[] }> {
+  items: OrderLineItem[];
+}): Promise<{ items: OrderLineItem[]; codes: string[] }> {
   const giftLines = input.items.filter((item) => item.is_gift_card);
   if (giftLines.length === 0) {
     return { items: input.items, codes: [] };
