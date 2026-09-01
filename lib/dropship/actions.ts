@@ -85,18 +85,6 @@ async function requireDropshipStore() {
   return { auth, supabase } as const;
 }
 
-function merchantCatalogSelect(privileged: boolean) {
-  return (
-    privileged
-      ? ADMIN_SUPPLIER_PRODUCT_SELECT
-      : DROPSHIP_SUPPLIER_PRODUCT_SELECT
-  ) as typeof DROPSHIP_SUPPLIER_PRODUCT_SELECT;
-}
-
-function sessionHasCostPrivilege(email?: string | null) {
-  return hasSupplierCostPricePrivilege(email);
-}
-
 function mapSupplierVariantsToCatalog(
   supplierVariants: Parameters<typeof supplierVariantsToCatalogJson>[0],
   basePriceUsd = 0,
@@ -307,7 +295,6 @@ export async function listActiveSupplierCatalogForMerchant(): Promise<
   const gate = await requireDropshipStore();
   if ("error" in gate) return { error: gate.error };
   const { auth } = gate;
-  const privileged = sessionHasCostPrivilege(auth.authUser.email);
 
   const admin = createAdminClient();
   const [settings, trendScores] = await Promise.all([
@@ -333,7 +320,7 @@ export async function listActiveSupplierCatalogForMerchant(): Promise<
     const { data, error } = await applyDropshipVisibleProductFilter(
       admin
         .from("supplier_products")
-        .select(merchantCatalogSelect(privileged)),
+        .select(DROPSHIP_SUPPLIER_PRODUCT_SELECT),
     )
       .order("id", { ascending: true })
       .range(from, from + pageSize - 1);
@@ -393,8 +380,7 @@ export async function listActiveSupplierCatalogForMerchant(): Promise<
   const products: MerchantSupplierCatalogProduct[] = [];
   for (const row of catalogRows) {
     const id = String(row.id);
-    const costInfo = resolveMerchantCatalogCostUsd(row, privileged);
-    const cost = costInfo.wholesalePriceUsd;
+    const cost = resolvePrecioMayoristaUsd(row);
     if (cost == null) continue;
     const variants = normalizeSupplierProductVariants(row.variants);
     const linkedProductId = linkedBySupplier.get(id) ?? null;
@@ -486,7 +472,6 @@ export async function importSupplierProductToStoreCatalog(
     const gate = await requireDropshipStore();
     if ("error" in gate) return { error: gate.error };
     const { auth } = gate;
-    const privileged = sessionHasCostPrivilege(auth.authUser.email);
 
     const supplierId = supplierProductId.trim();
     if (!supplierId) {
@@ -534,7 +519,7 @@ export async function importSupplierProductToStoreCatalog(
     const { data: supplierRow, error: supplierError } = await applyDropshipVisibleProductFilter(
       admin
         .from("supplier_products")
-        .select(merchantCatalogSelect(privileged))
+        .select(DROPSHIP_SUPPLIER_PRODUCT_SELECT)
         .eq("id", supplierId),
     )
       .maybeSingle();
@@ -547,11 +532,7 @@ export async function importSupplierProductToStoreCatalog(
     const title = String(supplierRow.title ?? "").trim();
     if (!title) return { error: "El producto mayorista no tiene nombre." };
 
-    const costInfo = resolveMerchantCatalogCostUsd(
-      supplierRow as Record<string, unknown>,
-      privileged,
-    );
-    const cost = costInfo.wholesalePriceUsd;
+    const cost = resolvePrecioMayoristaUsd(supplierRow as Record<string, unknown>);
     if (cost == null) {
       return { error: "Producto mayorista no disponible." };
     }
@@ -919,7 +900,6 @@ export async function applyDropshipCatalogMarginPercent(input: {
   const gate = await requireDropshipStore();
   if ("error" in gate) return { error: gate.error };
   const { auth } = gate;
-  const privileged = sessionHasCostPrivilege(auth.authUser.email);
 
   const marginPercent = parsePercentAmount(input.marginPercent, {
     min: 0,
@@ -981,7 +961,7 @@ export async function applyDropshipCatalogMarginPercent(input: {
     const { data, error } = await applyDropshipVisibleProductFilter(
       admin
         .from("supplier_products")
-        .select(merchantCatalogSelect(privileged))
+        .select(DROPSHIP_SUPPLIER_PRODUCT_SELECT)
         .in("id", chunk),
     );
     if (error) return { error: error.message };
@@ -1018,8 +998,7 @@ export async function applyDropshipCatalogMarginPercent(input: {
       skipped += 1;
       continue;
     }
-    const costInfo = resolveMerchantCatalogCostUsd(row, privileged);
-    const mayorista = costInfo.wholesalePriceUsd;
+    const mayorista = resolvePrecioMayoristaUsd(row);
     if (mayorista == null) {
       skipped += 1;
       continue;

@@ -108,12 +108,10 @@ export function isDashboardNavItemActive(
 export type DashboardNavVariant =
   | "merchant"
   | "supplier_own_store"
-  | "supplier_hub"
-  | "admin_own_store";
+  | "supplier_hub";
 
 export const SUPPLIER_OWN_STORE_NAV_PREFIX = "/proveedor/dashboard";
 export const SUPPLIER_HUB_NAV_PREFIX = "/proveedor/dashboard/hub";
-export const ADMIN_OWN_STORE_NAV_PREFIX = "/admin/tienda";
 
 export const SUPPLIER_HUB_NAV_ITEMS: DashboardNavItem[] = [
   {
@@ -157,12 +155,6 @@ export function remapDashboardHrefForVariant(
   href: string,
   variant?: DashboardNavVariant | null,
 ): string {
-  if (variant === "admin_own_store") {
-    if (href === "/dashboard" || href.startsWith("/dashboard/")) {
-      return `${ADMIN_OWN_STORE_NAV_PREFIX}${href.slice("/dashboard".length)}`;
-    }
-    return href;
-  }
   if (variant !== "supplier_own_store") return href;
   if (href === "/dashboard" || href.startsWith("/dashboard/")) {
     return `${SUPPLIER_OWN_STORE_NAV_PREFIX}${href.slice("/dashboard".length)}`;
@@ -176,12 +168,6 @@ function toMerchantDashboardPath(pathname: string): string {
   }
   if (pathname.startsWith(`${SUPPLIER_OWN_STORE_NAV_PREFIX}/`)) {
     return `/dashboard${pathname.slice(SUPPLIER_OWN_STORE_NAV_PREFIX.length)}`;
-  }
-  if (pathname === ADMIN_OWN_STORE_NAV_PREFIX) {
-    return "/dashboard";
-  }
-  if (pathname.startsWith(`${ADMIN_OWN_STORE_NAV_PREFIX}/`)) {
-    return `/dashboard${pathname.slice(ADMIN_OWN_STORE_NAV_PREFIX.length)}`;
   }
   return pathname;
 }
@@ -204,36 +190,27 @@ export function getDashboardNavItems(options?: {
         canAccessDashboardPath(role, item.href),
       );
 
-  if (variant !== "supplier_own_store" && variant !== "admin_own_store") {
+  if (variant !== "supplier_own_store") {
     return source;
   }
-
-  const prefix =
-    variant === "admin_own_store"
-      ? ADMIN_OWN_STORE_NAV_PREFIX
-      : SUPPLIER_OWN_STORE_NAV_PREFIX;
 
   return source.map((item) => {
     const href = remapDashboardHrefForVariant(item.href, variant);
     const isCatalog = item.href === "/dashboard/catalogo";
-    const catalogLabel =
-      variant === "supplier_own_store" ? "Productos Propios" : item.label;
-    const catalogDescription =
-      variant === "supplier_own_store"
-        ? "Mercancía de tu inventario, sin catálogo de terceros"
-        : item.description;
     return {
       ...item,
       href,
-      label: isCatalog ? catalogLabel : item.label,
-      description: isCatalog ? catalogDescription : item.description,
+      label: isCatalog ? "Productos Propios" : item.label,
+      description: isCatalog
+        ? "Mercancía de tu inventario, sin catálogo de terceros"
+        : item.description,
       match: (pathname: string) => {
         if (isCatalog) {
           return (
-            pathname === prefix ||
-            pathname.startsWith(`${prefix}/catalogo`) ||
-            pathname.startsWith(`${prefix}/inventario`) ||
-            pathname.startsWith(`${prefix}/productos`)
+            pathname === SUPPLIER_OWN_STORE_NAV_PREFIX ||
+            pathname.startsWith(`${SUPPLIER_OWN_STORE_NAV_PREFIX}/catalogo`) ||
+            pathname.startsWith(`${SUPPLIER_OWN_STORE_NAV_PREFIX}/inventario`) ||
+            pathname.startsWith(`${SUPPLIER_OWN_STORE_NAV_PREFIX}/productos`)
           );
         }
         return item.match

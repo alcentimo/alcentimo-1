@@ -649,14 +649,10 @@ export function AvailableProductsPanel({
                 Ganancia de tu tienda
               </h3>
               <p className="mt-1 text-xs leading-relaxed text-zinc-500 dark:text-zinc-400">
-                Aplica un % sobre{" "}
-                {products.some((item) => item.usesSupplierCostPrice)
-                  ? "el costo de proveedor"
-                  : "el precio mayorista"}
-                . Si marcas productos, se usa en esos (y se añaden a tu tienda
-                si aún no están). Si no marcas ninguno, se aplica a los que ya
-                tienes en esta vista. Ese % queda como ganancia por defecto para
-                productos nuevos.
+                Aplica un % sobre el precio mayorista. Si marcas productos, se
+                usa en esos (y se añaden a tu tienda si aún no están). Si no
+                marcas ninguno, se aplica a los que ya tienes en esta vista. Ese
+                % queda como ganancia por defecto para productos nuevos.
               </p>
             </div>
             <div className="flex flex-wrap items-center gap-2">
