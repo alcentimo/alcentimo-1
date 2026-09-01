@@ -24,10 +24,16 @@ export function AdminChrome({ email, children }: AdminChromeProps) {
               </span>
             ) : null}
             <Link
-              href="/admin/tienda/catalogo"
+              href="/mercado-oculto"
               className="font-medium text-zinc-600 transition hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100"
             >
-              Mi Tienda
+              Mercado oculto
+            </Link>
+            <Link
+              href="/dashboard/catalogo"
+              className="font-medium text-zinc-500 transition hover:text-zinc-800 dark:text-zinc-500 dark:hover:text-zinc-200"
+            >
+              Ir a mi tienda
             </Link>
           </div>
         </div>
