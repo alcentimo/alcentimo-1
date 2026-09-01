@@ -85,6 +85,18 @@ async function requireDropshipStore() {
   return { auth, supabase } as const;
 }
 
+function merchantCatalogSelect(privileged: boolean) {
+  return (
+    privileged
+      ? ADMIN_SUPPLIER_PRODUCT_SELECT
+      : DROPSHIP_SUPPLIER_PRODUCT_SELECT
+  ) as typeof DROPSHIP_SUPPLIER_PRODUCT_SELECT;
+}
+
+function sessionHasCostPrivilege(email?: string | null) {
+  return hasSupplierCostPricePrivilege(email);
+}
+
 function mapSupplierVariantsToCatalog(
   supplierVariants: Parameters<typeof supplierVariantsToCatalogJson>[0],
   basePriceUsd = 0,
@@ -295,6 +307,7 @@ export async function listActiveSupplierCatalogForMerchant(): Promise<
   const gate = await requireDropshipStore();
   if ("error" in gate) return { error: gate.error };
   const { auth } = gate;
+  const privileged = sessionHasCostPrivilege(auth.authUser.email);
 
   const admin = createAdminClient();
   const [settings, trendScores] = await Promise.all([
@@ -320,7 +333,7 @@ export async function listActiveSupplierCatalogForMerchant(): Promise<
     const { data, error } = await applyDropshipVisibleProductFilter(
       admin
         .from("supplier_products")
-        .select(DROPSHIP_SUPPLIER_PRODUCT_SELECT),
+        .select(merchantCatalogSelect(privileged)),
     )
       .order("id", { ascending: true })
       .range(from, from + pageSize - 1);
@@ -380,7 +393,8 @@ export async function listActiveSupplierCatalogForMerchant(): Promise<
   const products: MerchantSupplierCatalogProduct[] = [];
   for (const row of catalogRows) {
     const id = String(row.id);
-    const cost = resolvePrecioMayoristaUsd(row);
+    const costInfo = resolveMerchantCatalogCostUsd(row, privileged);
+    const cost = costInfo.wholesalePriceUsd;
     if (cost == null) continue;
     const variants = normalizeSupplierProductVariants(row.variants);
     const linkedProductId = linkedBySupplier.get(id) ?? null;
