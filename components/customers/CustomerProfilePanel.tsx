@@ -17,6 +17,7 @@ import {
 } from "@/lib/store-host";
 import type { CustomerAuthMethod } from "@/lib/customers/phone-auth";
 import { useCustomerSessionOptional } from "@/components/catalog-transactional/CustomerSessionProvider";
+import { CustomerGiftCardWallet } from "@/components/customers/CustomerGiftCardWallet";
 
 interface CustomerProfilePanelProps {
   storeSlug: string;
@@ -214,6 +215,8 @@ export function CustomerProfilePanel({
 
   return (
     <div className="space-y-6">
+      <CustomerGiftCardWallet storeSlug={storeSlug} />
+
       <form onSubmit={(e) => void handleSave(e)} className="card-panel space-y-4">
         <div>
           <h2 className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">

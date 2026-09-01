@@ -492,7 +492,18 @@ export interface GiftCardRedemption {
   store_id: string;
   order_id: string | null;
   amount_usd: number;
+  user_id?: string | null;
+  kind?: "order" | "wallet";
   created_at: string;
+}
+
+export interface CustomerStoreCredit {
+  id: string;
+  store_id: string;
+  user_id: string;
+  balance_usd: number;
+  created_at: string;
+  updated_at: string;
 }
 
 export type CouponInsert = {
@@ -820,6 +831,7 @@ export interface Order {
   tracking_number?: string | null;
   gift_card_code?: string | null;
   gift_card_usd?: number | null;
+  store_credit_usd?: number | null;
   created_at: string;
 }
 
@@ -1226,9 +1238,22 @@ export interface Database {
         Insert: Omit<GiftCardRedemption, "id" | "created_at"> & {
           id?: string;
           order_id?: string | null;
+          user_id?: string | null;
+          kind?: "order" | "wallet";
           created_at?: string;
         };
         Update: Partial<GiftCardRedemption>;
+        Relationships: [];
+      };
+      customer_store_credits: {
+        Row: CustomerStoreCredit;
+        Insert: Omit<CustomerStoreCredit, "id" | "created_at" | "updated_at"> & {
+          id?: string;
+          balance_usd?: number;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: Partial<CustomerStoreCredit>;
         Relationships: [];
       };
       promotions: {
@@ -1430,6 +1455,31 @@ export interface Database {
           p_amount: number;
         };
         Returns: { error?: string; success?: boolean; applied_usd?: number; remaining_usd?: number };
+      };
+      apply_gift_card_to_wallet: {
+        Args: {
+          p_code: string;
+          p_store_id: string;
+          p_user_id: string;
+        };
+        Returns: { error?: string; success?: boolean; credited_usd?: number; wallet_usd?: number };
+      };
+      apply_store_credit_for_order: {
+        Args: {
+          p_store_id: string;
+          p_user_id: string;
+          p_order_id: string;
+          p_amount: number;
+        };
+        Returns: { error?: string; success?: boolean; applied_usd?: number; wallet_usd?: number };
+      };
+      restore_store_credit: {
+        Args: {
+          p_store_id: string;
+          p_user_id: string;
+          p_amount: number;
+        };
+        Returns: { error?: string; success?: boolean; wallet_usd?: number };
       };
     };
     Enums: {

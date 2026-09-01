@@ -104,8 +104,9 @@ export function AdminGiftCardsPanel() {
         </h2>
         <p className="mt-1 max-w-2xl text-sm text-zinc-500 dark:text-zinc-400">
           Solo se emiten y canjean en tu vitrina de administrador
-          {storeName ? ` (${storeName})` : ""}. No aparecen ni funcionan en
-          tiendas de dropshippers.
+          {storeName ? ` (${storeName})` : ""}. Los clientes cargan el código en
+          su perfil; el checkout descuenta el saldo a favor. No aparecen ni
+          funcionan en tiendas de dropshippers.
         </p>
       </div>
 
