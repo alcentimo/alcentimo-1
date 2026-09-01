@@ -18,6 +18,7 @@ import type { LocationHoursSettings } from "@/lib/store-settings/types";
 import { useCatalogShellNavigationOptional } from "@/components/catalog-transactional/CatalogShellNavigation";
 import { useCustomerSessionOptional } from "@/components/catalog-transactional/CustomerSessionProvider";
 import { useCustomerAccountMode } from "@/components/catalog-transactional/CustomerAccountModeContext";
+import { StorefrontGiftCardSheetLink } from "@/components/catalog-transactional/StorefrontGiftCardCta";
 
 interface CatalogStoreProfileSheetProps {
   storeSlug: string;
@@ -198,6 +199,13 @@ export function CatalogStoreProfileSheet({
               </a>
             </div>
           ) : null}
+
+          <div className="catalog-profile-section">
+            <StorefrontGiftCardSheetLink
+              storeSlug={storeSlug}
+              onNavigate={navigateTo}
+            />
+          </div>
 
           <div className="catalog-profile-section catalog-profile-account">
             <h3 className="catalog-profile-label">

@@ -18,6 +18,7 @@ import {
 import { useCartOptional } from "@/components/catalog-transactional/CartProvider";
 import { useCatalogShellNavigationOptional } from "@/components/catalog-transactional/CatalogShellNavigation";
 import { useCustomerSessionOptional } from "@/components/catalog-transactional/CustomerSessionProvider";
+import { StorefrontGiftCardNavLink } from "@/components/catalog-transactional/StorefrontGiftCardCta";
 
 interface StorefrontMoricheNavProps {
   storeSlug: string;
@@ -87,6 +88,8 @@ export function StorefrontMoricheNav({
         <LayoutGrid className="h-4 w-4" aria-hidden="true" />
         <span className="mercado-nav-label">Categorías</span>
       </button>
+
+      <StorefrontGiftCardNavLink storeSlug={storeSlug} compact={compact} />
 
       <button
         type="button"

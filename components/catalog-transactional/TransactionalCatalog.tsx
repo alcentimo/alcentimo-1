@@ -33,6 +33,7 @@ import { CatalogLocationPicker } from "@/components/catalog-transactional/Catalo
 import { CatalogPromoBannerCarousel } from "@/components/catalog-transactional/CatalogPromoBannerCarousel";
 import { StorefrontCatalogListing } from "@/components/catalog-transactional/StorefrontCatalogListing";
 import { StorefrontCoverBanner } from "@/components/catalog-transactional/StorefrontCoverBanner";
+import { StorefrontGiftCardHomeCta } from "@/components/catalog-transactional/StorefrontGiftCardCta";
 import { StorefrontMoricheChrome } from "@/components/catalog-transactional/StorefrontMoricheChrome";
 import { CatalogFaqSection } from "@/components/catalog-transactional/CatalogFaqSection";
 import { useOpenCatalogProductById } from "@/components/catalog-transactional/useOpenCatalogProductById";
@@ -432,6 +433,10 @@ function TransactionalCatalogContent({
           </>
         }
       >
+        {!previewMode ? (
+          <StorefrontGiftCardHomeCta storeSlug={store.slug} />
+        ) : null}
+
         <StorefrontCatalogListing
           browse={browse}
           catalogProducts={catalogProducts}

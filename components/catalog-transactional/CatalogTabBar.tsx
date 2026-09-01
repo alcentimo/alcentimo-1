@@ -3,17 +3,23 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import type { MouseEvent } from "react";
-import { Cpu, Home, Search, ShoppingCart, User } from "lucide-react";
+import { Cpu, Gift, Home, Search, ShoppingCart, User } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { cn } from "@/lib/cn";
 import { getStoreCatalogBasePath } from "@/lib/store-host";
 import { useCatalogShellNavigationOptional } from "@/components/catalog-transactional/CatalogShellNavigation";
 import { useCartOptional } from "@/components/catalog-transactional/CartProvider";
+import { useGiftCardsEnabled } from "@/components/catalog-transactional/GiftCardStorefrontProvider";
+import {
+  getGiftCardStorefrontPath,
+  isGiftCardStorefrontPath,
+} from "@/lib/gift-cards/storefront-path";
 
 export type CatalogTabId =
   | "inicio"
   | "buscar"
   | "armar-pc"
+  | "gift-card"
   | "carrito"
   | "perfil";
 
@@ -29,6 +35,7 @@ interface CatalogTabDefinition {
   id: CatalogTabId;
   label: string;
   segment?: CatalogTabSegment;
+  href?: string;
   icon: LucideIcon;
   action?: "search" | "profile" | "cart";
 }
@@ -47,9 +54,31 @@ const PC_BUILDER_TAB: CatalogTabDefinition = {
   icon: Cpu,
 };
 
-function buildTabs(pcBuilderEnabled: boolean): CatalogTabDefinition[] {
-  if (!pcBuilderEnabled) return BASE_TABS;
-  return [BASE_TABS[0], PC_BUILDER_TAB, BASE_TABS[2], BASE_TABS[3]];
+function giftCardTab(href: string): CatalogTabDefinition {
+  return {
+    id: "gift-card",
+    label: "Tarjeta",
+    href,
+    icon: Gift,
+  };
+}
+
+function buildTabs(
+  pcBuilderEnabled: boolean,
+  giftCardsEnabled: boolean,
+  giftHref: string,
+): CatalogTabDefinition[] {
+  const gift = giftCardsEnabled ? giftCardTab(giftHref) : null;
+  if (pcBuilderEnabled && gift) {
+    return [BASE_TABS[0]!, PC_BUILDER_TAB, gift, BASE_TABS[2]!, BASE_TABS[3]!];
+  }
+  if (pcBuilderEnabled) {
+    return [BASE_TABS[0]!, PC_BUILDER_TAB, BASE_TABS[2]!, BASE_TABS[3]!];
+  }
+  if (gift) {
+    return [BASE_TABS[0]!, gift, BASE_TABS[2]!, BASE_TABS[3]!];
+  }
+  return BASE_TABS;
 }
 
 function isCatalogHomePath(pathname: string, base: string): boolean {
@@ -78,6 +107,10 @@ function resolveActiveTab(
   if (searchActive) return "buscar";
 
   const base = getStoreCatalogBasePath(storeSlug, { pathname });
+
+  if (isGiftCardStorefrontPath(pathname)) {
+    return "gift-card";
+  }
 
   if (pcBuilderEnabled && pathname.startsWith(`${base}/armar-pc`)) {
     return "armar-pc";
@@ -118,6 +151,8 @@ export function CatalogTabBar({
   const searchActive = shellNav?.searchActive ?? false;
   const profileOpen = shellNav?.profileOpen ?? false;
   const cartActive = shellNav?.cartActive ?? false;
+  const giftCardsEnabled = useGiftCardsEnabled();
+  const giftHref = getGiftCardStorefrontPath(storeSlug, pathname);
   const activeTab = resolveActiveTab(
     pathname,
     storeSlug,
@@ -127,7 +162,7 @@ export function CatalogTabBar({
     cartActive,
   );
   const base = getStoreCatalogBasePath(storeSlug, { pathname });
-  const tabs = buildTabs(pcBuilderEnabled);
+  const tabs = buildTabs(pcBuilderEnabled, giftCardsEnabled, giftHref);
 
   function handleInicioClick(event: MouseEvent<HTMLAnchorElement>) {
     const href = buildTabHref(base, "");
@@ -170,10 +205,11 @@ export function CatalogTabBar({
       <div
         className={cn(
           "catalog-tab-bar-inner",
-          pcBuilderEnabled && "catalog-tab-bar-inner--pc-builder",
+          (pcBuilderEnabled || giftCardsEnabled) &&
+            "catalog-tab-bar-inner--pc-builder",
         )}
       >
-        {tabs.map(({ id, label, segment, icon: Icon, action }) => {
+        {tabs.map(({ id, label, segment, href: tabHref, icon: Icon, action }) => {
           const isActive = activeTab === id;
 
           if (action === "search") {
@@ -242,7 +278,7 @@ export function CatalogTabBar({
             );
           }
 
-          const href = buildTabHref(base, segment);
+          const href = tabHref ?? buildTabHref(base, segment);
 
           return (
             <Link
