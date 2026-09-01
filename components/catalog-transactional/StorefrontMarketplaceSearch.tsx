@@ -55,7 +55,7 @@ export function StorefrontMarketplaceSearch({
         placeholder="Buscar productos, marcas y más…"
         aria-label={`Buscar en ${storeName}`}
         className="storefront-mp-search-input"
-        disabled={pending}
+        aria-busy={pending || undefined}
         autoComplete="off"
         enterKeyHint="search"
       />
