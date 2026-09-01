@@ -649,10 +649,14 @@ export function AvailableProductsPanel({
                 Ganancia de tu tienda
               </h3>
               <p className="mt-1 text-xs leading-relaxed text-zinc-500 dark:text-zinc-400">
-                Aplica un % sobre el precio mayorista. Si marcas productos, se
-                usa en esos (y se añaden a tu tienda si aún no están). Si no
-                marcas ninguno, se aplica a los que ya tienes en esta vista. Ese
-                % queda como ganancia por defecto para productos nuevos.
+                Aplica un % sobre{" "}
+                {products.some((item) => item.usesSupplierCostPrice)
+                  ? "el costo de proveedor"
+                  : "el precio mayorista"}
+                . Si marcas productos, se usa en esos (y se añaden a tu tienda
+                si aún no están). Si no marcas ninguno, se aplica a los que ya
+                tienes en esta vista. Ese % queda como ganancia por defecto para
+                productos nuevos.
               </p>
             </div>
             <div className="flex flex-wrap items-center gap-2">
@@ -919,12 +923,25 @@ export function AvailableProductsPanel({
                     <div className="rounded-xl border border-zinc-100 bg-zinc-50/80 p-3 dark:border-zinc-800 dark:bg-zinc-900/50">
                       <div className="flex items-baseline justify-between gap-3">
                         <span className="text-[11px] font-medium uppercase tracking-wide text-zinc-400">
-                          Costo mayorista
+                          {product.usesSupplierCostPrice
+                            ? "Costo proveedor"
+                            : "Costo mayorista"}
                         </span>
                         <span className="text-sm font-medium tabular-nums text-zinc-600 dark:text-zinc-300">
                           {formatUsd(product.wholesalePriceUsd)}
                         </span>
                       </div>
+                      {product.usesSupplierCostPrice &&
+                      product.precioMayoristaUsd != null ? (
+                        <div className="mt-1.5 flex items-baseline justify-between gap-3">
+                          <span className="text-[11px] text-zinc-400">
+                            Precio mayorista
+                          </span>
+                          <span className="text-xs tabular-nums text-zinc-500">
+                            {formatUsd(product.precioMayoristaUsd)}
+                          </span>
+                        </div>
+                      ) : null}
 
                       <div className="mt-3 grid grid-cols-2 gap-2 border-t border-zinc-200/80 pt-3 dark:border-zinc-700/80">
                         <label className="space-y-1.5">

@@ -1,4 +1,5 @@
 export type AdminDashboardTab =
+  | "tienda"
   | "dropship"
   | "proveedor"
   | "marcas"
@@ -10,6 +11,10 @@ export type AdminDashboardTab =
 const DEFAULT_TAB: AdminDashboardTab = "tiendas";
 
 const LEGACY_TAB_MAP: Record<string, AdminDashboardTab> = {
+  tienda: "tienda",
+  "mi-tienda": "tienda",
+  "tienda-propia": "tienda",
+  "mercado-oculto": "tienda",
   dropship: "dropship",
   liquidaciones: "dropship",
   "liquidaciones-dropship": "dropship",
