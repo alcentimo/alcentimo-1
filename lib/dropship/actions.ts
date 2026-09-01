@@ -55,11 +55,6 @@ import {
   resolvePrecioMayoristaUsd,
   resolveSuggestedRetailUsd,
 } from "@/lib/supplier/wholesale-price";
-import {
-  ADMIN_SUPPLIER_PRODUCT_SELECT,
-  hasSupplierCostPricePrivilege,
-  resolveMerchantCatalogCostUsd,
-} from "@/lib/admin/supplier-cost-privilege";
 
 type ActionResult<T extends object = object> = {
   error?: string;
@@ -78,18 +73,6 @@ async function requireDropshipStore() {
   if (!feature.ok) return { error: feature.error } as const;
 
   return { auth, supabase } as const;
-}
-
-function merchantCatalogSelect(privileged: boolean) {
-  return (
-    privileged
-      ? ADMIN_SUPPLIER_PRODUCT_SELECT
-      : DROPSHIP_SUPPLIER_PRODUCT_SELECT
-  ) as typeof DROPSHIP_SUPPLIER_PRODUCT_SELECT;
-}
-
-function sessionHasCostPrivilege(email?: string | null) {
-  return hasSupplierCostPricePrivilege(email);
 }
 
 function mapSupplierVariantsToCatalog(
@@ -285,11 +268,6 @@ export type MerchantSupplierCatalogProduct = {
   alreadyImported: boolean;
   linkedProductId: string | null;
   linkedProductSlug: string | null;
-  /** Solo admin: costo de fábrica del proveedor. */
-  costoProveedorUsd?: number | null;
-  /** Solo admin: precio mayorista que pagan los dropshippers. */
-  precioMayoristaUsd?: number | null;
-  usesSupplierCostPrice?: boolean;
 };
 
 export async function listActiveSupplierCatalogForMerchant(): Promise<
@@ -298,7 +276,6 @@ export async function listActiveSupplierCatalogForMerchant(): Promise<
   const gate = await requireDropshipStore();
   if ("error" in gate) return { error: gate.error };
   const { auth } = gate;
-  const privileged = sessionHasCostPrivilege(auth.authUser.email);
 
   const admin = createAdminClient();
   const settings = await getStoreSettingsConfig(auth.store.id);
@@ -315,7 +292,7 @@ export async function listActiveSupplierCatalogForMerchant(): Promise<
     const { data, error } = await applyDropshipVisibleProductFilter(
       admin
         .from("supplier_products")
-        .select(merchantCatalogSelect(privileged)),
+        .select(DROPSHIP_SUPPLIER_PRODUCT_SELECT),
     )
       .order("id", { ascending: true })
       .range(from, from + pageSize - 1);
@@ -375,8 +352,7 @@ export async function listActiveSupplierCatalogForMerchant(): Promise<
   const products: MerchantSupplierCatalogProduct[] = [];
   for (const row of catalogRows) {
     const id = String(row.id);
-    const costInfo = resolveMerchantCatalogCostUsd(row, privileged);
-    const cost = costInfo.wholesalePriceUsd;
+    const cost = resolvePrecioMayoristaUsd(row);
     if (cost == null) continue;
     const variants = normalizeSupplierProductVariants(row.variants);
     const linkedProductId = linkedBySupplier.get(id) ?? null;
@@ -414,13 +390,6 @@ export async function listActiveSupplierCatalogForMerchant(): Promise<
       linkedProductSlug: linkedProductId
         ? (slugByProductId.get(linkedProductId) ?? null)
         : null,
-      ...(privileged
-        ? {
-            costoProveedorUsd: costInfo.costoProveedorUsd,
-            precioMayoristaUsd: costInfo.precioMayoristaUsd,
-            usesSupplierCostPrice: costInfo.usesSupplierCostPrice,
-          }
-        : {}),
     });
   }
 
@@ -449,7 +418,6 @@ export async function importSupplierProductToStoreCatalog(
     const gate = await requireDropshipStore();
     if ("error" in gate) return { error: gate.error };
     const { auth } = gate;
-    const privileged = sessionHasCostPrivilege(auth.authUser.email);
 
     const supplierId = supplierProductId.trim();
     if (!supplierId) {
@@ -497,7 +465,7 @@ export async function importSupplierProductToStoreCatalog(
     const { data: supplierRow, error: supplierError } = await applyDropshipVisibleProductFilter(
       admin
         .from("supplier_products")
-        .select(merchantCatalogSelect(privileged))
+        .select(DROPSHIP_SUPPLIER_PRODUCT_SELECT)
         .eq("id", supplierId),
     )
       .maybeSingle();
@@ -510,11 +478,7 @@ export async function importSupplierProductToStoreCatalog(
     const title = String(supplierRow.title ?? "").trim();
     if (!title) return { error: "El producto mayorista no tiene nombre." };
 
-    const costInfo = resolveMerchantCatalogCostUsd(
-      supplierRow as Record<string, unknown>,
-      privileged,
-    );
-    const cost = costInfo.wholesalePriceUsd;
+    const cost = resolvePrecioMayoristaUsd(supplierRow as Record<string, unknown>);
     if (cost == null) {
       return { error: "Producto mayorista no disponible." };
     }
@@ -882,7 +846,6 @@ export async function applyDropshipCatalogMarginPercent(input: {
   const gate = await requireDropshipStore();
   if ("error" in gate) return { error: gate.error };
   const { auth } = gate;
-  const privileged = sessionHasCostPrivilege(auth.authUser.email);
 
   const marginPercent = parsePercentAmount(input.marginPercent, {
     min: 0,
@@ -944,7 +907,7 @@ export async function applyDropshipCatalogMarginPercent(input: {
     const { data, error } = await applyDropshipVisibleProductFilter(
       admin
         .from("supplier_products")
-        .select(merchantCatalogSelect(privileged))
+        .select(DROPSHIP_SUPPLIER_PRODUCT_SELECT)
         .in("id", chunk),
     );
     if (error) return { error: error.message };
@@ -981,8 +944,7 @@ export async function applyDropshipCatalogMarginPercent(input: {
       skipped += 1;
       continue;
     }
-    const costInfo = resolveMerchantCatalogCostUsd(row, privileged);
-    const mayorista = costInfo.wholesalePriceUsd;
+    const mayorista = resolvePrecioMayoristaUsd(row);
     if (mayorista == null) {
       skipped += 1;
       continue;
