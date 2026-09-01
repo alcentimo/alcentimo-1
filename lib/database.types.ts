@@ -1481,6 +1481,20 @@ export interface Database {
         };
         Returns: { error?: string; success?: boolean; wallet_usd?: number };
       };
+      consume_gift_card_rate_limit: {
+        Args: {
+          p_store_id: string;
+          p_subject: string;
+        };
+        Returns: { allowed?: boolean; retry_after_seconds?: number };
+      };
+      record_gift_card_attempt_failure: {
+        Args: {
+          p_store_id: string;
+          p_subject: string;
+        };
+        Returns: undefined;
+      };
     };
     Enums: {
       inventory_movement_type: InventoryMovementType;

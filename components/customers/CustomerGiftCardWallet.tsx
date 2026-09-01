@@ -32,17 +32,17 @@ export function CustomerGiftCardWallet({ storeSlug }: { storeSlug: string }) {
   }
 
   return (
-    <div className="card-panel space-y-4">
+    <div className="rounded-2xl border-2 border-teal-200 bg-teal-50/90 p-4 space-y-4 shadow-sm dark:border-teal-800 dark:bg-teal-950/30">
       <div>
-        <h2 className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">
-          Saldo a favor
+        <h2 className="text-base font-semibold text-teal-950 dark:text-teal-50">
+          Canjear tarjeta de regalo
         </h2>
-        <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
-          Carga una tarjeta de regalo a tu perfil. En el checkout se descuenta
-          solo.
+        <p className="mt-1 text-xs text-teal-800/80 dark:text-teal-200/80">
+          Ingresa el código para abonar el saldo a tu cuenta. En el checkout se
+          descuenta automáticamente.
         </p>
       </div>
-      <p className="text-lg font-semibold tabular-nums text-zinc-900 dark:text-zinc-50">
+      <p className="text-2xl font-semibold tabular-nums text-teal-950 dark:text-teal-50">
         {formatUsd(storeCreditUsd)}
       </p>
       <div className="flex gap-2">

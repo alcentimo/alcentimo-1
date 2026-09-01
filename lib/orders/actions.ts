@@ -55,6 +55,7 @@ import {
 } from "@/lib/dropship/supplier-stock";
 import { readDropshipHoldSessionKey } from "@/lib/dropship/cart-hold-session";
 import { syncCustomerProfileFromCheckout } from "@/lib/customers/sync-customer-profile-from-checkout";
+import { issuePurchasedGiftCards } from "@/lib/gift-cards/ensure-catalog-product";
 
 export interface SubmitTransactionalOrderResult {
   error?: string;
@@ -63,6 +64,7 @@ export interface SubmitTransactionalOrderResult {
   /** Teléfono normalizado guardado en el pedido / perfil. */
   customerPhone?: string;
   customerName?: string;
+  issuedGiftCardCodes?: string[];
 }
 
 
@@ -310,11 +312,30 @@ export async function submitTransactionalOrder(
   const totalUsd = Math.max(0, subtotalUsd - discountUsd);
 
   const merchandiseUsd = totalUsd;
-  const shippingQuote = resolveShippingQuote({
-    pricing: purchaseInfo.shippingPricing,
-    method: shippingMethodRaw,
-    merchandiseUsd,
-  });
+  const giftOnlyOrder =
+    enrichedOrderItems.length > 0 &&
+    enrichedOrderItems.every((item) => item.is_gift_card);
+  const shippingQuote = giftOnlyOrder
+    ? {
+        chargeUsd: 0,
+        chargeLabel: "Producto digital",
+        summaryLabel: "Tarjeta de regalo · sin envío",
+        isFree: true,
+        isCod: false,
+        appliesPaidShipping: false,
+        freeShipping: {
+          enabled: false,
+          always: false,
+          minUsd: 0,
+          unlocked: false,
+          remainingUsd: 0,
+        },
+      }
+    : resolveShippingQuote({
+        pricing: purchaseInfo.shippingPricing,
+        method: shippingMethodRaw,
+        merchandiseUsd,
+      });
   const orderTotalUsd = merchandiseUsd + shippingQuote.chargeUsd;
 
   let giftCardUsd = 0;
@@ -636,6 +657,21 @@ export async function submitTransactionalOrder(
     }
   }
 
+  const issuedGift = await issuePurchasedGiftCards({
+    storeId: store.id,
+    orderId,
+    items: enrichedOrderItems,
+  });
+  const issuedGiftCardCodes = issuedGift.codes;
+  const itemsForMessage = issuedGift.items;
+  if (
+    enrichedOrderItems.some((item) => item.is_gift_card) &&
+    issuedGiftCardCodes.length === 0
+  ) {
+    await admin.from("orders").delete().eq("id", orderId);
+    return { error: "No se pudo generar el código de la tarjeta de regalo." };
+  }
+
   const paymentLabel =
     amountDueUsd <= 0
       ? storeCreditUsd > 0
@@ -647,8 +683,9 @@ export async function submitTransactionalOrder(
   const carrierLabel = shippingMethodRaw
     ? getShippingMethod(shippingMethodRaw as ShippingCarrierKey).label
     : undefined;
-  const shippingMethodLabel =
-    carrierLabel ??
+  const shippingMethodLabel = giftOnlyOrder
+    ? "Producto digital"
+    : carrierLabel ??
     (fulfillmentType === "pickup"
       ? purchaseInfo.pickupPoints.length > 0
         ? "Punto de encuentro"
@@ -676,7 +713,7 @@ export async function submitTransactionalOrder(
   const message = buildTransactionalOrderWhatsAppMessage({
     customerName,
     customerPhone,
-    items: enrichedOrderItems.map((item) => ({
+    items: itemsForMessage.map((item) => ({
       product_name: item.product_name,
       variant_name: item.variant_name,
       quantity: item.quantity,
@@ -698,6 +735,8 @@ export async function submitTransactionalOrder(
     giftCardUsd: giftCardUsd > 0 ? giftCardUsd : undefined,
     giftCardCode: giftCardUsd > 0 ? giftCardCodeRaw : undefined,
     storeCreditUsd: storeCreditUsd > 0 ? storeCreditUsd : undefined,
+    issuedGiftCardCodes:
+      issuedGiftCardCodes.length > 0 ? issuedGiftCardCodes : undefined,
     locationName: resolvedLocationName ?? undefined,
     locationAddress: resolvedLocationAddress ?? undefined,
     deliveryAddress: resolvedFulfillmentAddress ?? undefined,
@@ -733,6 +772,8 @@ export async function submitTransactionalOrder(
     whatsappUrl,
     customerPhone,
     customerName,
+    issuedGiftCardCodes:
+      issuedGiftCardCodes.length > 0 ? issuedGiftCardCodes : undefined,
   };
 }
 

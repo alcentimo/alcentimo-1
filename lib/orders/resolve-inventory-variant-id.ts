@@ -5,6 +5,7 @@ export interface ProductVariantRow {
   product_id: string;
   name: string;
   is_default: boolean;
+  attributes?: Record<string, unknown> | null;
 }
 
 /**

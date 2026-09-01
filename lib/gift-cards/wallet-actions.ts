@@ -7,6 +7,10 @@ import { getStoreBySlug } from "@/lib/stores";
 import { isPlatformAdminOwnedStore } from "@/lib/gift-cards/admin-store";
 import { normalizeGiftCardCode, roundGiftUsd } from "@/lib/gift-cards/code";
 import { GIFT_CARD_STORE_DENIED_MESSAGE } from "@/lib/gift-cards/types";
+import {
+  consumeGiftCardRateLimit,
+  recordGiftCardAttemptFailure,
+} from "@/lib/gift-cards/rate-limit";
 import { getStoreCustomerAccountPath } from "@/lib/store-host";
 
 export type StoreCreditResult = {
@@ -78,6 +82,9 @@ export async function applyGiftCardToWallet(
     return { error: "Ingresa un código de tarjeta de regalo." };
   }
 
+  const rate = await consumeGiftCardRateLimit(auth.store.id);
+  if (!rate.ok) return { error: rate.error };
+
   const admin = createAdminClient();
   const { data, error } = await admin.rpc("apply_gift_card_to_wallet" as never, {
     p_code: normalized,
@@ -95,6 +102,7 @@ export async function applyGiftCardToWallet(
   } | null;
 
   if (!result || result.error || !result.success) {
+    await recordGiftCardAttemptFailure(auth.store.id);
     return { error: result?.error ?? "No se pudo cargar la tarjeta." };
   }
 
