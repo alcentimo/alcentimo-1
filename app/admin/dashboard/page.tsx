@@ -122,57 +122,8 @@ export default async function AdminDashboardPage({
     ? platformSettingsResult.data.dropshipShipping
     : DEFAULT_PLATFORM_DROPSHIP_SHIPPING;
 
-  const pendingMessages = messages.filter((item) => item.status === "pendiente")
-    .length;
-  const pendingDropshipSettlements = dropshipSettlements.filter(
-    (item) => item.status === "reported",
-  ).length;
-  const totalStores = new Set(
-    dropshippers
-      .map((row) => row.storeId)
-      .filter((storeId): storeId is string => Boolean(storeId)),
-  ).size;
-  const totalDropshippers = new Set(dropshippers.map((row) => row.id)).size;
-
   return (
     <div className="admin-dashboard-page">
-      <header className="admin-dashboard-page-header">
-        <div>
-          <p className="section-label">Administración centralizada</p>
-          <h1 className="page-header-title">Panel Admin</h1>
-          <p className="page-header-desc">
-            Gestión de mayorista, liquidaciones dropship, envíos, usuarios y
-            soporte.
-          </p>
-        </div>
-        <div className="admin-dashboard-quick-stats">
-          <div className="admin-dashboard-quick-stat">
-            <span className="admin-dashboard-quick-stat-label">Soporte</span>
-            <strong>{pendingMessages}</strong>
-          </div>
-          <div className="admin-dashboard-quick-stat">
-            <span className="admin-dashboard-quick-stat-label">Dropship</span>
-            <strong>{pendingDropshipSettlements}</strong>
-          </div>
-          <div className="admin-dashboard-quick-stat">
-            <span className="admin-dashboard-quick-stat-label">Mayorista</span>
-            <strong>{pendingSupplierDrafts}</strong>
-          </div>
-          <div className="admin-dashboard-quick-stat">
-            <span className="admin-dashboard-quick-stat-label">Dropshippers</span>
-            <strong>{totalDropshippers}</strong>
-          </div>
-          <div className="admin-dashboard-quick-stat">
-            <span className="admin-dashboard-quick-stat-label">Proveedores</span>
-            <strong>{suppliers.length}</strong>
-          </div>
-          <div className="admin-dashboard-quick-stat">
-            <span className="admin-dashboard-quick-stat-label">Tiendas</span>
-            <strong>{totalStores}</strong>
-          </div>
-        </div>
-      </header>
-
       <Suspense
         fallback={
           <p className="text-sm text-zinc-500 dark:text-zinc-400">
