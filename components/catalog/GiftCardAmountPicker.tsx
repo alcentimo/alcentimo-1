@@ -8,8 +8,12 @@ import {
   GIFT_CARD_AMOUNT_GROUP_ID,
   GIFT_CARD_CUSTOM_MAX_USD,
   GIFT_CARD_CUSTOM_MIN_USD,
+  GIFT_CARD_DEDICATION_MAX_LEN,
   clampGiftCardCustomAmount,
+  giftCardDedicationModifier,
+  getGiftCardDedication,
   isGiftCardCustomVariant,
+  pricingModifiersWithoutDedication,
 } from "@/lib/gift-cards/catalog";
 import { formatUsd } from "@/lib/format";
 import { cn } from "@/lib/cn";
@@ -54,10 +58,21 @@ export function GiftCardAmountPicker({
       ?.priceExtraUsd ?? 0;
   const customInputValue =
     currentCustom > 0 ? String(currentCustom) : "";
+  const dedication = getGiftCardDedication(selectedModifiers);
+
+  function emitModifiers(
+    amountMods: CartModifierSelection[],
+    nextDedication = dedication,
+  ) {
+    const dedicationMod = giftCardDedicationModifier(nextDedication);
+    onModifiersChange(
+      dedicationMod ? [...amountMods, dedicationMod] : amountMods,
+    );
+  }
 
   function selectPreset(option: CatalogVariantOption) {
     onSelectVariant(option.id);
-    onModifiersChange([]);
+    emitModifiers([]);
   }
 
   function selectCustom() {
@@ -70,12 +85,12 @@ export function GiftCardAmountPicker({
     onSelectVariant(customId);
     const parsed = Number(raw.replace(",", "."));
     if (!Number.isFinite(parsed) || parsed <= 0) {
-      onModifiersChange([]);
+      emitModifiers([]);
       return;
     }
     const clamped = clampGiftCardCustomAmount(parsed);
     const amount = clamped ?? parsed;
-    onModifiersChange([
+    emitModifiers([
       {
         groupId: GIFT_CARD_AMOUNT_GROUP_ID,
         groupName: "Monto",
@@ -84,6 +99,11 @@ export function GiftCardAmountPicker({
         priceExtraUsd: amount,
       },
     ]);
+  }
+
+  function handleDedication(raw: string) {
+    const amountMods = pricingModifiersWithoutDedication(selectedModifiers);
+    emitModifiers(amountMods, raw);
   }
 
   return (
@@ -155,6 +175,22 @@ export function GiftCardAmountPicker({
           ) : null}
         </label>
       ) : null}
+      <label className="block space-y-1">
+        <span className="text-xs text-zinc-500">
+          Dedicatoria o mensaje (opcional)
+        </span>
+        <textarea
+          value={dedication}
+          maxLength={GIFT_CARD_DEDICATION_MAX_LEN}
+          rows={3}
+          onChange={(event) => handleDedication(event.target.value)}
+          placeholder="Si es un regalo, puedes escribir un mensaje. Si es para ti, déjalo vacío."
+          className="input-field w-full min-h-[4.5rem] resize-y"
+        />
+        <span className="block text-[11px] text-zinc-400">
+          No es obligatorio. Sirve si quieres acompañar el código con una nota.
+        </span>
+      </label>
     </div>
   );
 }

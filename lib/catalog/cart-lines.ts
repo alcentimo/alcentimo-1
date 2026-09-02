@@ -2,6 +2,10 @@ import type { CartItem } from "@/lib/catalog/cart-types";
 import { cartItemKey, sumModifiersExtraUsd } from "@/lib/catalog/cart-types";
 import { parseVariantsJson } from "@/lib/products/variants";
 import type { SubmitOrderLineInput } from "@/lib/orders/types";
+import {
+  getGiftCardDedication,
+  pricingModifiersWithoutDedication,
+} from "@/lib/gift-cards/catalog";
 
 /** Normaliza IDs que vienen del carrito / localStorage (string, número o nulo). */
 function asCartId(value: unknown): string {
@@ -59,8 +63,13 @@ export function buildSubmitOrderLinesFromCartItems(
       const unitPriceUsd = Number.isFinite(unitPriceRaw) ? unitPriceRaw : 0;
       const modifiersExtraUsd = Math.max(
         0,
-        Number(sumModifiersExtraUsd(item.modifiers)) || 0,
+        Number(
+          sumModifiersExtraUsd(
+            pricingModifiersWithoutDedication(item.modifiers),
+          ),
+        ) || 0,
       );
+      const giftDedication = getGiftCardDedication(item.modifiers);
 
       return {
         productId,
@@ -72,6 +81,7 @@ export function buildSubmitOrderLinesFromCartItems(
         unitPriceUsd,
         wholesaleApplied: Boolean(item.wholesaleApplied),
         modifiersExtraUsd,
+        ...(giftDedication ? { giftDedication } : {}),
       };
     })
     .filter((line) => line.productId.length > 0 && line.quantity > 0);

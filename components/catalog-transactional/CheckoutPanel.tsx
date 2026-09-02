@@ -255,13 +255,13 @@ export function CheckoutPanel({
   );
 
   useEffect(() => {
-    if (shippingOptions.length === 1) {
+    if (!digitalGiftOnly && shippingOptions.length === 1) {
       setSelectedShipping(shippingOptions[0]!.key);
     }
     setSelectedPayment((current) =>
       resolveSelectedPaymentKey(current, paymentOptions),
     );
-  }, [paymentOptions, shippingOptions]);
+  }, [paymentOptions, shippingOptions, digitalGiftOnly]);
 
   const isNationalCarrierSelected = isNationalCarrierKey(selectedShipping);
   const isLocalDeliverySelected = selectedShipping === "delivery";
@@ -294,6 +294,7 @@ export function CheckoutPanel({
   }, [isPickupSelected]);
 
   useEffect(() => {
+    if (digitalGiftOnly) return;
     if (selectedShipping || shippingOptions.length === 0) return;
 
     if (fulfillmentMode === "pickup") {
@@ -304,7 +305,7 @@ export function CheckoutPanel({
 
     const delivery = shippingOptions.find((method) => method.key === "delivery");
     if (delivery) setSelectedShipping("delivery");
-  }, [fulfillmentMode, shippingOptions, selectedShipping]);
+  }, [digitalGiftOnly, fulfillmentMode, shippingOptions, selectedShipping]);
 
   useEffect(() => {
     let cancelled = false;
@@ -343,6 +344,7 @@ export function CheckoutPanel({
 
       const preferredMethod = context.preferredShippingMethod;
       if (
+        !digitalGiftOnly &&
         preferredMethod &&
         shippingOptions.some((option) => option.key === preferredMethod)
       ) {
@@ -353,10 +355,10 @@ export function CheckoutPanel({
         ) {
           setShippingBranchCode(context.preferredShippingBranchCode);
         }
-      } else if (fulfillmentMode === "pickup") {
+      } else if (!digitalGiftOnly && fulfillmentMode === "pickup") {
         const pickup = shippingOptions.find((method) => method.key === "pickup");
         if (pickup) setSelectedShipping("pickup");
-      } else if (fulfillmentMode === "delivery") {
+      } else if (!digitalGiftOnly && fulfillmentMode === "delivery") {
         const delivery = shippingOptions.find(
           (method) => method.key === "delivery",
         );
@@ -367,17 +369,23 @@ export function CheckoutPanel({
     return () => {
       cancelled = true;
     };
-  }, [storeSlug, fulfillmentMode, shippingOptions]);
+  }, [storeSlug, fulfillmentMode, shippingOptions, digitalGiftOnly]);
 
-  // Si el comprador ya tiene nombre y teléfono, salta directo a envío.
+  useEffect(() => {
+    if (digitalGiftOnly && checkoutStep === 3) {
+      setCheckoutStep(4);
+    }
+  }, [digitalGiftOnly, checkoutStep]);
+
+  // Si el comprador ya tiene nombre y teléfono, salta envío (o pago si es digital).
   useEffect(() => {
     if (autoSkippedCustomerStepRef.current) return;
     if (initialStep !== 2 || checkoutStep !== 2) return;
     if (!customerProfile) return;
 
     autoSkippedCustomerStepRef.current = true;
-    setCheckoutStep(3);
-  }, [customerProfile, checkoutStep, initialStep]);
+    setCheckoutStep(digitalGiftOnly ? 4 : 3);
+  }, [customerProfile, checkoutStep, initialStep, digitalGiftOnly]);
 
   const isLoggedCustomer = Boolean(
     customerProfile || customerSession?.isCustomer,
@@ -793,28 +801,7 @@ export function CheckoutPanel({
         return;
       }
       // Fallback por si el builder filtró de más: el servidor resuelve variantes.
-      submitLines = items
-        .map((item) => ({
-          productId: String(item.product?.product_id ?? "").trim(),
-          variantId: String(
-            item.variantId || item.product?.default_variant_id || "",
-          ).trim(),
-          productName:
-            String(item.product?.product_name ?? "").trim() || "Producto",
-          variantName: String(item.variantName ?? "").trim() || "Estándar",
-          quantity: Math.max(1, Math.floor(Number(item.quantity) || 1)),
-          unitPriceUsd: Number(item.unitPriceUsd) || 0,
-          modifiersExtraUsd: Math.max(
-            0,
-            Number(
-              item.modifiers?.reduce(
-                (sum, row) => sum + (row.priceExtraUsd || 0),
-                0,
-              ) ?? 0,
-            ) || 0,
-          ),
-        }))
-        .filter((line) => line.productId.length > 0);
+      submitLines = buildSubmitOrderLinesFromCartItems(items);
     }
 
     if (submitLines.length === 0) {
@@ -1055,8 +1042,24 @@ export function CheckoutPanel({
       ) : (
         <>
           <CheckoutStepper
-            step={checkoutStep}
-            onStepSelect={goToStep}
+            step={
+              digitalGiftOnly && checkoutStep === 4
+                ? 3
+                : checkoutStep
+            }
+            steps={digitalGiftOnly ? 3 : 4}
+            labels={
+              digitalGiftOnly
+                ? ["Carrito", "Datos", "Pago"]
+                : ["Carrito", "Datos", "Envío", "Pago"]
+            }
+            onStepSelect={(next) => {
+              if (digitalGiftOnly && next === 3) {
+                goToStep(4);
+                return;
+              }
+              goToStep(next);
+            }}
           />
 
           <div className="txn-checkout-scroll" key={checkoutStep}>
@@ -1741,7 +1744,8 @@ export function CheckoutPanel({
             {(discountUsd > 0 && appliedPromotion) ||
             giftCardUsd > 0 ||
             storeCreditApplyUsd > 0 ||
-            (checkoutStep >= 3 &&
+            (!digitalGiftOnly &&
+              checkoutStep >= 3 &&
               ((selectedShipping && shippingQuote.appliesPaidShipping) ||
                 (shippingHint && selectedShipping))) ? (
               <div className="txn-checkout-order-meta">
@@ -1775,6 +1779,7 @@ export function CheckoutPanel({
                   </div>
                 ) : null}
                 {checkoutStep >= 3 &&
+                !digitalGiftOnly &&
                 selectedShipping &&
                 shippingQuote.appliesPaidShipping ? (
                   <div className="txn-checkout-total !border-0 !px-0 !py-0">
@@ -1790,7 +1795,10 @@ export function CheckoutPanel({
                     </strong>
                   </div>
                 ) : null}
-                {checkoutStep >= 3 && shippingHint && selectedShipping ? (
+                {checkoutStep >= 3 &&
+                !digitalGiftOnly &&
+                shippingHint &&
+                selectedShipping ? (
                   <p className="text-[11px] leading-relaxed text-zinc-500 dark:text-zinc-400">
                     {shippingHint}
                   </p>
@@ -1822,12 +1830,14 @@ export function CheckoutPanel({
                     ? "Al confirmar, verás el resumen del pedido. WhatsApp es opcional desde esa pantalla."
                     : "Tu pedido quedará registrado en el panel de la tienda."}
                 </p>
-                {shippingDisplayLabel || paymentLabel ? (
+                {(!digitalGiftOnly && shippingDisplayLabel) || paymentLabel ? (
                   <p className="txn-checkout-hint !text-left">
-                    {shippingDisplayLabel
+                    {!digitalGiftOnly && shippingDisplayLabel
                       ? `Envío: ${shippingDisplayLabel}`
                       : null}
-                    {shippingDisplayLabel && paymentLabel ? " · " : null}
+                    {!digitalGiftOnly && shippingDisplayLabel && paymentLabel
+                      ? " · "
+                      : null}
                     {paymentLabel ? `Pago: ${paymentLabel}` : null}
                   </p>
                 ) : null}
@@ -1849,7 +1859,9 @@ export function CheckoutPanel({
                   : checkoutStep === 2
                     ? "Completa nombre y teléfono para continuar."
                     : checkoutStep === 3
-                      ? "Selecciona el método de envío para continuar."
+                      ? digitalGiftOnly
+                        ? "Selecciona el método de pago para enviar tu pedido."
+                        : "Selecciona el método de envío para continuar."
                       : "Selecciona el método de pago para enviar tu pedido."}
               </p>
             ) : null}

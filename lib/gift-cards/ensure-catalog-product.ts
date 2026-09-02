@@ -310,13 +310,20 @@ export async function issuePurchasedGiftCards(input: {
       let inserted = false;
       for (let attempt = 0; attempt < 4 && !inserted; attempt += 1) {
         const code = generateGiftCardCode();
+        const dedication = line.gift_dedication?.trim();
         const { error } = await admin.from("gift_cards").insert({
           store_id: input.storeId,
           code,
           initial_balance_usd: amount,
           current_balance_usd: amount,
           status: "active",
-          note: `Pedido ${input.orderId.slice(0, 8).toUpperCase()} · ${line.variant_name}`,
+          note: [
+            `Pedido ${input.orderId.slice(0, 8).toUpperCase()}`,
+            line.variant_name,
+            dedication || null,
+          ]
+            .filter(Boolean)
+            .join(" · "),
         });
         if (!error) {
           lineCodes.push(code);

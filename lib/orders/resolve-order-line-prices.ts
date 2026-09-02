@@ -16,6 +16,7 @@ import {
   clampGiftCardCustomAmount,
   isGiftCardCustomVariant,
   isGiftCardMetadata,
+  sanitizeGiftCardDedication,
   GIFT_CARD_PRODUCT_SLUG,
 } from "@/lib/gift-cards/catalog";
 import { isPlatformAdminOwnedStore } from "@/lib/gift-cards/admin-store";
@@ -317,6 +318,11 @@ export async function resolveOrderLinesWithPricing(
       pricing_tier: pricing.wholesaleApplied ? "wholesale" : "retail",
       retail_unit_price_usd: pricing.retailUnitUsd,
       ...(isGiftCard ? { is_gift_card: true } : {}),
+      ...(isGiftCard && sanitizeGiftCardDedication(line.giftDedication)
+        ? {
+            gift_dedication: sanitizeGiftCardDedication(line.giftDedication),
+          }
+        : {}),
     };
 
     if (dropship) {

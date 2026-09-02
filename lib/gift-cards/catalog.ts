@@ -11,6 +11,8 @@ export const GIFT_CARD_CUSTOM_MIN_USD = 5;
 export const GIFT_CARD_CUSTOM_MAX_USD = 500;
 export const GIFT_CARD_VIRTUAL_STOCK = 999_999;
 export const GIFT_CARD_AMOUNT_GROUP_ID = "gift-card-amount";
+export const GIFT_CARD_DEDICATION_GROUP_ID = "gift-card-dedication";
+export const GIFT_CARD_DEDICATION_MAX_LEN = 240;
 
 /** Términos que deben encontrar siempre el producto digital en el buscador. */
 export const GIFT_CARD_SEARCH_PHRASES = [
@@ -88,6 +90,50 @@ export function isGiftCardCustomVariant(attributes: unknown): boolean {
   }
   const value = (attributes as Record<string, unknown>)[GIFT_CARD_CUSTOM_ATTR];
   return value === true || value === "true" || value === "1";
+}
+
+export function sanitizeGiftCardDedication(value: unknown): string {
+  return String(value ?? "")
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, GIFT_CARD_DEDICATION_MAX_LEN);
+}
+
+export function getGiftCardDedication(
+  modifiers: Array<{ groupId?: string; optionName?: string }> | undefined,
+): string {
+  if (!modifiers?.length) return "";
+  const row = modifiers.find(
+    (item) => item.groupId === GIFT_CARD_DEDICATION_GROUP_ID,
+  );
+  return sanitizeGiftCardDedication(row?.optionName);
+}
+
+export function giftCardDedicationModifier(text: string): {
+  groupId: string;
+  groupName: string;
+  optionId: string;
+  optionName: string;
+  priceExtraUsd: number;
+} | null {
+  const optionName = sanitizeGiftCardDedication(text);
+  if (!optionName) return null;
+  return {
+    groupId: GIFT_CARD_DEDICATION_GROUP_ID,
+    groupName: "Dedicatoria",
+    optionId: "message",
+    optionName,
+    priceExtraUsd: 0,
+  };
+}
+
+export function pricingModifiersWithoutDedication<
+  T extends { groupId?: string },
+>(modifiers: T[] | undefined): T[] {
+  if (!modifiers?.length) return [];
+  return modifiers.filter(
+    (row) => row.groupId !== GIFT_CARD_DEDICATION_GROUP_ID,
+  );
 }
 
 export function cartItemsAreGiftCardsOnly(

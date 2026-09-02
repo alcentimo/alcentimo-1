@@ -40,6 +40,7 @@ import {
   clampGiftCardCustomAmount,
   isGiftCardCatalogItem,
   isGiftCardCustomVariant,
+  pricingModifiersWithoutDedication,
 } from "@/lib/gift-cards/catalog";
 import { getLowStockThreshold } from "@/lib/inventory/stock-status";
 import {
@@ -219,16 +220,19 @@ export function CatalogProductDetailPanel({
 }: CatalogProductDetailPanelProps) {
   const cartContext = useCartOptional();
   const shellNav = useCatalogShellNavigationOptional();
-  const giftCardsEnabled = useGiftCardsEnabled();
-  const activeExchangeRate = exchangeRate ?? product.exchange_rate_used;
   // Buyer PDP: cart is the primary path. WhatsApp only when the store is
   // WhatsApp-only (or cart is unavailable, e.g. reference/preview mode).
+  // Gift cards always use the web cart so the code can be issued.
   const cartAvailable = Boolean(onAddToCart);
+  const giftCardsEnabled = useGiftCardsEnabled();
+  const isGiftCardProductEarly = isGiftCardCatalogItem(product);
   const showWhatsAppOrder =
-    checkoutType === "direct_whatsapp" ||
-    (checkoutType === "both" && !cartAvailable);
+    !(isGiftCardProductEarly && giftCardsEnabled && cartAvailable) &&
+    (checkoutType === "direct_whatsapp" ||
+      (checkoutType === "both" && !cartAvailable));
   const whatsappPrimary = !cartAvailable;
   const whatsappReady = Boolean(whatsappPhone?.trim());
+  const activeExchangeRate = exchangeRate ?? product.exchange_rate_used;
 
   const [detailDescription, setDetailDescription] = useState<string | null>(null);
   const [detailImages, setDetailImages] = useState<CatalogProductGalleryImage[]>(
@@ -313,7 +317,9 @@ export function CatalogProductDetailPanel({
     [variantOptions, selectedVariantId],
   );
 
-  const modifiersExtra = sumModifiersExtraUsd(selectedModifiers);
+  const modifiersExtra = sumModifiersExtraUsd(
+    pricingModifiersWithoutDedication(selectedModifiers),
+  );
 
   const contextCartQuantity =
     cartContext?.items.find(

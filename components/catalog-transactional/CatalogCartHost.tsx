@@ -10,6 +10,10 @@ import { CheckoutPanel } from "@/components/catalog-transactional/CheckoutPanel"
 import { CheckoutErrorBoundary } from "@/components/catalog-transactional/CheckoutErrorBoundary";
 import { useCatalogFulfillment } from "@/components/catalog-transactional/CatalogFulfillmentProvider";
 import type { CheckoutType } from "@/lib/store-settings/types";
+import {
+  cartItemsAreGiftCardsOnly,
+  isGiftCardCatalogItem,
+} from "@/lib/gift-cards/catalog";
 
 interface CatalogCartHostProps {
   store: Pick<Store, "slug" | "name">;
@@ -34,8 +38,12 @@ export type CartPanelView = "closed" | "summary" | "checkout";
 function resolveCheckoutType(
   purchaseInfo: PublicPurchaseInfo,
   sandboxMode: boolean,
+  hasGiftCard: boolean,
 ): CheckoutType {
   if (sandboxMode) return "direct_whatsapp";
+  if (hasGiftCard && purchaseInfo.checkoutType === "direct_whatsapp") {
+    return "full_checkout";
+  }
   return purchaseInfo.checkoutType;
 }
 
@@ -51,7 +59,7 @@ export function CatalogCartHost({
   showFab = true,
   sandboxMode = false,
 }: CatalogCartHostProps) {
-  const { itemCount } = useCart();
+  const { itemCount, items } = useCart();
   const { mode, selectedLocationId, locations } = useCatalogFulfillment();
   const defaultLocationId =
     locations.find((loc) => loc.is_default)?.id ?? locations[0]?.id ?? null;
@@ -59,12 +67,18 @@ export function CatalogCartHost({
   const isControlled =
     controlledPanelView !== undefined && onPanelViewChange !== undefined;
 
-  const checkoutType = resolveCheckoutType(purchaseInfo, sandboxMode);
+  const checkoutType = resolveCheckoutType(
+    purchaseInfo,
+    sandboxMode,
+    items.some((item) => isGiftCardCatalogItem(item.product)),
+  );
+  const digitalGiftOnly = cartItemsAreGiftCardsOnly(items);
   const showFullCheckoutCta =
     checkoutType === "both" || checkoutType === "full_checkout";
   const showWhatsAppCta =
-    checkoutType === "both" || checkoutType === "direct_whatsapp";
-  const whatsappOnly = checkoutType === "direct_whatsapp";
+    !digitalGiftOnly &&
+    (checkoutType === "both" || checkoutType === "direct_whatsapp");
+  const whatsappOnly = !digitalGiftOnly && checkoutType === "direct_whatsapp";
 
   const initialView: CartPanelView = openInitially
     ? showFullCheckoutCta

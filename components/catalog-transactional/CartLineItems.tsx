@@ -3,6 +3,7 @@
 import Image from "next/image";
 import { Minus, Plus, Trash2 } from "lucide-react";
 import { cartItemKey, type CartItem } from "@/lib/catalog/cart-types";
+import { GIFT_CARD_DEDICATION_GROUP_ID } from "@/lib/gift-cards/catalog";
 import { formatApproxBs, formatUsd } from "@/lib/format";
 import { WholesalePriceBadge } from "@/components/catalog/WholesalePriceBadge";
 import { cn } from "@/lib/cn";
@@ -96,6 +97,18 @@ export function CartLineItems({
                   {item.variantName !== "Estándar" ? (
                     <p className="mt-0.5 truncate text-xs text-zinc-500">
                       {item.variantName}
+                    </p>
+                  ) : null}
+                  {item.modifiers?.some(
+                    (row) => row.groupId === GIFT_CARD_DEDICATION_GROUP_ID,
+                  ) ? (
+                    <p className="mt-0.5 line-clamp-2 text-xs italic text-zinc-500">
+                      {
+                        item.modifiers.find(
+                          (row) =>
+                            row.groupId === GIFT_CARD_DEDICATION_GROUP_ID,
+                        )?.optionName
+                      }
                     </p>
                   ) : null}
                   {item.wholesaleApplied ? (

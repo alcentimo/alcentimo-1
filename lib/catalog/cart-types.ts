@@ -1,6 +1,7 @@
 import type { CatalogListItem } from "@/lib/database.types";
 import type { CatalogVariantOption } from "@/lib/products/variants";
 import { computeUsdToVes, resolveUnitPriceUsd } from "@/lib/catalog/pricing";
+import { pricingModifiersWithoutDedication } from "@/lib/gift-cards/catalog";
 
 export interface CartModifierSelection {
   groupId: string;
@@ -65,7 +66,9 @@ export function buildCartItem(
   modifiers: CartModifierSelection[] = [],
   wholesaleEnabled = true,
 ): CartItem {
-  const modifiersExtra = sumModifiersExtraUsd(modifiers);
+  const modifiersExtra = sumModifiersExtraUsd(
+    pricingModifiersWithoutDedication(modifiers),
+  );
   const retailBaseUsd = product.price_usd ?? 0;
   const pricing = resolveUnitPriceUsd({
     retailUsd: retailBaseUsd,
@@ -76,7 +79,9 @@ export function buildCartItem(
     wholesaleEnabled,
   });
   const unitPriceUsd = pricing.unitPriceUsd;
-  const modifiersLabel = formatModifiersLabel(modifiers);
+  const modifiersLabel = formatModifiersLabel(
+    pricingModifiersWithoutDedication(modifiers),
+  );
   const variantName = modifiersLabel
     ? `${variant.name} · ${modifiersLabel}`
     : variant.name;

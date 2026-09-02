@@ -71,6 +71,27 @@ export function CheckoutSuccessScreen({
       : CUSTOMER_ORDER_ESTADO_LABELS.pendiente;
 
   const instructions = (() => {
+    if (issuedGiftCardCodes.length > 0) {
+      if (proofAttached) {
+        return {
+          title: "Tu pago está siendo verificado",
+          body: "La tienda recibió tu comprobante. Cuando se confirme el pago, tus códigos de tarjeta de regalo quedan listos para usar o regalar. No hay envío físico.",
+          whatsappLabel: "Avisar a la tienda por WhatsApp",
+        };
+      }
+      if (expectsPaymentProof) {
+        return {
+          title: "Falta enviar tu comprobante",
+          body: "Tu pedido digital quedó registrado. Súbelo aquí o envíalo por WhatsApp para que validen el pago. El código ya aparece arriba.",
+          whatsappLabel: "Enviar comprobante por WhatsApp",
+        };
+      }
+      return {
+        title: "Pedido digital registrado",
+        body: "No hay envío ni agencia de encomienda. Conserva los códigos de arriba; también puedes abonarlos en Mi perfil.",
+        whatsappLabel: "Escribir a la tienda por WhatsApp",
+      };
+    }
     if (proofAttached) {
       return {
         title: "Tu pago está siendo verificado",
@@ -125,8 +146,8 @@ export function CheckoutSuccessScreen({
             Códigos de tu tarjeta de regalo
           </p>
           <p className="mt-1 text-xs text-teal-800/80 dark:text-teal-200/80">
-            Guárdalos o abónalos en Mi perfil. Cada código es de un solo uso
-            para cargar saldo.
+            Producto digital: no hay envío físico. Guarda estos códigos o
+            abónalos en Mi perfil. Cada uno carga saldo en esta tienda.
           </p>
           <ul className="mt-2 space-y-1 font-mono text-sm font-semibold tracking-wide text-teal-950 dark:text-teal-50">
             {issuedGiftCardCodes.map((code) => (
