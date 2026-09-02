@@ -140,6 +140,18 @@ export async function submitTransactionalOrder(
         0,
         Math.min(1000, Number(line.modifiersExtraUsd ?? 0) || 0),
       ),
+      giftCardRecipientEmail:
+        typeof line.giftCardRecipientEmail === "string"
+          ? line.giftCardRecipientEmail.trim().toLowerCase().slice(0, 160)
+          : null,
+      giftCardMessage:
+        typeof line.giftCardMessage === "string"
+          ? line.giftCardMessage.trim().slice(0, 300)
+          : null,
+      giftCardFromName:
+        typeof line.giftCardFromName === "string"
+          ? line.giftCardFromName.trim().slice(0, 80)
+          : null,
     }));
   } catch {
     return { error: "Pedido inválido." };

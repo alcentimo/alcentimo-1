@@ -14,6 +14,9 @@ import {
 } from "@/lib/gift-cards/catalog";
 import { upsertVariantLocationStock } from "@/lib/locations/sync-stock";
 import type { OrderLineItem } from "@/lib/orders/types";
+import { sendGiftCardRecipientEmail } from "@/lib/email/send-gift-card-email";
+import { getPublicSiteUrl } from "@/lib/env/server";
+import { getStoreCustomerAccountPath } from "@/lib/store-host";
 
 const PRODUCT_NAME = "Tarjeta de regalo";
 const CATEGORY_NAME = "Tarjetas de regalo";
@@ -235,6 +238,16 @@ export async function issuePurchasedGiftCards(input: {
   }
 
   const admin = createAdminClient();
+  const { data: storeRow } = await admin
+    .from("stores")
+    .select("slug, name")
+    .eq("id", input.storeId)
+    .maybeSingle();
+  const storeSlug = String((storeRow as { slug?: string } | null)?.slug ?? "");
+  const storeName = String(
+    (storeRow as { name?: string } | null)?.name ?? "Alcéntimo",
+  );
+  const redeemUrl = `${getPublicSiteUrl().replace(/\/$/, "")}${getStoreCustomerAccountPath(storeSlug || "tienda", "perfil")}`;
   const codes: string[] = [];
   const codesByProductKey = new Map<string, string[]>();
 
@@ -247,18 +260,41 @@ export async function issuePurchasedGiftCards(input: {
       let inserted = false;
       for (let attempt = 0; attempt < 4 && !inserted; attempt += 1) {
         const code = generateGiftCardCode();
+        const recipient = line.gift_card_recipient_email?.trim() || null;
+        const fromName = line.gift_card_from_name?.trim() || null;
+        const message = line.gift_card_message?.trim() || null;
+        const noteParts = [
+          `Pedido ${input.orderId.slice(0, 8).toUpperCase()}`,
+          line.variant_name,
+          recipient ? `Para ${recipient}` : null,
+          fromName ? `De ${fromName}` : null,
+        ].filter(Boolean);
         const { error } = await admin.from("gift_cards").insert({
           store_id: input.storeId,
           code,
           initial_balance_usd: amount,
           current_balance_usd: amount,
           status: "active",
-          note: `Pedido ${input.orderId.slice(0, 8).toUpperCase()} · ${line.variant_name}`,
+          note: noteParts.join(" · "),
         });
         if (!error) {
           lineCodes.push(code);
           codes.push(code);
           inserted = true;
+          if (recipient) {
+            const emailed = await sendGiftCardRecipientEmail({
+              to: recipient,
+              storeName,
+              amountUsd: amount,
+              code,
+              fromName,
+              message,
+              redeemUrl,
+            });
+            if (!emailed.ok) {
+              console.error("[gift-card-email]", emailed.error);
+            }
+          }
         } else if (!/duplicate|unique/i.test(error.message)) {
           console.error("[gift-card-issue]", error.message);
           break;

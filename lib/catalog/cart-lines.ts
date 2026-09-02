@@ -2,6 +2,13 @@ import type { CartItem } from "@/lib/catalog/cart-types";
 import { cartItemKey, sumModifiersExtraUsd } from "@/lib/catalog/cart-types";
 import { parseVariantsJson } from "@/lib/products/variants";
 import type { SubmitOrderLineInput } from "@/lib/orders/types";
+import {
+  GIFT_CARD_FROM_MAX_LENGTH,
+  GIFT_CARD_MESSAGE_MAX_LENGTH,
+  giftCardDeliveryFromModifiers,
+  isGiftCardCatalogItem,
+  normalizeGiftCardRecipientEmail,
+} from "@/lib/gift-cards/catalog";
 
 /** Normaliza IDs que vienen del carrito / localStorage (string, número o nulo). */
 function asCartId(value: unknown): string {
@@ -61,6 +68,12 @@ export function buildSubmitOrderLinesFromCartItems(
         0,
         Number(sumModifiersExtraUsd(item.modifiers)) || 0,
       );
+      const delivery = isGiftCardCatalogItem(item.product)
+        ? giftCardDeliveryFromModifiers(item.modifiers)
+        : null;
+      const recipientEmail = delivery
+        ? normalizeGiftCardRecipientEmail(delivery.recipientEmail)
+        : null;
 
       return {
         productId,
@@ -72,6 +85,16 @@ export function buildSubmitOrderLinesFromCartItems(
         unitPriceUsd,
         wholesaleApplied: Boolean(item.wholesaleApplied),
         modifiersExtraUsd,
+        ...(recipientEmail
+          ? {
+              giftCardRecipientEmail: recipientEmail,
+              giftCardMessage:
+                delivery?.message.slice(0, GIFT_CARD_MESSAGE_MAX_LENGTH) ||
+                null,
+              giftCardFromName:
+                delivery?.fromName.slice(0, GIFT_CARD_FROM_MAX_LENGTH) || null,
+            }
+          : {}),
       };
     })
     .filter((line) => line.productId.length > 0 && line.quantity > 0);

@@ -16,6 +16,9 @@ import {
   clampGiftCardCustomAmount,
   isGiftCardCustomVariant,
   isGiftCardMetadata,
+  normalizeGiftCardRecipientEmail,
+  GIFT_CARD_FROM_MAX_LENGTH,
+  GIFT_CARD_MESSAGE_MAX_LENGTH,
   GIFT_CARD_PRODUCT_SLUG,
 } from "@/lib/gift-cards/catalog";
 import { isPlatformAdminOwnedStore } from "@/lib/gift-cards/admin-store";
@@ -221,6 +224,17 @@ export async function resolveOrderLinesWithPricing(
       return { items: [], error: GIFT_CARD_STORE_DENIED_MESSAGE };
     }
 
+    const recipientEmail = isGiftCard
+      ? normalizeGiftCardRecipientEmail(line.giftCardRecipientEmail ?? "")
+      : null;
+    if (isGiftCard && !recipientEmail) {
+      return {
+        items: [],
+        error:
+          "Indica el correo electrónico del destinatario de la tarjeta de regalo.",
+      };
+    }
+
     const defaultVariantId = defaultVariantByProduct.get(line.productId);
     if (!defaultVariantId) {
       return {
@@ -316,7 +330,18 @@ export async function resolveOrderLinesWithPricing(
       line_total_usd: pricing.unitPriceUsd * line.quantity,
       pricing_tier: pricing.wholesaleApplied ? "wholesale" : "retail",
       retail_unit_price_usd: pricing.retailUnitUsd,
-      ...(isGiftCard ? { is_gift_card: true } : {}),
+      ...(isGiftCard
+        ? {
+            is_gift_card: true,
+            gift_card_recipient_email: recipientEmail,
+            gift_card_message:
+              line.giftCardMessage?.trim().slice(0, GIFT_CARD_MESSAGE_MAX_LENGTH) ||
+              null,
+            gift_card_from_name:
+              line.giftCardFromName?.trim().slice(0, GIFT_CARD_FROM_MAX_LENGTH) ||
+              null,
+          }
+        : {}),
     };
 
     if (dropship) {

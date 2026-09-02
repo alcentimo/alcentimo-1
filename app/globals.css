@@ -3224,8 +3224,101 @@ html:has(.landing-shell) {
   @apply flex w-full touch-manipulation items-center justify-center gap-2 rounded-xl border-2 border-teal-600 bg-white px-4 py-3 text-sm font-semibold text-teal-700 transition hover:bg-teal-50 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60 disabled:active:scale-100;
 }
 
-.product-detail-add-btn-in-cart {
-  @apply bg-teal-700;
+.gift-card-hero {
+  @apply flex min-h-[18rem] items-center justify-center bg-[#232f3e] p-6 sm:min-h-[22rem] sm:p-8;
+}
+
+.gift-card-hero-card {
+  @apply w-full max-w-md rounded-2xl bg-gradient-to-br from-amber-200 via-orange-100 to-amber-50 px-6 py-8 text-[#131921] shadow-xl;
+}
+
+.gift-card-hero-brand {
+  @apply m-0 text-[11px] font-semibold uppercase tracking-[0.18em] text-zinc-700;
+}
+
+.gift-card-hero-label {
+  @apply mt-3 m-0 text-lg font-medium;
+}
+
+.gift-card-hero-amount {
+  @apply mt-4 m-0 text-4xl font-semibold tracking-tight sm:text-5xl;
+}
+
+.gift-card-hero-note {
+  @apply mt-6 m-0 text-sm text-zinc-600;
+}
+
+.gift-card-buy-box {
+  @apply space-y-5 rounded-xl border border-zinc-200 bg-white p-4 sm:p-5;
+}
+
+.gift-card-buy-box-price {
+  @apply m-0 text-3xl font-normal tracking-tight text-[#0f1111];
+}
+
+.gift-card-buy-box-kicker {
+  @apply m-0 text-sm text-zinc-600;
+}
+
+.gift-card-buy-box-section {
+  @apply m-0 min-w-0 border-0 p-0;
+}
+
+.gift-card-buy-box-section legend {
+  @apply mb-2 px-0 text-sm font-semibold text-[#0f1111];
+}
+
+.gift-card-amount-grid {
+  @apply grid grid-cols-2 gap-2 sm:grid-cols-4;
+}
+
+.gift-card-amount-tile {
+  @apply min-h-12 rounded-md border border-zinc-400 bg-white px-2 text-sm font-medium text-[#0f1111] transition hover:bg-zinc-50;
+}
+
+.gift-card-amount-tile--selected {
+  @apply border-[#c7511f] bg-[#fef8f2] shadow-[inset_0_0_0_1px_#c7511f];
+}
+
+.gift-card-buy-box-field {
+  @apply block space-y-1.5 text-sm;
+}
+
+.gift-card-buy-box-field > span:first-child {
+  @apply font-semibold text-[#0f1111];
+}
+
+.gift-card-buy-box-field input,
+.gift-card-buy-box-field textarea {
+  @apply w-full rounded-md border border-zinc-400 bg-white px-3 py-2 text-sm text-[#0f1111] outline-none focus:border-[#e77600] focus:shadow-[0_0_0_3px_rgba(228,121,17,0.35)];
+}
+
+.gift-card-custom-input {
+  @apply flex items-center gap-2 rounded-md border border-zinc-400 bg-white px-3 focus-within:border-[#e77600] focus-within:shadow-[0_0_0_3px_rgba(228,121,17,0.35)];
+}
+
+.gift-card-custom-input span {
+  @apply text-sm font-semibold text-zinc-600;
+}
+
+.gift-card-custom-input input {
+  @apply border-0 p-2 shadow-none focus:border-0 focus:shadow-none;
+}
+
+.gift-card-buy-box-hint {
+  @apply text-xs font-normal text-zinc-500;
+}
+
+.gift-card-buy-box-error {
+  @apply text-xs font-medium text-red-700;
+}
+
+.product-detail-panel--gift-card .product-detail-cart-btn {
+  @apply rounded-full border-0 bg-[#ffd814] text-[#0f1111] hover:bg-[#f7ca00];
+}
+
+.product-detail-panel--gift-card .product-detail-add-btn {
+  @apply rounded-full bg-[#ffa41c] text-[#0f1111] shadow-none hover:bg-[#fa8900];
 }
 
 .product-file-input-offscreen {

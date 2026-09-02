@@ -31,6 +31,9 @@ export interface OrderLineItem {
   is_gift_card?: boolean;
   /** Códigos emitidos al confirmar la compra (uno por unidad). */
   issued_gift_card_codes?: string[];
+  gift_card_recipient_email?: string | null;
+  gift_card_message?: string | null;
+  gift_card_from_name?: string | null;
 }
 
 export interface CatalogOrder {
@@ -67,4 +70,7 @@ export interface SubmitOrderLineInput {
   wholesaleApplied?: boolean;
   /** Extra de modificadores (alimentos, etc.); el servidor lo suma al precio. */
   modifiersExtraUsd?: number;
+  giftCardRecipientEmail?: string | null;
+  giftCardMessage?: string | null;
+  giftCardFromName?: string | null;
 }

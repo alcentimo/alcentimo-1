@@ -11,6 +11,11 @@ export const GIFT_CARD_CUSTOM_MIN_USD = 5;
 export const GIFT_CARD_CUSTOM_MAX_USD = 500;
 export const GIFT_CARD_VIRTUAL_STOCK = 999_999;
 export const GIFT_CARD_AMOUNT_GROUP_ID = "gift-card-amount";
+export const GIFT_CARD_RECIPIENT_GROUP_ID = "gift-card-recipient";
+export const GIFT_CARD_MESSAGE_GROUP_ID = "gift-card-message";
+export const GIFT_CARD_FROM_GROUP_ID = "gift-card-from";
+export const GIFT_CARD_MESSAGE_MAX_LENGTH = 300;
+export const GIFT_CARD_FROM_MAX_LENGTH = 80;
 
 export function isGiftCardMetadata(
   metadata: Record<string, unknown> | null | undefined,
@@ -62,6 +67,43 @@ export function giftCardWholesaleEnabled(
 ): boolean {
   if (isGiftCardCatalogItem(product)) return false;
   return wholesaleEnabled;
+}
+
+export function normalizeGiftCardRecipientEmail(value: string): string | null {
+  const email = value.trim().toLowerCase();
+  if (email.length < 5 || email.length > 160) return null;
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return null;
+  return email;
+}
+
+export function isGiftCardDeliveryModifierGroup(groupId: string): boolean {
+  return (
+    groupId === GIFT_CARD_RECIPIENT_GROUP_ID ||
+    groupId === GIFT_CARD_MESSAGE_GROUP_ID ||
+    groupId === GIFT_CARD_FROM_GROUP_ID
+  );
+}
+
+export function giftCardDeliveryFromModifiers(
+  modifiers:
+    | Array<{ groupId: string; optionName?: string; optionId?: string }>
+    | null
+    | undefined,
+): {
+  recipientEmail: string;
+  message: string;
+  fromName: string;
+} {
+  const rows = modifiers ?? [];
+  const read = (groupId: string) => {
+    const row = rows.find((item) => item.groupId === groupId);
+    return String(row?.optionName || row?.optionId || "").trim();
+  };
+  return {
+    recipientEmail: read(GIFT_CARD_RECIPIENT_GROUP_ID),
+    message: read(GIFT_CARD_MESSAGE_GROUP_ID),
+    fromName: read(GIFT_CARD_FROM_GROUP_ID),
+  };
 }
 
 /** Detecta SKUs mayoristas que no deben copiarse a vitrinas dropship. */

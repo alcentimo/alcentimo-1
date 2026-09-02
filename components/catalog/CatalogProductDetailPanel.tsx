@@ -11,6 +11,7 @@ import type { CartModifierSelection } from "@/lib/catalog/cart-types";
 import { MercadoProductGallery } from "@/components/mercado-oculto/MercadoProductGallery";
 import { RubroCatalogVariantSlot } from "@/components/rubros/RubroCatalogVariantSlot";
 import { GiftCardAmountPicker } from "@/components/catalog/GiftCardAmountPicker";
+import { GiftCardHero } from "@/components/catalog/GiftCardHero";
 import { useGiftCardsEnabled } from "@/components/catalog-transactional/GiftCardStorefrontProvider";
 import { fetchCatalogProductDetail } from "@/lib/catalog/fetch-catalog-product-detail";
 import {
@@ -38,8 +39,10 @@ import {
 } from "@/lib/products/variants";
 import {
   clampGiftCardCustomAmount,
+  giftCardDeliveryFromModifiers,
   isGiftCardCatalogItem,
   isGiftCardCustomVariant,
+  normalizeGiftCardRecipientEmail,
 } from "@/lib/gift-cards/catalog";
 import { getLowStockThreshold } from "@/lib/inventory/stock-status";
 import {
@@ -132,6 +135,7 @@ function ProductDetailActionButtons({
   whatsappReady,
   whatsappPrimary,
   canWhatsAppOrder,
+  giftCardLayout = false,
 }: {
   onAddToCart?: CatalogProductDetailPanelProps["onAddToCart"];
   handleBuyNow: () => void;
@@ -146,19 +150,9 @@ function ProductDetailActionButtons({
   whatsappReady: boolean;
   whatsappPrimary: boolean;
   canWhatsAppOrder: boolean;
+  giftCardLayout?: boolean;
 }) {
-  return (
-    <>
-      {onAddToCart ? (
-        <>
-          <button
-            type="button"
-            onClick={handleBuyNow}
-            disabled={outOfStock || (!canAddMore && !inCart)}
-            className="product-detail-add-btn touch-manipulation"
-          >
-            Comprar ahora
-          </button>
+  const addToCartButton = onAddToCart ? (
           <button
             type="button"
             onClick={handleAdd}
@@ -179,8 +173,31 @@ function ProductDetailActionButtons({
                 : `En carrito (${contextCartQuantity})`
               : "Agregar al carrito"}
           </button>
+  ) : null;
+  const buyNowButton = onAddToCart ? (
+          <button
+            type="button"
+            onClick={handleBuyNow}
+            disabled={outOfStock || (!canAddMore && !inCart)}
+            className="product-detail-add-btn touch-manipulation"
+          >
+            Comprar ahora
+          </button>
+  ) : null;
+
+  return (
+    <>
+      {giftCardLayout ? (
+        <>
+          {addToCartButton}
+          {buyNowButton}
         </>
-      ) : null}
+      ) : (
+        <>
+          {buyNowButton}
+          {addToCartButton}
+        </>
+      )}
 
       {showWhatsAppOrder && whatsappReady ? (
         <button
@@ -361,6 +378,13 @@ export function CatalogProductDetailPanel({
   const giftCustomValid =
     !giftCustomSelected ||
     clampGiftCardCustomAmount(modifiersExtra) != null;
+  const giftRecipientValid =
+    !isGiftCard ||
+    Boolean(
+      normalizeGiftCardRecipientEmail(
+        giftCardDeliveryFromModifiers(selectedModifiers).recipientEmail,
+      ),
+    );
 
   const canAddMore =
     !giftCardsBlocked &&
@@ -368,7 +392,8 @@ export function CatalogProductDetailPanel({
     remaining > 0 &&
     onAddToCart &&
     selectedVariant &&
-    giftCustomValid;
+    giftCustomValid &&
+    giftRecipientValid;
   const inCart = contextCartQuantity > 0;
 
   const hasDiscount = isProductOnSale(product.compare_at_usd, product.price_usd);
@@ -462,7 +487,13 @@ export function CatalogProductDetailPanel({
 
   return (
     <div
-      className={isPage ? "product-detail-page" : "product-detail-overlay"}
+      className={
+        isPage
+          ? "product-detail-page"
+          : isGiftCard
+            ? "product-detail-overlay product-detail-panel--gift-card"
+            : "product-detail-overlay"
+      }
       role={isPage ? undefined : "dialog"}
       aria-modal={isPage ? undefined : true}
     >
@@ -475,7 +506,12 @@ export function CatalogProductDetailPanel({
         />
       )}
 
-      <div className="product-detail-panel">
+      <div
+        className={cn(
+          "product-detail-panel",
+          isGiftCard && "product-detail-panel--gift-card",
+        )}
+      >
         <header className="product-detail-header">
           {isPage ? (
             <div className="product-detail-back-wrap">
@@ -514,6 +550,12 @@ export function CatalogProductDetailPanel({
 
         <div className="product-detail-scroll">
           <div className="product-detail-media">
+            {isGiftCard ? (
+              <GiftCardHero
+                amountUsd={displayPriceUsd}
+                storeName={product.store_name}
+              />
+            ) : (
             <MercadoProductGallery
               productName={product.product_name}
               images={detailImages.length > 0 ? detailImages : undefined}
@@ -526,6 +568,7 @@ export function CatalogProductDetailPanel({
               loading="eager"
               sizes="(max-width: 768px) 100vw, 560px"
             />
+            )}
           </div>
 
           <div className="product-detail-body">
@@ -553,7 +596,11 @@ export function CatalogProductDetailPanel({
             )}
 
             <div className="product-detail-stock-row">
-              {outOfStock ? (
+              {isGiftCard ? (
+                <span className="product-detail-stock-badge product-detail-stock-badge--in">
+                  Entrega digital por correo electrónico
+                </span>
+              ) : outOfStock ? (
                 <span className="product-detail-stock-badge product-detail-stock-badge--out">
                   <span className="product-detail-stock-dot" aria-hidden="true" />
                   Agotado
@@ -572,19 +619,20 @@ export function CatalogProductDetailPanel({
               )}
             </div>
 
-            {storeUsesRubroProductModule(storeRubro, "tecnologia") ? (
+            {isGiftCard ? null : storeUsesRubroProductModule(storeRubro, "tecnologia") ? (
               <TechSpecsChips product={product} />
             ) : null}
-            {storeUsesRubroProductModule(storeRubro, "coleccionables") ? (
+            {isGiftCard ? null : storeUsesRubroProductModule(storeRubro, "coleccionables") ? (
               <CollectibleBadges product={product} />
             ) : null}
-            {storeUsesRubroProductModule(storeRubro, "salud-belleza") ? (
+            {isGiftCard ? null : storeUsesRubroProductModule(storeRubro, "salud-belleza") ? (
               <BeautyBadges product={product} />
             ) : null}
-            {storeUsesRubroProductModule(storeRubro, "papeleria-libreria-oficina") ? (
+            {isGiftCard ? null : storeUsesRubroProductModule(storeRubro, "papeleria-libreria-oficina") ? (
               <StationeryBadges product={product} />
             ) : null}
 
+            {isGiftCard ? null : (
             <div
               className={
                 hasDiscount
@@ -624,8 +672,9 @@ export function CatalogProductDetailPanel({
                 </p>
               ) : null}
             </div>
+            )}
 
-            {attributeEntries.length > 0 ? (
+            {isGiftCard ? null : attributeEntries.length > 0 ? (
               <dl className="product-detail-attributes">
                 {attributeEntries.map(([key, value]) => (
                   <div key={key}>
@@ -636,7 +685,7 @@ export function CatalogProductDetailPanel({
               </dl>
             ) : null}
 
-            {descriptionText ? (
+            {isGiftCard ? null : descriptionText ? (
               <section className="product-detail-description">
                 <h3>Descripción</h3>
                 <p>{descriptionText}</p>
@@ -658,6 +707,7 @@ export function CatalogProductDetailPanel({
                     onSelectVariant={setSelectedVariantId}
                     selectedModifiers={selectedModifiers}
                     onModifiersChange={setSelectedModifiers}
+                    amountUsd={displayPriceUsd}
                   />
                 ) : (
                   <RubroCatalogVariantSlot
@@ -687,10 +737,11 @@ export function CatalogProductDetailPanel({
                   inCart={inCart}
                   justAdded={justAdded}
                   contextCartQuantity={contextCartQuantity}
-                  showWhatsAppOrder={showWhatsAppOrder}
+                  showWhatsAppOrder={showWhatsAppOrder && !isGiftCard}
                   whatsappReady={whatsappReady}
                   whatsappPrimary={whatsappPrimary}
                   canWhatsAppOrder={canWhatsAppOrder}
+                  giftCardLayout={isGiftCard}
                 />
               </div>
             ) : null}
@@ -709,11 +760,12 @@ export function CatalogProductDetailPanel({
               inCart={inCart}
               justAdded={justAdded}
               contextCartQuantity={contextCartQuantity}
-              showWhatsAppOrder={showWhatsAppOrder}
-              whatsappReady={whatsappReady}
-              whatsappPrimary={whatsappPrimary}
-              canWhatsAppOrder={canWhatsAppOrder}
-            />
+                  showWhatsAppOrder={showWhatsAppOrder && !isGiftCard}
+                  whatsappReady={whatsappReady}
+                  whatsappPrimary={whatsappPrimary}
+                  canWhatsAppOrder={canWhatsAppOrder}
+                  giftCardLayout={isGiftCard}
+                />
           </footer>
         ) : null}
       </div>
