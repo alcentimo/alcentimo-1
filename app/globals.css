@@ -4092,6 +4092,10 @@ html:has(.landing-shell) {
   @apply flex items-center gap-1.5 sm:gap-2;
 }
 
+.checkout-stepper-list--three .checkout-stepper-connector {
+  @apply w-4 sm:w-8;
+}
+
 .checkout-stepper-list--four .checkout-stepper-connector {
   @apply w-3 sm:w-5;
 }

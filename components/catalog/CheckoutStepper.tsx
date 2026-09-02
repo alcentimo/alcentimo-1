@@ -10,7 +10,7 @@ const DEFAULT_LABELS = ["Carrito", "Datos", "Envío", "Pago"] as const;
 interface CheckoutStepperProps {
   step: CheckoutStep;
   /** Cantidad de pasos visibles. Por defecto 4. */
-  steps?: 2 | 4;
+  steps?: 2 | 3 | 4;
   labels?: string[];
   /** Permite volver a un paso ya completado (menor al actual). */
   onStepSelect?: (step: CheckoutStep) => void;
@@ -37,6 +37,7 @@ export function CheckoutStepper({
       <ol
         className={cn(
           "checkout-stepper-list",
+          steps === 3 && "checkout-stepper-list--three",
           steps === 4 && "checkout-stepper-list--four",
         )}
       >
