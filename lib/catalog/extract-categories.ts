@@ -1,4 +1,5 @@
 import type { CatalogListItem } from "@/lib/database.types";
+import { GIFT_CARD_CATEGORY_SLUG } from "@/lib/gift-cards/catalog";
 import { supplierCategorySortOrder } from "@/lib/supplier/categories";
 import {
   getProductCategoriesForRubro,
@@ -18,6 +19,10 @@ function compareCatalogCategories(
   a: CatalogCategoryOption,
   b: CatalogCategoryOption,
 ): number {
+  const giftA = a.slug === GIFT_CARD_CATEGORY_SLUG ? 0 : 1;
+  const giftB = b.slug === GIFT_CARD_CATEGORY_SLUG ? 0 : 1;
+  if (giftA !== giftB) return giftA - giftB;
+
   const supplierA = supplierCategorySortOrder(a.slug);
   const supplierB = supplierCategorySortOrder(b.slug);
   if (supplierA !== supplierB) return supplierA - supplierB;

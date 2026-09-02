@@ -6,11 +6,15 @@ import { ChevronLeft, ChevronRight, Expand, X } from "lucide-react";
 import { CatalogProductImage } from "@/components/catalog/CatalogProductImage";
 import { CatalogProductMediaFallback } from "@/components/catalog/CatalogProductMediaFallback";
 import { GiftCardCorporateVisual } from "@/components/catalog/GiftCardCorporateVisual";
+import { GiftCardProductArt } from "@/components/catalog/GiftCardProductArt";
 import {
   resolveCatalogProductImages,
   type CatalogProductGalleryImage,
 } from "@/lib/products/product-gallery-types";
-import { isGiftCardCatalogItem } from "@/lib/gift-cards/catalog";
+import {
+  GIFT_CARD_PRODUCT_SLUG,
+  isGiftCardCatalogItem,
+} from "@/lib/gift-cards/catalog";
 import { cn } from "@/lib/cn";
 
 interface ProductImageGalleryProps {
@@ -194,6 +198,14 @@ export function ProductImageGallery({
   }
 
   if (!activeImage) {
+    if (product.product_slug === GIFT_CARD_PRODUCT_SLUG) {
+      return (
+        <GiftCardProductArt
+          alt={alt}
+          className={cn(fallbackClassName, className)}
+        />
+      );
+    }
     return (
       <CatalogProductMediaFallback
         alt={alt}
@@ -268,6 +280,7 @@ export function ProductImageGallery({
             className={imageClassName}
             loading={loading}
             sizes={sizes}
+            priority={loading === "eager"}
           />
         </div>
 

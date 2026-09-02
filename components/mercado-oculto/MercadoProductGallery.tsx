@@ -16,10 +16,10 @@ export interface MercadoProductGalleryProps {
   /** Filas ya resueltas (`product_images` / detalle). */
   images?: CatalogProductGalleryImage[];
   product?: {
+    product_slug?: string | null;
     thumb_url?: string | null;
     gallery_images?: unknown;
     image_alt?: string | null;
-    product_slug?: string | null;
     category_slug?: string | null;
     metadata?: Record<string, unknown> | null;
   };
@@ -61,10 +61,10 @@ export function MercadoProductGallery({
   const galleryProduct = useMemo(
     () => ({
       product_name: productName,
+      product_slug: product?.product_slug ?? null,
       image_alt: product?.image_alt ?? null,
       thumb_url: product?.thumb_url ?? resolvedImages[0]?.thumb_url ?? null,
       gallery_images: resolvedImages,
-      product_slug: product?.product_slug ?? null,
       category_slug: product?.category_slug ?? null,
       metadata: product?.metadata ?? null,
     }),

@@ -54,7 +54,7 @@ async function ensureAdminGiftCardCatalogProductWithClient(
 ): Promise<void> {
   const { data: existing, error: existingError } = await admin
     .from("products")
-    .select("id")
+    .select("id, name, short_description, tags, is_featured, sort_order, metadata")
     .eq("store_id", input.storeId)
     .eq("slug", GIFT_CARD_PRODUCT_SLUG)
     .maybeSingle();
@@ -64,7 +64,65 @@ async function ensureAdminGiftCardCatalogProductWithClient(
     return;
   }
   if (existing?.id) {
-    await ensureGiftCardProductImage(admin, String(existing.id));
+    const existingId = String(existing.id);
+    const row = existing as {
+      name?: string | null;
+      short_description?: string | null;
+      tags?: string[] | null;
+      is_featured?: boolean | null;
+      sort_order?: number | null;
+      metadata?: unknown;
+    };
+    const previousMetadata =
+      row.metadata &&
+      typeof row.metadata === "object" &&
+      !Array.isArray(row.metadata)
+        ? (row.metadata as Record<string, unknown>)
+        : {};
+    const expectedTags = [
+      "gift-card",
+      "digital",
+      "tarjeta de regalo",
+      "gift card",
+      "vale de regalo",
+    ];
+    const currentTags = Array.isArray(row.tags) ? row.tags : [];
+    const tagsMatch =
+      expectedTags.length === currentTags.length &&
+      expectedTags.every((tag) => currentTags.includes(tag));
+    const alreadyIndexed =
+      row.name === PRODUCT_NAME &&
+      (row.short_description ?? "").includes("Tarjeta de regalo") &&
+      tagsMatch &&
+      row.is_featured === true &&
+      (row.sort_order ?? 1) === 0 &&
+      previousMetadata[GIFT_CARD_METADATA_FLAG] === true;
+
+    await ensureGiftCardProductImage(admin, existingId);
+
+    if (!alreadyIndexed) {
+      await admin
+        .from("products")
+        .update({
+          name: PRODUCT_NAME,
+          short_description:
+            "Tarjeta de regalo digital. Elige un monto o uno personalizado. Recibirás un código para abonar en tu perfil o regalar.",
+          tags: expectedTags,
+          is_featured: true,
+          sort_order: 0,
+          metadata: {
+            ...previousMetadata,
+            [GIFT_CARD_METADATA_FLAG]: true,
+            digital: true,
+          },
+        })
+        .eq("id", existingId);
+    }
+
+    revalidatePublicCatalogCache({
+      slug: input.storeSlug,
+      storeId: input.storeId,
+    });
     return;
   }
 
@@ -138,10 +196,16 @@ async function ensureAdminGiftCardCatalogProductWithClient(
     name: PRODUCT_NAME,
     slug: GIFT_CARD_PRODUCT_SLUG,
     short_description:
-      "Producto digital. Elige un monto o uno personalizado. Recibirás un código para abonar en tu perfil o regalar.",
+      "Tarjeta de regalo digital. Elige un monto o uno personalizado. Recibirás un código para abonar en tu perfil o regalar.",
     description:
       "Tarjeta de regalo digital de esta tienda. No es un artículo físico: al confirmar el pedido se genera un código único. Puedes cargarlo en tu cuenta (Mi perfil) o enviárselo a otra persona.",
-    tags: ["gift-card", "digital"],
+    tags: [
+      "gift-card",
+      "digital",
+      "tarjeta de regalo",
+      "gift card",
+      "vale de regalo",
+    ],
     is_active: true,
     is_featured: true,
     is_deleted: false,

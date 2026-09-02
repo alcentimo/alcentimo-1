@@ -39,11 +39,15 @@ export function CatalogProductImage({
 
   return (
     <>
-      {status === "loading" ? (
-        <div className="catalog-product-image-placeholder" aria-hidden="true">
-          <div className="catalog-product-image-shimmer" />
-        </div>
-      ) : null}
+      <div
+        className={cn(
+          "catalog-product-image-placeholder",
+          status === "loaded" && "catalog-product-image-placeholder-done",
+        )}
+        aria-hidden="true"
+      >
+        <div className="catalog-product-image-shimmer" />
+      </div>
       <Image
         src={src}
         alt={alt}
@@ -53,7 +57,7 @@ export function CatalogProductImage({
         priority={priority}
         loading={priority ? undefined : loading}
         className={cn(
-          "object-contain object-center transition-opacity duration-300 ease-out",
+          "object-contain object-center catalog-product-image-el",
           status === "loading" ? "opacity-0" : "opacity-100",
           className,
         )}

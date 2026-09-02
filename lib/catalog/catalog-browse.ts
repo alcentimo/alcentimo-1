@@ -4,6 +4,14 @@ import {
   normalizeProductBrand,
   resolveCatalogProductBrand,
 } from "@/lib/catalog/product-brand";
+import {
+  isGiftCardCatalogItem,
+  queryMatchesGiftCardProduct,
+} from "@/lib/gift-cards/catalog";
+import {
+  catalogSearchTokens,
+  foldCatalogSearchText,
+} from "@/lib/inventory/search";
 
 export type CatalogSortKey =
   | "featured"
@@ -32,7 +40,45 @@ export const CATALOG_SORT_OPTIONS: ReadonlyArray<{
 ];
 
 export function normalizeCatalogSearchText(value: string): string {
-  return value.trim().toLowerCase();
+  return foldCatalogSearchText(value);
+}
+
+function catalogSearchHaystack(product: CatalogListItem): string {
+  return foldCatalogSearchText(
+    [
+      product.product_name,
+      product.short_description,
+      product.category_name,
+      product.category_slug?.replace(/-/g, " "),
+      product.product_slug?.replace(/-/g, " "),
+      product.default_sku,
+      resolveCatalogProductBrand(product),
+    ]
+      .filter(Boolean)
+      .join(" "),
+  );
+}
+
+export function matchesCatalogSearch(
+  product: CatalogListItem,
+  query: string,
+): boolean {
+  const normalized = normalizeCatalogSearchText(query);
+  if (!normalized) return true;
+
+  if (
+    isGiftCardCatalogItem(product) &&
+    queryMatchesGiftCardProduct(query)
+  ) {
+    return true;
+  }
+
+  const haystack = catalogSearchHaystack(product);
+  if (haystack.includes(normalized)) return true;
+
+  const tokens = catalogSearchTokens(query);
+  if (tokens.length === 0) return haystack.includes(normalized);
+  return tokens.every((token) => haystack.includes(token));
 }
 
 /** Con stock disponible primero; agotados al final (estándar del catálogo público). */
@@ -45,24 +91,13 @@ export function compareCatalogStockAvailability(
   return rank(a) - rank(b);
 }
 
-export function matchesCatalogSearch(
-  product: CatalogListItem,
-  query: string,
-): boolean {
-  const normalized = normalizeCatalogSearchText(query);
-  if (!normalized) return true;
-
-  const haystack = [
-    product.product_name,
-    product.short_description,
-    product.category_name,
-    resolveCatalogProductBrand(product),
-  ]
-    .filter(Boolean)
-    .join(" ")
-    .toLowerCase();
-
-  return haystack.includes(normalized);
+function compareGiftCardFeaturedRank(
+  a: CatalogListItem,
+  b: CatalogListItem,
+): number {
+  const rank = (product: CatalogListItem) =>
+    isGiftCardCatalogItem(product) ? 0 : 1;
+  return rank(a) - rank(b);
 }
 
 export function parseCatalogPriceBound(
@@ -178,6 +213,8 @@ export function sortCatalogProducts(
       return sorted.sort((a, b) => {
         const stockOrder = compareCatalogStockAvailability(a, b);
         if (stockOrder !== 0) return stockOrder;
+        const giftOrder = compareGiftCardFeaturedRank(a, b);
+        if (giftOrder !== 0) return giftOrder;
         const trendA = a.hub_trend_score ?? 0;
         const trendB = b.hub_trend_score ?? 0;
         if (trendA !== trendB) return trendB - trendA;

@@ -16,6 +16,20 @@ export const GIFT_CARD_FROM_GROUP_ID = "gift-card-from-name";
 export const GIFT_CARD_MESSAGE_GROUP_ID = "gift-card-message";
 export const GIFT_CARD_PUBLIC_IMAGE_PATH = "/images/gift-card.svg";
 
+/** Términos que deben encontrar siempre el producto digital en el buscador. */
+export const GIFT_CARD_SEARCH_PHRASES = [
+  "tarjeta de regalo",
+  "tarjetas de regalo",
+  "tarjeta regalo",
+  "tarjeta digital",
+  "gift card",
+  "giftcard",
+  "gift-card",
+  "vale de regalo",
+  "codigo de regalo",
+  "código de regalo",
+] as const;
+
 export function isGiftCardMetadata(
   metadata: Record<string, unknown> | null | undefined,
 ): boolean {
@@ -33,6 +47,33 @@ export function isGiftCardCatalogItem(
   return (
     product.product_slug === GIFT_CARD_PRODUCT_SLUG ||
     product.category_slug === GIFT_CARD_CATEGORY_SLUG
+  );
+}
+
+function foldGiftCardSearchText(value: string): string {
+  return value
+    .normalize("NFD")
+    .replace(/\p{M}/gu, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+/** True si la consulta del cliente apunta a la tarjeta de regalo digital. */
+export function queryMatchesGiftCardProduct(query: string): boolean {
+  const folded = foldGiftCardSearchText(query);
+  if (!folded) return false;
+  const compact = folded.replace(/\s+/g, "");
+  if (compact.includes("giftcard")) return true;
+  if (folded.includes("gift") && folded.includes("card")) return true;
+  if (folded.includes("tarjeta") && folded.includes("regalo")) return true;
+  if (folded.includes("tarjetas") && folded.includes("regalo")) return true;
+  if (folded.includes("vale") && folded.includes("regalo")) return true;
+  if (folded.includes("codigo") && folded.includes("regalo")) return true;
+  if (folded.includes("digital") && folded.includes("regalo")) return true;
+  return GIFT_CARD_SEARCH_PHRASES.some((phrase) =>
+    folded.includes(foldGiftCardSearchText(phrase)),
   );
 }
 
