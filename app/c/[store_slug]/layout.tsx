@@ -181,50 +181,50 @@ export default async function TransactionalCatalogLayout({
         manifestAbsoluteUrl={manifestAbsoluteUrl}
         storeSlug={storeSlug}
       />
-      <CartProvider
-        storeSlug={storeSlug}
-        storeId={cartAuth.storeId}
-        userId={cartAuth.userId}
-        isCustomer={cartAuth.isCustomer}
-        wholesaleEnabled={wholesaleEnabled}
+      <GiftCardStorefrontProvider
+        enabled={giftCardsEnabled}
+        initialStoreCreditUsd={storeCreditUsd}
       >
-        <PromotionProvider value={promotionContext}>
-          <GiftCardStorefrontProvider
-            enabled={giftCardsEnabled}
-            initialStoreCreditUsd={storeCreditUsd}
-          >
-          <CustomerSessionProvider
-            storeSlug={storeSlug}
-            initial={{
-              isAuthenticated: customerSession.isAuthenticated,
-              isCustomer: customerSession.isCustomer,
-              userId: customerSession.userId,
-              displayName: customerSession.displayName,
-              phone: customerSession.phone,
-              contactEmail: customerSession.contactEmail,
-            }}
-          >
-            <CatalogAppShell
+        <CartProvider
+          storeSlug={storeSlug}
+          storeId={cartAuth.storeId}
+          userId={cartAuth.userId}
+          isCustomer={cartAuth.isCustomer}
+          wholesaleEnabled={wholesaleEnabled}
+        >
+          <PromotionProvider value={promotionContext}>
+            <CustomerSessionProvider
               storeSlug={storeSlug}
-              storeName={store?.name ?? ""}
-              storeLogoUrl={storeLogoUrl}
-              storeDescription={store?.description ?? null}
-              locationHours={storeSettings?.locationHours ?? null}
-              storeRubro={store?.rubro_tienda ?? null}
-              enablePcBuilder={store?.enable_pc_builder ?? false}
-              assistantEnabled={assistantEnabled}
-              whatsappPhone={whatsappPhone}
-              whatsappChatWelcome={whatsappChatWelcome}
-              supportAvatarUrl={storeLogoFallback}
-              supportMerchantName={supportBranding?.merchantName ?? null}
-              customerAccountMode="hibrido"
+              initial={{
+                isAuthenticated: customerSession.isAuthenticated,
+                isCustomer: customerSession.isCustomer,
+                userId: customerSession.userId,
+                displayName: customerSession.displayName,
+                phone: customerSession.phone,
+                contactEmail: customerSession.contactEmail,
+              }}
             >
-              {children}
-            </CatalogAppShell>
-          </CustomerSessionProvider>
-          </GiftCardStorefrontProvider>
-        </PromotionProvider>
-      </CartProvider>
+              <CatalogAppShell
+                storeSlug={storeSlug}
+                storeName={store?.name ?? ""}
+                storeLogoUrl={storeLogoUrl}
+                storeDescription={store?.description ?? null}
+                locationHours={storeSettings?.locationHours ?? null}
+                storeRubro={store?.rubro_tienda ?? null}
+                enablePcBuilder={store?.enable_pc_builder ?? false}
+                assistantEnabled={assistantEnabled}
+                whatsappPhone={whatsappPhone}
+                whatsappChatWelcome={whatsappChatWelcome}
+                supportAvatarUrl={storeLogoFallback}
+                supportMerchantName={supportBranding?.merchantName ?? null}
+                customerAccountMode="hibrido"
+              >
+                {children}
+              </CatalogAppShell>
+            </CustomerSessionProvider>
+          </PromotionProvider>
+        </CartProvider>
+      </GiftCardStorefrontProvider>
     </div>
   );
 }

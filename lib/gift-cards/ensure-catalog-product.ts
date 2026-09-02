@@ -229,6 +229,11 @@ export async function issuePurchasedGiftCards(input: {
     return { items: input.items, codes: [] };
   }
 
+  const adminOwned = await isPlatformAdminOwnedStore(input.storeId);
+  if (!adminOwned) {
+    return { items: input.items, codes: [] };
+  }
+
   const admin = createAdminClient();
   const codes: string[] = [];
   const codesByProductKey = new Map<string, string[]>();

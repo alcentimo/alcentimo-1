@@ -1,8 +1,33 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { normalizeSupplierProductCategory } from "@/lib/supplier/categories";
 import type { DropshipLinkedCatalogEntry } from "@/lib/dropship/linked-catalog";
+import {
+  isGiftCardMetadata,
+  GIFT_CARD_CATEGORY_SLUG,
+  GIFT_CARD_PRODUCT_SLUG,
+} from "@/lib/gift-cards/catalog";
 
 export const SUPPLIER_OWN_PRODUCT_METADATA_KEY = "supplierOwnProductId";
+
+function metadataRecord(metadata: unknown): Record<string, unknown> | null {
+  if (!metadata || typeof metadata !== "object" || Array.isArray(metadata)) {
+    return null;
+  }
+  return metadata as Record<string, unknown>;
+}
+
+function isGiftCardOwnBrandRow(row: {
+  metadata?: unknown;
+  slug?: string | null;
+  categories?: { slug?: string } | { slug?: string }[] | null;
+}): boolean {
+  const relation = Array.isArray(row.categories)
+    ? row.categories[0]
+    : row.categories;
+  if (isGiftCardMetadata(metadataRecord(row.metadata))) return true;
+  if (row.slug === GIFT_CARD_PRODUCT_SLUG) return true;
+  return relation?.slug === GIFT_CARD_CATEGORY_SLUG;
+}
 
 function ownProductIdFromMetadata(metadata: unknown): string | null {
   if (!metadata || typeof metadata !== "object" || Array.isArray(metadata)) {
@@ -29,7 +54,11 @@ export async function listOwnBrandCatalogProductIds(
   if (error || !data) return [];
 
   return (data as Array<{ id: string; metadata: unknown }>)
-    .filter((row) => ownProductIdFromMetadata(row.metadata))
+    .filter(
+      (row) =>
+        ownProductIdFromMetadata(row.metadata) &&
+        !isGiftCardOwnBrandRow(row),
+    )
     .map((row) => row.id);
 }
 
@@ -55,7 +84,11 @@ export async function listOwnBrandCatalogEntries(
         | null;
     }>
   )
-    .filter((row) => ownProductIdFromMetadata(row.metadata))
+    .filter(
+      (row) =>
+        ownProductIdFromMetadata(row.metadata) &&
+        !isGiftCardOwnBrandRow(row),
+    )
     .map((row) => {
       const relation = Array.isArray(row.categories)
         ? row.categories[0]
@@ -88,6 +121,7 @@ export async function listOwnBrandStoreCategories(
       | null;
   }>) {
     if (!ownProductIdFromMetadata(row.metadata)) continue;
+    if (isGiftCardOwnBrandRow(row)) continue;
     const relation = Array.isArray(row.categories)
       ? row.categories[0]
       : row.categories;

@@ -27,6 +27,13 @@ import {
   applySupplierGalleryToCatalogItems,
   resolveSupplierGalleryForProductIds,
 } from "@/lib/catalog/resolve-supplier-gallery";
+import { isPlatformAdminOwnedStore } from "@/lib/gift-cards/admin-store";
+import { GIFT_CARD_CATEGORY_SLUG } from "@/lib/gift-cards/catalog";
+import {
+  listAdminGiftCardCatalogProductIds,
+  stripGiftCardsFromCatalogItems,
+} from "@/lib/gift-cards/catalog-visibility";
+import { getPublicStoreBySlug } from "@/lib/stores";
 
 export interface CatalogPageData {
   products: CatalogListItem[];
@@ -243,6 +250,7 @@ function catalogProductsCacheKey(options: GetCatalogOptions): string[] {
     options.productSlug?.trim().toLowerCase() ?? "",
     "union-own",
     "hub-trend-v1",
+    "gift-cards-admin-only",
   ];
 }
 
@@ -279,31 +287,69 @@ async function loadCatalogProductsUncached(
     productSlug,
   } = options;
   const normalizedSlug = storeSlug.trim().toLowerCase();
-  const dropshipEntries = storeId?.trim()
-    ? await listDropshipLinkedCatalogEntriesForStoreId(storeId.trim())
+  const resolvedStoreId =
+    storeId?.trim() ||
+    (await getPublicStoreBySlug(normalizedSlug))?.id?.trim() ||
+    "";
+  const dropshipEntries = resolvedStoreId
+    ? await listDropshipLinkedCatalogEntriesForStoreId(resolvedStoreId)
     : await listDropshipLinkedCatalogEntriesForStoreSlug(normalizedSlug);
-  const ownEntries = storeId?.trim()
-    ? await listOwnBrandCatalogEntries(storeId.trim())
+  const ownEntries = resolvedStoreId
+    ? await listOwnBrandCatalogEntries(resolvedStoreId)
     : [];
+  const adminOwned = resolvedStoreId
+    ? await isPlatformAdminOwnedStore(resolvedStoreId)
+    : false;
+  const giftCardProductIds = resolvedStoreId
+    ? await listAdminGiftCardCatalogProductIds(resolvedStoreId)
+    : [];
+  const giftCardIdSet = new Set(giftCardProductIds);
   const linkedEntries = mergeLinkedCatalogEntries([dropshipEntries, ownEntries]);
   const linkedProductIds = linkedEntries.map((entry) => entry.productId);
 
   const requestedCategory = categorySlug?.trim().toLowerCase() ?? "";
-  const categoryProductIds = requestedCategory
-    ? linkedEntries
-        .filter((entry) => entry.supplierCategory === requestedCategory)
-        .map((entry) => entry.productId)
-    : linkedProductIds;
+  const unionVisibleIds = (() => {
+    const ids = [...linkedProductIds];
+    for (const giftId of giftCardProductIds) {
+      if (!ids.includes(giftId)) ids.push(giftId);
+    }
+    return ids;
+  })();
+  const categoryProductIds =
+    requestedCategory === GIFT_CARD_CATEGORY_SLUG
+      ? adminOwned
+        ? giftCardProductIds
+        : []
+      : requestedCategory
+        ? linkedEntries
+            .filter((entry) => entry.supplierCategory === requestedCategory)
+            .map((entry) => entry.productId)
+            .filter((id) => !giftCardIdSet.has(id))
+        : unionVisibleIds;
 
   const allowedProductIds = productIds?.length
-    ? productIds.filter((id) =>
-        categoryProductIds.length > 0
-          ? categoryProductIds.includes(id)
-          : true,
-      )
+    ? productIds.filter((id) => {
+        if (giftCardIdSet.has(id)) return adminOwned;
+        if (categoryProductIds.length > 0) {
+          return categoryProductIds.includes(id);
+        }
+        return true;
+      })
     : categoryProductIds.length > 0
       ? categoryProductIds
       : undefined;
+
+  if (
+    requestedCategory === GIFT_CARD_CATEGORY_SLUG &&
+    (!adminOwned || giftCardProductIds.length === 0)
+  ) {
+    return {
+      products: [],
+      exchangeRate: await getCurrentExchangeRate(),
+      totalCount: 0,
+      hasMore: false,
+    };
+  }
 
   if (productIds?.length && (allowedProductIds?.length ?? 0) === 0) {
     return {
@@ -381,7 +427,7 @@ async function loadCatalogProductsUncached(
   const baseQueryOptions: Omit<CatalogProductsQueryOptions, "select" | "mode"> =
     {
       storeSlug: normalizedSlug,
-      storeId: storeId?.trim() || undefined,
+      storeId: resolvedStoreId || storeId?.trim() || undefined,
       paginated: paginated && !skipSqlRange,
       offset: skipSqlRange ? 0 : offset,
       limit,
@@ -469,6 +515,8 @@ async function loadCatalogProductsUncached(
     products = sortCatalogProducts(products, "featured");
   }
 
+  products = stripGiftCardsFromCatalogItems(products, adminOwned);
+
   const totalCount = paginated
     ? (trendOrderedIds?.length ?? productsResult.count ?? products.length)
     : products.length;
@@ -495,7 +543,7 @@ export async function getCatalogProducts(
 
   const normalizedSlug = options.storeSlug.trim().toLowerCase();
   return withPublicCatalogCache(
-    ["public-catalog-products-v4", ...catalogProductsCacheKey(options)],
+    ["public-catalog-products-v5", ...catalogProductsCacheKey(options)],
     { slug: normalizedSlug, storeId: options.storeId },
     () => loadCatalogProductsUncached({ ...options, storeSlug: normalizedSlug }),
   );

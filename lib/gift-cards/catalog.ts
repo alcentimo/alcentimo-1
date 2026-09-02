@@ -5,6 +5,7 @@ export const GIFT_CARD_METADATA_FLAG = "gift_card";
 export const GIFT_CARD_CUSTOM_ATTR = "gift_card_custom";
 export const GIFT_CARD_PRODUCT_SLUG = "tarjeta-de-regalo";
 export const GIFT_CARD_CATEGORY_SLUG = "tarjetas-de-regalo";
+export const GIFT_CARD_CATEGORY_NAME = "Tarjetas de regalo";
 export const GIFT_CARD_PRESET_AMOUNTS_USD = [10, 25, 50, 100, 200] as const;
 export const GIFT_CARD_CUSTOM_MIN_USD = 5;
 export const GIFT_CARD_CUSTOM_MAX_USD = 500;
@@ -61,4 +62,24 @@ export function giftCardWholesaleEnabled(
 ): boolean {
   if (isGiftCardCatalogItem(product)) return false;
   return wholesaleEnabled;
+}
+
+/** Detecta SKUs mayoristas que no deben copiarse a vitrinas dropship. */
+export function isGiftCardSupplierListing(row: {
+  title?: unknown;
+  category?: unknown;
+}): boolean {
+  const title = String(row.title ?? "")
+    .trim()
+    .toLowerCase();
+  const category = String(row.category ?? "")
+    .trim()
+    .toLowerCase();
+  if (category === GIFT_CARD_CATEGORY_SLUG) return true;
+  if (!title) return false;
+  return (
+    title.includes("tarjeta de regalo") ||
+    title.includes("tarjetas de regalo") ||
+    title.includes("gift card")
+  );
 }

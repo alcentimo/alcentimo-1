@@ -1,9 +1,10 @@
 import "server-only";
 
+import { cache } from "react";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { isSupportAdmin, resolveAuthEmail } from "@/lib/support/is-support-admin";
 
-export async function isPlatformAdminOwnedStore(
+async function isPlatformAdminOwnedStoreUncached(
   storeId: string,
   ownerId?: string | null,
 ): Promise<boolean> {
@@ -32,6 +33,8 @@ export async function isPlatformAdminOwnedStore(
     return false;
   }
 }
+
+export const isPlatformAdminOwnedStore = cache(isPlatformAdminOwnedStoreUncached);
 
 /** Primera tienda del usuario admin (dueño), o null si no tiene vitrina. */
 export async function getAdminOwnedStoreForUser(userId: string): Promise<{

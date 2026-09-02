@@ -9,6 +9,8 @@ import {
   normalizeSupplierProductCategory,
   supplierCategoryLabel,
 } from "@/lib/supplier/categories";
+import { isPlatformAdminOwnedStore } from "@/lib/gift-cards/admin-store";
+import { excludeGiftCardCategoryOptions } from "@/lib/gift-cards/catalog-visibility";
 
 async function loadPublicStoreCategoriesUncached(
   storeId: string,
@@ -33,13 +35,20 @@ async function loadPublicStoreCategoriesUncached(
     sortOrder: index,
   }));
 
-  if (fromSupplier.length > 0) return fromSupplier;
+  const adminOwned = await isPlatformAdminOwnedStore(storeId);
 
-  return ownCategories.map((item, index) => ({
-    slug: item.slug,
-    name: item.name,
-    sortOrder: index,
-  }));
+  if (fromSupplier.length > 0) {
+    return excludeGiftCardCategoryOptions(fromSupplier, adminOwned);
+  }
+
+  return excludeGiftCardCategoryOptions(
+    ownCategories.map((item, index) => ({
+      slug: item.slug,
+      name: item.name,
+      sortOrder: index,
+    })),
+    adminOwned,
+  );
 }
 
 /**
@@ -52,7 +61,7 @@ export async function getPublicStoreCategories(
   const id = storeId.trim();
   if (!id) return [];
   return withPublicCatalogCache(
-    ["public-store-categories-v4", id],
+    ["public-store-categories-v5", id],
     { storeId: id },
     () => loadPublicStoreCategoriesUncached(id),
   );

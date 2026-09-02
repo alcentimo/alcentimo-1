@@ -32,6 +32,7 @@ import {
 } from "@/lib/products/import-category";
 import type { ProductVariantJson } from "@/lib/products/variants";
 import { syncProductVariants } from "@/lib/products/sync-variants";
+import { isGiftCardSupplierListing } from "@/lib/gift-cards/catalog";
 import { normalizeSupplierProductCategory } from "@/lib/supplier/categories";
 import {
   normalizeSupplierProductVariants,
@@ -545,6 +546,17 @@ export async function importSupplierProductToStoreCatalog(
 
     const title = String(supplierRow.title ?? "").trim();
     if (!title) return { error: "El producto mayorista no tiene nombre." };
+    if (
+      isGiftCardSupplierListing({
+        title,
+        category: supplierRow.category,
+      })
+    ) {
+      return {
+        error:
+          "Las tarjetas de regalo no se pueden importar a vitrinas de dropshippers.",
+      };
+    }
 
     const cost = resolvePrecioMayoristaUsd(supplierRow as Record<string, unknown>);
     if (cost == null) {
