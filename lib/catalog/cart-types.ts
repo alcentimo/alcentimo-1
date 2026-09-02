@@ -1,6 +1,11 @@
 import type { CatalogListItem } from "@/lib/database.types";
 import type { CatalogVariantOption } from "@/lib/products/variants";
 import { computeUsdToVes, resolveUnitPriceUsd } from "@/lib/catalog/pricing";
+import {
+  GIFT_CARD_FROM_GROUP_ID,
+  GIFT_CARD_MESSAGE_GROUP_ID,
+  GIFT_CARD_RECIPIENT_GROUP_ID,
+} from "@/lib/gift-cards/catalog";
 
 export interface CartModifierSelection {
   groupId: string;
@@ -48,7 +53,15 @@ export function formatModifiersLabel(
   modifiers: CartModifierSelection[] | undefined,
 ): string {
   if (!modifiers || modifiers.length === 0) return "";
-  return modifiers.map((row) => row.optionName).join(", ");
+  return modifiers
+    .filter(
+      (row) =>
+        row.groupId !== GIFT_CARD_RECIPIENT_GROUP_ID &&
+        row.groupId !== GIFT_CARD_FROM_GROUP_ID &&
+        row.groupId !== GIFT_CARD_MESSAGE_GROUP_ID,
+    )
+    .map((row) => row.optionName)
+    .join(", ");
 }
 
 export function sumModifiersExtraUsd(

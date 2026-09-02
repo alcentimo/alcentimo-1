@@ -41,6 +41,10 @@ import {
   isGiftCardCatalogItem,
   isGiftCardCustomVariant,
 } from "@/lib/gift-cards/catalog";
+import {
+  parseGiftCardDeliveryFromModifiers,
+  validateGiftCardDelivery,
+} from "@/lib/gift-cards/delivery";
 import { getLowStockThreshold } from "@/lib/inventory/stock-status";
 import {
   resolveCartStockCap,
@@ -361,6 +365,11 @@ export function CatalogProductDetailPanel({
   const giftCustomValid =
     !giftCustomSelected ||
     clampGiftCardCustomAmount(modifiersExtra) != null;
+  const giftDeliveryValid =
+    !isGiftCard ||
+    validateGiftCardDelivery(
+      parseGiftCardDeliveryFromModifiers(selectedModifiers),
+    ).ok;
 
   const canAddMore =
     !giftCardsBlocked &&
@@ -368,7 +377,8 @@ export function CatalogProductDetailPanel({
     remaining > 0 &&
     onAddToCart &&
     selectedVariant &&
-    giftCustomValid;
+    giftCustomValid &&
+    giftDeliveryValid;
   const inCart = contextCartQuantity > 0;
 
   const hasDiscount = isProductOnSale(product.compare_at_usd, product.price_usd);
@@ -455,7 +465,9 @@ export function CatalogProductDetailPanel({
     showWhatsAppOrder &&
     whatsappReady &&
     Boolean(selectedVariant) &&
-    !outOfStock;
+    !outOfStock &&
+    giftCustomValid &&
+    giftDeliveryValid;
 
   const isPage = layout === "page";
   const backHref = catalogHref || "/";
@@ -521,6 +533,9 @@ export function CatalogProductDetailPanel({
                 thumb_url: product.thumb_url,
                 image_alt: product.image_alt,
                 gallery_images: product.gallery_images,
+                product_slug: product.product_slug,
+                metadata: product.metadata,
+                category_slug: product.category_slug,
               }}
               mode="detail"
               loading="eager"
@@ -673,6 +688,13 @@ export function CatalogProductDetailPanel({
                   />
                 )}
               </div>
+            ) : null}
+
+            {isGiftCard && !giftDeliveryValid && onAddToCart ? (
+              <p className="mt-2 text-xs text-amber-700 dark:text-amber-300">
+                Completa el correo del destinatario, de parte de y el mensaje
+                para añadir al carrito.
+              </p>
             ) : null}
 
             {showFooter ? (

@@ -18,6 +18,7 @@ import type { LocationHoursSettings } from "@/lib/store-settings/types";
 import { useCatalogShellNavigationOptional } from "@/components/catalog-transactional/CatalogShellNavigation";
 import { useCustomerSessionOptional } from "@/components/catalog-transactional/CustomerSessionProvider";
 import { useCustomerAccountMode } from "@/components/catalog-transactional/CustomerAccountModeContext";
+import { CustomerGiftCardWallet } from "@/components/customers/CustomerGiftCardWallet";
 
 interface CatalogStoreProfileSheetProps {
   storeSlug: string;
@@ -203,6 +204,10 @@ export function CatalogStoreProfileSheet({
             <h3 className="catalog-profile-label">
               <UserRound className="inline h-4 w-4" aria-hidden="true" /> Tu cuenta
             </h3>
+
+            <div className="mb-4">
+              <CustomerGiftCardWallet storeSlug={storeSlug} />
+            </div>
 
             {isCustomer && displayName ? (
               <div className="catalog-profile-customer-card">

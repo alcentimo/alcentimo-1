@@ -31,6 +31,9 @@ export interface OrderLineItem {
   is_gift_card?: boolean;
   /** Códigos emitidos al confirmar la compra (uno por unidad). */
   issued_gift_card_codes?: string[];
+  gift_recipient_email?: string;
+  gift_from_name?: string;
+  gift_message?: string;
 }
 
 export interface CatalogOrder {
@@ -67,4 +70,8 @@ export interface SubmitOrderLineInput {
   wholesaleApplied?: boolean;
   /** Extra de modificadores (alimentos, etc.); el servidor lo suma al precio. */
   modifiersExtraUsd?: number;
+  /** Envío digital de tarjeta de regalo (estilo Amazon). */
+  giftRecipientEmail?: string;
+  giftFromName?: string;
+  giftMessage?: string;
 }

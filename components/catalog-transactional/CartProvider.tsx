@@ -23,6 +23,10 @@ import {
 } from "@/lib/catalog/cart-lines";
 import { getCatalogVariantOptions } from "@/lib/products/variants";
 import { giftCardWholesaleEnabled, isGiftCardCatalogItem } from "@/lib/gift-cards/catalog";
+import {
+  parseGiftCardDeliveryFromModifiers,
+  validateGiftCardDelivery,
+} from "@/lib/gift-cards/delivery";
 import { useGiftCardsEnabled } from "@/components/catalog-transactional/GiftCardStorefrontProvider";
 import {
   clearStoredCart,
@@ -472,6 +476,13 @@ export function CartProvider({
       modifiers: import("@/lib/catalog/cart-types").CartModifierSelection[] = [],
     ) => {
       if (isGiftCardCatalogItem(product) && !giftCardsEnabled) {
+        return;
+      }
+      if (
+        isGiftCardCatalogItem(product) &&
+        !validateGiftCardDelivery(parseGiftCardDeliveryFromModifiers(modifiers))
+          .ok
+      ) {
         return;
       }
       setItems((current) => {

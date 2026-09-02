@@ -72,8 +72,8 @@ export default async function CustomerProfilePage({
         <header className="catalog-subpage-header !px-0">
           <h1 className="catalog-subpage-title">Mi perfil</h1>
           <p className="catalog-subpage-desc">
-            Actualiza tu contacto y seguridad en {store.name}. Los cambios se
-            usan al autocompletar el checkout.
+            Consulta tu billetera y saldo a favor, canjea códigos de tarjetas
+            de regalo y actualiza tu contacto en {store.name}.
           </p>
         </header>
 

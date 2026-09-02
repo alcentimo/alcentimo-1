@@ -20,6 +20,8 @@ export interface MercadoProductGalleryProps {
     thumb_url?: string | null;
     gallery_images?: unknown;
     image_alt?: string | null;
+    category_slug?: string | null;
+    metadata?: Record<string, unknown> | null;
   };
   mode?: "card" | "detail";
   className?: string;
@@ -63,8 +65,18 @@ export function MercadoProductGallery({
       image_alt: product?.image_alt ?? null,
       thumb_url: product?.thumb_url ?? resolvedImages[0]?.thumb_url ?? null,
       gallery_images: resolvedImages,
+      category_slug: product?.category_slug ?? null,
+      metadata: product?.metadata ?? null,
     }),
-    [productName, product?.image_alt, product?.product_slug, product?.thumb_url, resolvedImages],
+    [
+      productName,
+      product?.image_alt,
+      product?.thumb_url,
+      product?.product_slug,
+      product?.category_slug,
+      product?.metadata,
+      resolvedImages,
+    ],
   );
 
   if (mode === "detail") {

@@ -5,18 +5,24 @@ import { createPortal } from "react-dom";
 import { ChevronLeft, ChevronRight, Expand, X } from "lucide-react";
 import { CatalogProductImage } from "@/components/catalog/CatalogProductImage";
 import { CatalogProductMediaFallback } from "@/components/catalog/CatalogProductMediaFallback";
+import { GiftCardCorporateVisual } from "@/components/catalog/GiftCardCorporateVisual";
 import { GiftCardProductArt } from "@/components/catalog/GiftCardProductArt";
-import { GIFT_CARD_PRODUCT_SLUG } from "@/lib/gift-cards/catalog";
 import {
   resolveCatalogProductImages,
   type CatalogProductGalleryImage,
 } from "@/lib/products/product-gallery-types";
+import {
+  GIFT_CARD_PRODUCT_SLUG,
+  isGiftCardCatalogItem,
+} from "@/lib/gift-cards/catalog";
 import { cn } from "@/lib/cn";
 
 interface ProductImageGalleryProps {
   product: {
     product_name: string;
     product_slug?: string | null;
+    category_slug?: string | null;
+    metadata?: Record<string, unknown> | null;
     image_alt?: string | null;
     thumb_url?: string | null;
     gallery_images?: unknown;
@@ -71,6 +77,11 @@ export function ProductImageGallery({
   const activeImage: CatalogProductGalleryImage | null =
     images[activeIndex] ?? images[0] ?? null;
   const alt = product.image_alt ?? product.product_name;
+  const isGiftCard = isGiftCardCatalogItem({
+    metadata: product.metadata ?? null,
+    product_slug: product.product_slug ?? "",
+    category_slug: product.category_slug ?? "",
+  });
   const isDetail = mode === "detail";
   const hasMultiple = images.length > 1;
   const showThumbs = isDetail && hasMultiple;
@@ -154,6 +165,36 @@ export function ProductImageGallery({
     if (Math.abs(delta) < 40) return;
     if (delta > 0) goPrev();
     else goNext();
+  }
+
+  if (isGiftCard) {
+    return (
+      <div
+        className={cn(
+          "product-image-gallery",
+          isDetail && "product-image-gallery-detail",
+          !isDetail && "product-image-gallery-card",
+          className,
+        )}
+        onClick={onMediaClick}
+        onKeyDown={
+          onMediaClick
+            ? (event) => {
+                if (event.key === "Enter" || event.key === " ") {
+                  event.preventDefault();
+                  onMediaClick();
+                }
+              }
+            : undefined
+        }
+        role={onMediaClick ? "button" : undefined}
+        tabIndex={onMediaClick ? 0 : undefined}
+      >
+        <div className="product-image-gallery-stage">
+          <GiftCardCorporateVisual alt={alt} className={imageClassName} />
+        </div>
+      </div>
+    );
   }
 
   if (!activeImage) {
