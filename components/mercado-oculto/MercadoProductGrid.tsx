@@ -227,6 +227,7 @@ function MercadoCardMedia({
         product={{
           product_slug: product.product_slug,
           thumb_url: product.thumb_url,
+          category_slug: product.category,
         }}
         mode="card"
         onMediaClick={onOpen}

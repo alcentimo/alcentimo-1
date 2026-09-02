@@ -43,6 +43,7 @@ import {
 } from "@/src/config/categories";
 import dynamic from "next/dynamic";
 import { resolveCatalogProductBrand } from "@/lib/catalog/product-brand";
+import { isGiftCardCatalogItem } from "@/lib/gift-cards/catalog";
 import { cn } from "@/lib/cn";
 
 const EMPTY_MODIFIERS: CartModifierSelection[] = [];
@@ -198,8 +199,10 @@ export const ProductCard = memo(function ProductCard({
     isAlimentos &&
     hasFoodModifiers(parseFoodModifiersFromMetadata(product.metadata ?? null));
   const showVariantSelector = hasMultipleVariants(product);
+  const isGiftCard = isGiftCardCatalogItem(product);
   /** Variantes/mods se eligen en el detalle; «Añadir» usa la opción por defecto. */
-  const hasConfigurableOptions = showVariantSelector || foodHasModifiers;
+  const hasConfigurableOptions =
+    showVariantSelector || foodHasModifiers || isGiftCard;
 
   const retailDisplayUsd = selectedVariant?.priceUsd ?? product.price_usd ?? 0;
   const wholesaleConfigured = hasWholesalePricing(
@@ -261,6 +264,7 @@ export const ProductCard = memo(function ProductCard({
     Boolean(onAddToCart) &&
     !outOfStock &&
     Boolean(selectedVariant) &&
+    !isGiftCard &&
     (canAddMore || inCart);
   const showFooter = showPrices || showAddButton;
 

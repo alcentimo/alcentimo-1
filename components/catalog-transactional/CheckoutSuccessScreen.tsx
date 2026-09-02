@@ -146,8 +146,8 @@ export function CheckoutSuccessScreen({
             Códigos de tu tarjeta de regalo
           </p>
           <p className="mt-1 text-xs text-teal-800/80 dark:text-teal-200/80">
-            Producto digital: no hay envío físico. Guarda estos códigos o
-            abónalos en Mi perfil. Cada uno carga saldo en esta tienda.
+            Producto digital: no hay envío físico. Si indicaste un correo, también
+            enviamos el código al destinatario. Puedes abonarlo en Mi perfil.
           </p>
           <ul className="mt-2 space-y-1 font-mono text-sm font-semibold tracking-wide text-teal-950 dark:text-teal-50">
             {issuedGiftCardCodes.map((code) => (

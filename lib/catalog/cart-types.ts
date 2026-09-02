@@ -1,7 +1,7 @@
 import type { CatalogListItem } from "@/lib/database.types";
 import type { CatalogVariantOption } from "@/lib/products/variants";
 import { computeUsdToVes, resolveUnitPriceUsd } from "@/lib/catalog/pricing";
-import { pricingModifiersWithoutDedication } from "@/lib/gift-cards/catalog";
+import { stripGiftCardDeliveryModifiers } from "@/lib/gift-cards/delivery";
 
 export interface CartModifierSelection {
   groupId: string;
@@ -48,8 +48,9 @@ export function cartItemKey(
 export function formatModifiersLabel(
   modifiers: CartModifierSelection[] | undefined,
 ): string {
-  if (!modifiers || modifiers.length === 0) return "";
-  return modifiers.map((row) => row.optionName).join(", ");
+  const visible = stripGiftCardDeliveryModifiers(modifiers);
+  if (visible.length === 0) return "";
+  return visible.map((row) => row.optionName).join(", ");
 }
 
 export function sumModifiersExtraUsd(
@@ -67,7 +68,7 @@ export function buildCartItem(
   wholesaleEnabled = true,
 ): CartItem {
   const modifiersExtra = sumModifiersExtraUsd(
-    pricingModifiersWithoutDedication(modifiers),
+    stripGiftCardDeliveryModifiers(modifiers),
   );
   const retailBaseUsd = product.price_usd ?? 0;
   const pricing = resolveUnitPriceUsd({
@@ -79,9 +80,7 @@ export function buildCartItem(
     wholesaleEnabled,
   });
   const unitPriceUsd = pricing.unitPriceUsd;
-  const modifiersLabel = formatModifiersLabel(
-    pricingModifiersWithoutDedication(modifiers),
-  );
+  const modifiersLabel = formatModifiersLabel(modifiers);
   const variantName = modifiersLabel
     ? `${variant.name} · ${modifiersLabel}`
     : variant.name;

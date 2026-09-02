@@ -16,11 +16,11 @@ import {
   clampGiftCardCustomAmount,
   isGiftCardCustomVariant,
   isGiftCardMetadata,
-  sanitizeGiftCardDedication,
   GIFT_CARD_PRODUCT_SLUG,
 } from "@/lib/gift-cards/catalog";
 import { isPlatformAdminOwnedStore } from "@/lib/gift-cards/admin-store";
 import { GIFT_CARD_STORE_DENIED_MESSAGE } from "@/lib/gift-cards/types";
+import { validateGiftCardDelivery } from "@/lib/gift-cards/delivery";
 
 export async function resolveOrderLinesWithPricing(
   admin: SupabaseClient,
@@ -265,6 +265,14 @@ export async function resolveOrderLinesWithPricing(
 
     let priceExtraUsd = jsonVariant?.price_extra_usd ?? 0;
     if (isGiftCard) {
+      const delivery = validateGiftCardDelivery({
+        recipientEmail: line.giftRecipientEmail,
+        fromName: line.giftFromName,
+        message: line.giftMessage,
+      });
+      if (!delivery.ok) {
+        return { items: [], error: delivery.error };
+      }
       const custom =
         isGiftCardCustomVariant(inventoryVariantRow?.attributes) ||
         isGiftCardCustomVariant(jsonVariant?.attributes);
@@ -317,10 +325,12 @@ export async function resolveOrderLinesWithPricing(
       line_total_usd: pricing.unitPriceUsd * line.quantity,
       pricing_tier: pricing.wholesaleApplied ? "wholesale" : "retail",
       retail_unit_price_usd: pricing.retailUnitUsd,
-      ...(isGiftCard ? { is_gift_card: true } : {}),
-      ...(isGiftCard && sanitizeGiftCardDedication(line.giftDedication)
+      ...(isGiftCard
         ? {
-            gift_dedication: sanitizeGiftCardDedication(line.giftDedication),
+            is_gift_card: true,
+            gift_recipient_email: line.giftRecipientEmail?.trim() || undefined,
+            gift_from_name: line.giftFromName?.trim() || undefined,
+            gift_message: line.giftMessage?.trim() || undefined,
           }
         : {}),
     };

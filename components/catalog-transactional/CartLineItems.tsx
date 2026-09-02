@@ -3,9 +3,11 @@
 import Image from "next/image";
 import { Minus, Plus, Trash2 } from "lucide-react";
 import { cartItemKey, type CartItem } from "@/lib/catalog/cart-types";
-import { GIFT_CARD_DEDICATION_GROUP_ID } from "@/lib/gift-cards/catalog";
 import { formatApproxBs, formatUsd } from "@/lib/format";
 import { WholesalePriceBadge } from "@/components/catalog/WholesalePriceBadge";
+import { GiftCardCorporateVisual } from "@/components/catalog/GiftCardCorporateVisual";
+import { isGiftCardCatalogItem } from "@/lib/gift-cards/catalog";
+import { parseGiftCardDeliveryFromModifiers } from "@/lib/gift-cards/delivery";
 import { cn } from "@/lib/cn";
 
 interface CartLineItemsProps {
@@ -73,7 +75,9 @@ export function CartLineItems({
             </button>
 
             <div className="txn-checkout-item-thumb">
-              {item.product.thumb_url ? (
+              {isGiftCardCatalogItem(item.product) ? (
+                <GiftCardCorporateVisual alt={item.product.product_name} />
+              ) : item.product.thumb_url ? (
                 <Image
                   src={item.product.thumb_url}
                   alt={item.product.product_name}
@@ -99,16 +103,18 @@ export function CartLineItems({
                       {item.variantName}
                     </p>
                   ) : null}
-                  {item.modifiers?.some(
-                    (row) => row.groupId === GIFT_CARD_DEDICATION_GROUP_ID,
-                  ) ? (
-                    <p className="mt-0.5 line-clamp-2 text-xs italic text-zinc-500">
-                      {
-                        item.modifiers.find(
-                          (row) =>
-                            row.groupId === GIFT_CARD_DEDICATION_GROUP_ID,
-                        )?.optionName
-                      }
+                  {isGiftCardCatalogItem(item.product) ? (
+                    <p className="mt-0.5 truncate text-xs text-teal-800 dark:text-teal-200">
+                      {(() => {
+                        const delivery = parseGiftCardDeliveryFromModifiers(
+                          item.modifiers,
+                        );
+                        if (delivery.recipientEmail) {
+                          return `Para: ${delivery.recipientEmail}`;
+                        }
+                        if (delivery.message) return delivery.message;
+                        return "Código digital · sin envío físico";
+                      })()}
                     </p>
                   ) : null}
                   {item.wholesaleApplied ? (

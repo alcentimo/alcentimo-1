@@ -7,6 +7,10 @@ import {
 import { withPublicCatalogCache } from "@/lib/catalog/public-catalog-cache";
 import { getSupabaseAnonClient } from "@/lib/supabase";
 import type { CatalogProductGalleryImage } from "@/lib/products/product-gallery-types";
+import {
+  GIFT_CARD_PRODUCT_SLUG,
+  GIFT_CARD_PUBLIC_IMAGE_PATH,
+} from "@/lib/gift-cards/catalog";
 
 export interface CatalogProductDetailExtra {
   description: string | null;
@@ -68,7 +72,19 @@ async function loadCatalogProductDetailUncached(
   const supplierImages = productId
     ? await resolveSupplierGalleryForProductId(productId)
     : [];
-  const images = pickGalleryImages(catalogImages, supplierImages);
+  let images = pickGalleryImages(catalogImages, supplierImages);
+  if (normalizedProduct === GIFT_CARD_PRODUCT_SLUG && images.length === 0) {
+    images = [
+      {
+        id: "gift-card-corporate",
+        thumb_url: GIFT_CARD_PUBLIC_IMAGE_PATH,
+        medium_url: GIFT_CARD_PUBLIC_IMAGE_PATH,
+        full_url: GIFT_CARD_PUBLIC_IMAGE_PATH,
+        sort_order: 0,
+        is_primary: true,
+      },
+    ];
+  }
 
   return {
     detail: {
@@ -91,7 +107,7 @@ export async function fetchCatalogProductDetail(
   }
 
   return withPublicCatalogCache(
-    ["public-catalog-product-detail-v1", normalizedStore, normalizedProduct],
+    ["public-catalog-product-detail-v2", normalizedStore, normalizedProduct],
     { slug: normalizedStore },
     () => loadCatalogProductDetailUncached(normalizedStore, normalizedProduct),
   );

@@ -140,8 +140,12 @@ export async function submitTransactionalOrder(
         0,
         Math.min(1000, Number(line.modifiersExtraUsd ?? 0) || 0),
       ),
-      giftDedication:
-        String(line.giftDedication ?? "").trim().slice(0, 240) || undefined,
+      giftRecipientEmail:
+        String(line.giftRecipientEmail ?? "").trim().slice(0, 254) || undefined,
+      giftFromName:
+        String(line.giftFromName ?? "").trim().slice(0, 80) || undefined,
+      giftMessage:
+        String(line.giftMessage ?? "").trim().slice(0, 500) || undefined,
     }));
   } catch {
     return { error: "Pedido inválido." };
