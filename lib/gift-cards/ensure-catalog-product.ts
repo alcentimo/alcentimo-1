@@ -15,7 +15,7 @@ import {
 } from "@/lib/gift-cards/catalog";
 import { upsertVariantLocationStock } from "@/lib/locations/sync-stock";
 import type { OrderLineItem } from "@/lib/orders/types";
-import { validateGiftCardDelivery } from "@/lib/gift-cards/delivery";
+import { validateGiftCardDelivery, isValidGiftRecipientEmail } from "@/lib/gift-cards/delivery";
 import { sendPurchasedGiftCardEmail } from "@/lib/gift-cards/send-gift-card-email";
 import { getStoreCustomerAccountUrl } from "@/lib/store-host";
 
@@ -394,13 +394,16 @@ export async function issuePurchasedGiftCards(input: {
         const recipientNote = line.gift_recipient_email
           ? ` · Para ${line.gift_recipient_email}`
           : "";
+        const messageNote = line.gift_message?.trim()
+          ? ` · ${line.gift_message.trim()}`
+          : "";
         const { error } = await admin.from("gift_cards").insert({
           store_id: input.storeId,
           code,
           initial_balance_usd: amount,
           current_balance_usd: amount,
           status: "active",
-          note: `Pedido ${input.orderId.slice(0, 8).toUpperCase()} · ${line.variant_name}${recipientNote}`,
+          note: `Pedido ${input.orderId.slice(0, 8).toUpperCase()} · ${line.variant_name}${recipientNote}${messageNote}`,
         });
         if (!error) {
           lineCodes.push(code);
@@ -423,7 +426,11 @@ export async function issuePurchasedGiftCards(input: {
       fromName: line.gift_from_name,
       message: line.gift_message,
     });
-    if (delivery.ok && lineCodes.length > 0) {
+    if (
+      delivery.ok &&
+      isValidGiftRecipientEmail(delivery.delivery.recipientEmail) &&
+      lineCodes.length > 0
+    ) {
       await sendPurchasedGiftCardEmail({
         storeName,
         profileUrl,

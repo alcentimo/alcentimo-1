@@ -140,6 +140,12 @@ export async function submitTransactionalOrder(
         0,
         Math.min(1000, Number(line.modifiersExtraUsd ?? 0) || 0),
       ),
+      giftRecipientEmail:
+        String(line.giftRecipientEmail ?? "").trim().slice(0, 254) || undefined,
+      giftFromName:
+        String(line.giftFromName ?? "").trim().slice(0, 80) || undefined,
+      giftMessage:
+        String(line.giftMessage ?? "").trim().slice(0, 500) || undefined,
     }));
   } catch {
     return { error: "Pedido inválido." };
@@ -194,13 +200,6 @@ export async function submitTransactionalOrder(
     settings,
     platformSettings.dropshipShipping,
   );
-
-  if (purchaseInfo.checkoutType === "direct_whatsapp") {
-    return {
-      error:
-        "Esta tienda recibe pedidos solo por WhatsApp. Usa «Pedir por WhatsApp» en el carrito.",
-    };
-  }
 
   let resolvedFulfillmentAddress: string | null = null;
   const deliveryZonesWithPoints = purchaseInfo.deliveryZones.filter(
@@ -315,6 +314,20 @@ export async function submitTransactionalOrder(
   const giftOnlyOrder =
     enrichedOrderItems.length > 0 &&
     enrichedOrderItems.every((item) => item.is_gift_card);
+  const hasPurchasedGiftCard = enrichedOrderItems.some(
+    (item) => item.is_gift_card,
+  );
+
+  if (
+    purchaseInfo.checkoutType === "direct_whatsapp" &&
+    !hasPurchasedGiftCard
+  ) {
+    return {
+      error:
+        "Esta tienda recibe pedidos solo por WhatsApp. Usa «Pedir por WhatsApp» en el carrito.",
+    };
+  }
+
   const shippingQuote = giftOnlyOrder
     ? {
         chargeUsd: 0,
@@ -428,17 +441,19 @@ export async function submitTransactionalOrder(
     let preferredShippingBranchName: string | null | undefined;
     let preferredShippingBranchAddress: string | null | undefined;
 
-    if (isNationalCarrierKey(shippingMethodRaw) && shippingBranchCode) {
-      preferredShippingBranchCode = shippingBranchCode;
-      preferredShippingBranchName = shippingBranchName;
-      preferredShippingBranchAddress = shippingBranchAddress;
-    } else if (
-      shippingMethodRaw === "delivery" ||
-      shippingMethodRaw === "pickup"
-    ) {
-      preferredShippingBranchCode = null;
-      preferredShippingBranchName = null;
-      preferredShippingBranchAddress = null;
+    if (!giftOnlyOrder) {
+      if (isNationalCarrierKey(shippingMethodRaw) && shippingBranchCode) {
+        preferredShippingBranchCode = shippingBranchCode;
+        preferredShippingBranchName = shippingBranchName;
+        preferredShippingBranchAddress = shippingBranchAddress;
+      } else if (
+        shippingMethodRaw === "delivery" ||
+        shippingMethodRaw === "pickup"
+      ) {
+        preferredShippingBranchCode = null;
+        preferredShippingBranchName = null;
+        preferredShippingBranchAddress = null;
+      }
     }
 
     // Guarda teléfono/nombre del paso Datos → perfil + Mis Clientes + autofill.
@@ -447,15 +462,21 @@ export async function submitTransactionalOrder(
       userId: customerUserId,
       displayName: customerName,
       phone: customerPhone,
-      ...(resolvedFulfillmentAddress
+      ...(!giftOnlyOrder && resolvedFulfillmentAddress
         ? { deliveryAddress: resolvedFulfillmentAddress }
         : {}),
-      ...(shippingMethodRaw
+      ...(!giftOnlyOrder && shippingMethodRaw
         ? { preferredShippingMethod: shippingMethodRaw }
         : {}),
-      preferredShippingBranchCode,
-      preferredShippingBranchName,
-      preferredShippingBranchAddress,
+      preferredShippingBranchCode: giftOnlyOrder
+        ? undefined
+        : preferredShippingBranchCode,
+      preferredShippingBranchName: giftOnlyOrder
+        ? undefined
+        : preferredShippingBranchName,
+      preferredShippingBranchAddress: giftOnlyOrder
+        ? undefined
+        : preferredShippingBranchAddress,
     });
   }
 
@@ -477,22 +498,25 @@ export async function submitTransactionalOrder(
     total_usd: amountDueUsd,
     payment_proof_url: storedProofUrl,
     estado: initialEstado,
-    location_id: resolvedLocationId,
-    fulfillment_type: fulfillmentType,
+    location_id: giftOnlyOrder ? null : resolvedLocationId,
+    fulfillment_type: giftOnlyOrder ? null : fulfillmentType,
     gift_card_code: giftCardUsd > 0 ? giftCardCodeRaw : null,
     gift_card_usd: giftCardUsd > 0 ? giftCardUsd : null,
     store_credit_usd: storeCreditUsd > 0 ? storeCreditUsd : null,
-    shipping_method: shippingMethodRaw || null,
-    shipping_branch_code: isNationalCarrierKey(shippingMethodRaw)
-      ? shippingBranchCode
-      : null,
-    shipping_branch_name: isNationalCarrierKey(shippingMethodRaw)
-      ? shippingBranchName
-      : null,
-    shipping_branch_address: isNationalCarrierKey(shippingMethodRaw)
-      ? shippingBranchAddress
-      : null,
-    delivery_address: resolvedFulfillmentAddress,
+    shipping_method: giftOnlyOrder ? null : shippingMethodRaw || null,
+    shipping_branch_code:
+      giftOnlyOrder || !isNationalCarrierKey(shippingMethodRaw)
+        ? null
+        : shippingBranchCode,
+    shipping_branch_name:
+      giftOnlyOrder || !isNationalCarrierKey(shippingMethodRaw)
+        ? null
+        : shippingBranchName,
+    shipping_branch_address:
+      giftOnlyOrder || !isNationalCarrierKey(shippingMethodRaw)
+        ? null
+        : shippingBranchAddress,
+    delivery_address: giftOnlyOrder ? null : resolvedFulfillmentAddress,
   };
 
   let { error: insertError } = await admin.from("orders").insert(orderInsert);
@@ -729,7 +753,7 @@ export async function submitTransactionalOrder(
     }),
     paymentLabel,
     shippingLabel: shippingMethodLabel,
-    shippingChargeLabel: shippingModalityLabel,
+    shippingChargeLabel: giftOnlyOrder ? undefined : shippingModalityLabel,
     discountUsd: discountUsd > 0 ? discountUsd : undefined,
     promotionLabel,
     giftCardUsd: giftCardUsd > 0 ? giftCardUsd : undefined,
@@ -737,15 +761,21 @@ export async function submitTransactionalOrder(
     storeCreditUsd: storeCreditUsd > 0 ? storeCreditUsd : undefined,
     issuedGiftCardCodes:
       issuedGiftCardCodes.length > 0 ? issuedGiftCardCodes : undefined,
-    locationName: resolvedLocationName ?? undefined,
-    locationAddress: resolvedLocationAddress ?? undefined,
-    deliveryAddress: resolvedFulfillmentAddress ?? undefined,
-    shippingBranchName: isNationalCarrierKey(shippingMethodRaw)
-      ? shippingBranchName ?? undefined
-      : undefined,
-    shippingBranchAddress: isNationalCarrierKey(shippingMethodRaw)
-      ? shippingBranchAddress ?? undefined
-      : undefined,
+    locationName: giftOnlyOrder ? undefined : resolvedLocationName ?? undefined,
+    locationAddress: giftOnlyOrder
+      ? undefined
+      : resolvedLocationAddress ?? undefined,
+    deliveryAddress: giftOnlyOrder
+      ? undefined
+      : resolvedFulfillmentAddress ?? undefined,
+    shippingBranchName:
+      giftOnlyOrder || !isNationalCarrierKey(shippingMethodRaw)
+        ? undefined
+        : shippingBranchName ?? undefined,
+    shippingBranchAddress:
+      giftOnlyOrder || !isNationalCarrierKey(shippingMethodRaw)
+        ? undefined
+        : shippingBranchAddress ?? undefined,
   });
 
   const storeWhatsAppPhone =

@@ -92,9 +92,9 @@ export function buildSubmitOrderLinesFromCartItems(
         modifiersExtraUsd,
         ...(delivery?.ok
           ? {
-              giftRecipientEmail: delivery.delivery.recipientEmail,
-              giftFromName: delivery.delivery.fromName,
-              giftMessage: delivery.delivery.message,
+              giftRecipientEmail: delivery.delivery.recipientEmail || undefined,
+              giftFromName: delivery.delivery.fromName || undefined,
+              giftMessage: delivery.delivery.message || undefined,
             }
           : {}),
       };

@@ -128,8 +128,8 @@ export function GiftCardAmountPicker({
           Elige el monto
         </p>
         <p className="text-xs text-zinc-500 dark:text-zinc-400">
-          Producto digital: al confirmar el pedido se genera un código y se
-          envía por correo al destinatario.
+          Producto digital: al confirmar el pedido se genera un código. Puedes
+          usarlo en tu perfil o enviarlo por correo si es un regalo.
         </p>
         <div className="flex flex-wrap gap-2">
           {presets.map((option) => {
@@ -195,19 +195,19 @@ export function GiftCardAmountPicker({
 
       <fieldset className="space-y-3 rounded-2xl border border-teal-200 bg-teal-50/60 p-4 dark:border-teal-800 dark:bg-teal-950/30">
         <legend className="px-1 text-sm font-semibold text-teal-950 dark:text-teal-50">
-          Envío digital
+          Envío digital (opcional)
         </legend>
         <p className="text-xs text-teal-800/90 dark:text-teal-200/80">
-          Completa estos datos antes de añadir al carrito. El código se enviará
-          al correo del destinatario junto con tu mensaje.
+          Si compras para ti, déjalo vacío: el código aparece al confirmar el
+          pedido. Si es un regalo, puedes indicar correo, tu nombre y un
+          mensaje.
         </p>
         <label className="block space-y-1">
           <span className="text-xs font-medium text-zinc-700 dark:text-zinc-200">
-            Correo del destinatario
+            Correo del destinatario (opcional)
           </span>
           <input
             type="email"
-            required
             autoComplete="email"
             inputMode="email"
             value={delivery.recipientEmail}
@@ -220,11 +220,10 @@ export function GiftCardAmountPicker({
         </label>
         <label className="block space-y-1">
           <span className="text-xs font-medium text-zinc-700 dark:text-zinc-200">
-            De parte de
+            De parte de (opcional)
           </span>
           <input
             type="text"
-            required
             maxLength={GIFT_CARD_FROM_MAX}
             autoComplete="name"
             value={delivery.fromName}
@@ -235,15 +234,14 @@ export function GiftCardAmountPicker({
         </label>
         <label className="block space-y-1">
           <span className="text-xs font-medium text-zinc-700 dark:text-zinc-200">
-            Mensaje / dedicatoria
+            Mensaje / dedicatoria (opcional)
           </span>
           <textarea
-            required
             rows={3}
             maxLength={GIFT_CARD_MESSAGE_MAX}
             value={delivery.message}
             onChange={(event) => updateDelivery({ message: event.target.value })}
-            placeholder="¡Felicidades! Disfruta tu regalo."
+            placeholder="Si es un regalo, puedes escribir un mensaje. Si es para ti, déjalo vacío."
             className="input-field w-full min-h-[5.5rem] resize-y"
           />
         </label>

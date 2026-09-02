@@ -70,7 +70,7 @@ export interface SubmitOrderLineInput {
   wholesaleApplied?: boolean;
   /** Extra de modificadores (alimentos, etc.); el servidor lo suma al precio. */
   modifiersExtraUsd?: number;
-  /** Envío digital de tarjeta de regalo (estilo Amazon). */
+  /** Envío digital de tarjeta de regalo (estilo Amazon). Campos opcionales. */
   giftRecipientEmail?: string;
   giftFromName?: string;
   giftMessage?: string;

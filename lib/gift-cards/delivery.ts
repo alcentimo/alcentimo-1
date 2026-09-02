@@ -45,22 +45,10 @@ export function validateGiftCardDelivery(
   const fromName = sanitizeGiftFromName(String(input?.fromName ?? ""));
   const message = sanitizeGiftMessage(String(input?.message ?? ""));
 
-  if (!isValidGiftRecipientEmail(recipientEmail)) {
+  if (recipientEmail && !isValidGiftRecipientEmail(recipientEmail)) {
     return {
       ok: false,
       error: "Indica un correo electrónico válido del destinatario.",
-    };
-  }
-  if (fromName.length < 2) {
-    return {
-      ok: false,
-      error: "Indica de parte de quién es el regalo.",
-    };
-  }
-  if (message.length < 2) {
-    return {
-      ok: false,
-      error: "Escribe un mensaje o dedicatoria para el destinatario.",
     };
   }
 
@@ -70,29 +58,35 @@ export function validateGiftCardDelivery(
 export function giftCardDeliveryModifiers(
   delivery: GiftCardDelivery,
 ): CartModifierSelection[] {
-  return [
-    {
+  const rows: CartModifierSelection[] = [];
+  if (delivery.recipientEmail.trim()) {
+    rows.push({
       groupId: GIFT_CARD_RECIPIENT_GROUP_ID,
       groupName: "Para",
       optionId: delivery.recipientEmail,
       optionName: delivery.recipientEmail,
       priceExtraUsd: 0,
-    },
-    {
+    });
+  }
+  if (delivery.fromName.trim()) {
+    rows.push({
       groupId: GIFT_CARD_FROM_GROUP_ID,
       groupName: "De parte de",
       optionId: delivery.fromName.slice(0, 80),
       optionName: delivery.fromName,
       priceExtraUsd: 0,
-    },
-    {
+    });
+  }
+  if (delivery.message.trim()) {
+    rows.push({
       groupId: GIFT_CARD_MESSAGE_GROUP_ID,
       groupName: "Mensaje",
       optionId: delivery.message.slice(0, 80),
       optionName: delivery.message,
       priceExtraUsd: 0,
-    },
-  ];
+    });
+  }
+  return rows;
 }
 
 export function isGiftCardDeliveryGroupId(groupId: string): boolean {

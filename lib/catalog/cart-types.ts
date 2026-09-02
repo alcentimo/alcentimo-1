@@ -1,11 +1,7 @@
 import type { CatalogListItem } from "@/lib/database.types";
 import type { CatalogVariantOption } from "@/lib/products/variants";
 import { computeUsdToVes, resolveUnitPriceUsd } from "@/lib/catalog/pricing";
-import {
-  GIFT_CARD_FROM_GROUP_ID,
-  GIFT_CARD_MESSAGE_GROUP_ID,
-  GIFT_CARD_RECIPIENT_GROUP_ID,
-} from "@/lib/gift-cards/catalog";
+import { stripGiftCardDeliveryModifiers } from "@/lib/gift-cards/delivery";
 
 export interface CartModifierSelection {
   groupId: string;
@@ -52,16 +48,9 @@ export function cartItemKey(
 export function formatModifiersLabel(
   modifiers: CartModifierSelection[] | undefined,
 ): string {
-  if (!modifiers || modifiers.length === 0) return "";
-  return modifiers
-    .filter(
-      (row) =>
-        row.groupId !== GIFT_CARD_RECIPIENT_GROUP_ID &&
-        row.groupId !== GIFT_CARD_FROM_GROUP_ID &&
-        row.groupId !== GIFT_CARD_MESSAGE_GROUP_ID,
-    )
-    .map((row) => row.optionName)
-    .join(", ");
+  const visible = stripGiftCardDeliveryModifiers(modifiers);
+  if (visible.length === 0) return "";
+  return visible.map((row) => row.optionName).join(", ");
 }
 
 export function sumModifiersExtraUsd(
@@ -78,7 +67,9 @@ export function buildCartItem(
   modifiers: CartModifierSelection[] = [],
   wholesaleEnabled = true,
 ): CartItem {
-  const modifiersExtra = sumModifiersExtraUsd(modifiers);
+  const modifiersExtra = sumModifiersExtraUsd(
+    stripGiftCardDeliveryModifiers(modifiers),
+  );
   const retailBaseUsd = product.price_usd ?? 0;
   const pricing = resolveUnitPriceUsd({
     retailUsd: retailBaseUsd,

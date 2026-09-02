@@ -105,9 +105,16 @@ export function CartLineItems({
                   ) : null}
                   {isGiftCardCatalogItem(item.product) ? (
                     <p className="mt-0.5 truncate text-xs text-teal-800 dark:text-teal-200">
-                      Para:{" "}
-                      {parseGiftCardDeliveryFromModifiers(item.modifiers)
-                        .recipientEmail || "Completa el envío digital"}
+                      {(() => {
+                        const delivery = parseGiftCardDeliveryFromModifiers(
+                          item.modifiers,
+                        );
+                        if (delivery.recipientEmail) {
+                          return `Para: ${delivery.recipientEmail}`;
+                        }
+                        if (delivery.message) return delivery.message;
+                        return "Código digital · sin envío físico";
+                      })()}
                     </p>
                   ) : null}
                   {item.wholesaleApplied ? (
