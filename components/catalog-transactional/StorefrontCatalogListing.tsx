@@ -13,11 +13,11 @@ import {
 } from "@/lib/catalog/product-brand";
 import { CatalogBrowseLoadMore } from "@/components/catalog-transactional/CatalogBrowseLoadMore";
 import { CatalogBrowseStatus } from "@/components/catalog-transactional/CatalogBrowseStatus";
+import { CatalogProductGridSkeleton } from "@/components/catalog/CatalogProductGridSkeleton";
 import { StorefrontFiltersPanel } from "@/components/catalog-transactional/StorefrontFiltersPanel";
 import { useCatalogBrowse } from "@/components/catalog-transactional/useCatalogBrowse";
 import { MercadoProductGrid } from "@/components/mercado-oculto/MercadoProductGrid";
 import { formatApproxBs, formatExchangeRate } from "@/lib/format";
-import { cn } from "@/lib/cn";
 import type { MercadoProductCard } from "@/lib/mercado-oculto/types";
 
 interface StorefrontCatalogListingProps {
@@ -204,27 +204,27 @@ export function StorefrontCatalogListing({
             }
             onRetry={browse.retryFetch}
           />
-          <div
-            className={cn(
-              browse.loadingFilter && "catalog-product-grid-updating",
-            )}
-          >
-            <MercadoProductGrid
-              products={mercadoCards}
-              getProductHref={getProductHref}
-              onProductActivate={onActivateProduct}
-              onSelectBrand={onSelectBrand ?? browse.setBrand}
-              priceLabel="USD"
-              priceHint={rateLabel}
-              formatPriceSecondary={priceSecondary}
-              ctaLabel="Ver producto"
-              metaInStock="Envío a todo el país"
-              metaOutOfStock="Sin stock"
-              emptyTitle="No hay productos"
-              emptyDescription="Prueba otra categoría, marca o limpia la búsqueda."
-            />
-            {extraAfterGrid}
-          </div>
+          {browse.loadingFilter ? (
+            <CatalogProductGridSkeleton count={8} />
+          ) : (
+            <div>
+              <MercadoProductGrid
+                products={mercadoCards}
+                getProductHref={getProductHref}
+                onProductActivate={onActivateProduct}
+                onSelectBrand={onSelectBrand ?? browse.setBrand}
+                priceLabel="USD"
+                priceHint={rateLabel}
+                formatPriceSecondary={priceSecondary}
+                ctaLabel="Ver producto"
+                metaInStock="Envío a todo el país"
+                metaOutOfStock="Sin stock"
+                emptyTitle="No hay productos"
+                emptyDescription="Prueba otra categoría, marca o limpia la búsqueda."
+              />
+              {extraAfterGrid}
+            </div>
+          )}
           <CatalogBrowseLoadMore
             visibleCount={browse.visibleCount}
             totalCount={browse.totalCount}

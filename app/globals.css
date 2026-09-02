@@ -3244,10 +3244,20 @@ html:has(.landing-shell) {
   @apply absolute inset-0 z-[1] overflow-hidden;
   background: linear-gradient(
     135deg,
-    color-mix(in srgb, var(--pc-media-bg) 92%, var(--pc-fg-meta) 8%) 0%,
-    var(--pc-media-bg) 50%,
-    color-mix(in srgb, var(--pc-media-bg) 88%, var(--pc-fg-meta) 12%) 100%
+    color-mix(in srgb, var(--pc-media-bg) 78%, var(--pc-fg-meta) 22%) 0%,
+    color-mix(in srgb, var(--pc-media-bg) 88%, #d4d4d8 12%) 50%,
+    color-mix(in srgb, var(--pc-media-bg) 70%, var(--pc-fg-meta) 30%) 100%
   );
+}
+
+.catalog-product-image-placeholder-done {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 180ms ease-out;
+}
+
+.catalog-product-image-el {
+  transition: opacity 220ms ease-out;
 }
 
 .catalog-product-image-shimmer {
@@ -13860,6 +13870,87 @@ button.mercado-mp-card-btn {
   .storefront-hero-stage .txn-promo-banner-viewport {
     height: 17.5rem;
   }
+}
+
+.storefront-hero-stage .storefront-gift-banner {
+  @apply mx-auto max-w-7xl px-4 pt-4 sm:px-6 lg:px-8;
+}
+
+.storefront-gift-banner-link {
+  @apply flex flex-col gap-4 rounded-md border border-[#e6e6e6] bg-white p-5 shadow-none sm:flex-row sm:items-center sm:gap-6 sm:p-6;
+  background:
+    linear-gradient(120deg, #0f241f 0%, #16352e 48%, #1f4a40 100%);
+  color: #f7f4ec;
+}
+
+.storefront-gift-banner-icon {
+  @apply flex h-14 w-14 shrink-0 items-center justify-center rounded-full;
+  background: color-mix(in srgb, #d4af37 82%, white 18%);
+  color: #13261f;
+}
+
+.storefront-gift-banner-copy {
+  @apply flex min-w-0 flex-1 flex-col gap-1;
+}
+
+.storefront-gift-banner-kicker {
+  @apply text-[11px] font-semibold uppercase tracking-[0.16em] text-[#d4af37];
+}
+
+.storefront-gift-banner-title {
+  @apply text-lg font-semibold tracking-tight text-white sm:text-xl;
+}
+
+.storefront-gift-banner-sub {
+  @apply max-w-2xl text-sm leading-relaxed text-white/75;
+}
+
+.storefront-gift-banner-cta {
+  @apply inline-flex shrink-0 items-center justify-center rounded-full bg-white px-4 py-2 text-sm font-semibold text-[#13261f];
+}
+
+.gift-card-product-art {
+  @apply absolute inset-0 flex h-full min-h-full w-full flex-col items-center justify-center overflow-hidden;
+  background:
+    linear-gradient(155deg, #14342c 0%, #1d4a40 52%, #0f241f 100%);
+  color: #f7f4ec;
+}
+
+.gift-card-product-art-shine {
+  @apply pointer-events-none absolute -right-8 -top-10 h-32 w-32 rounded-full opacity-40;
+  background: radial-gradient(circle, #d4af37 0%, transparent 70%);
+}
+
+.gift-card-product-art-body {
+  @apply relative z-[1] flex flex-col items-center gap-1 px-4 text-center;
+}
+
+.gift-card-product-art-icon {
+  @apply mb-2 h-8 w-8 text-[#d4af37];
+}
+
+.gift-card-product-art-kicker {
+  @apply text-[10px] font-semibold uppercase tracking-[0.18em] text-[#d4af37];
+}
+
+.gift-card-product-art-title {
+  @apply text-sm font-semibold tracking-tight text-white;
+}
+
+.storefront-mp-listing .txn-product-grid {
+  @apply grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5;
+}
+
+.storefront-mp-listing .catalog-product-skeleton-image {
+  aspect-ratio: 4 / 5;
+  background: linear-gradient(
+    90deg,
+    #e4e4e7 0%,
+    #f4f4f5 50%,
+    #e4e4e7 100%
+  );
+  background-size: 200% 100%;
+  animation: catalog-image-shimmer 1.4s ease-in-out infinite;
 }
 
 /* ——— Vitrina marketplace (dropshippers · estilo Mercado Libre) ——— */

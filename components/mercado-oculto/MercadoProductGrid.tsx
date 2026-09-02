@@ -63,7 +63,7 @@ export function MercadoProductGrid({
 
   return (
     <ul className="mercado-mp-grid">
-      {products.map((product) => {
+      {products.map((product, index) => {
         const inStock = product.available_stock > 0;
         const showDiscount =
           inStock &&
@@ -82,10 +82,14 @@ export function MercadoProductGrid({
             <article className="group mercado-mp-card">
               <div className="mercado-mp-card-media">
                 {activate ? (
-                  <MercadoCardMedia product={product} onOpen={activate} />
+                  <MercadoCardMedia
+                    product={product}
+                    onOpen={activate}
+                    priority={index < 8}
+                  />
                 ) : (
                   <Link href={href} className="block" prefetch>
-                    <MercadoCardMedia product={product} />
+                    <MercadoCardMedia product={product} priority={index < 8} />
                   </Link>
                 )}
               </div>
@@ -196,9 +200,11 @@ export function MercadoProductGrid({
 function MercadoCardMedia({
   product,
   onOpen,
+  priority = false,
 }: {
   product: MercadoProductCard;
   onOpen?: () => void;
+  priority?: boolean;
 }) {
   const inStock = product.available_stock > 0;
   const showDiscount =
@@ -218,8 +224,13 @@ function MercadoCardMedia({
       <MercadoProductGallery
         productName={product.product_name}
         imageUrls={imageUrls}
+        product={{
+          product_slug: product.product_slug,
+          thumb_url: product.thumb_url,
+        }}
         mode="card"
         onMediaClick={onOpen}
+        loading={priority ? "eager" : "lazy"}
       />
       <div className="mercado-mp-card-status-row">
         {showDiscount ? (
