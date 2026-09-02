@@ -33,6 +33,7 @@ import { CatalogLocationPicker } from "@/components/catalog-transactional/Catalo
 import { CatalogPromoBannerCarousel } from "@/components/catalog-transactional/CatalogPromoBannerCarousel";
 import { StorefrontCatalogListing } from "@/components/catalog-transactional/StorefrontCatalogListing";
 import { StorefrontCoverBanner } from "@/components/catalog-transactional/StorefrontCoverBanner";
+import { StorefrontGiftCardBanner } from "@/components/catalog-transactional/StorefrontGiftCardBanner";
 import { StorefrontMoricheChrome } from "@/components/catalog-transactional/StorefrontMoricheChrome";
 import { CatalogFaqSection } from "@/components/catalog-transactional/CatalogFaqSection";
 import { useOpenCatalogProductById } from "@/components/catalog-transactional/useOpenCatalogProductById";
@@ -40,6 +41,7 @@ import { mapCatalogListItemToMercadoCard } from "@/lib/catalog/map-catalog-to-me
 import { officialBrandsToCatalogOptions } from "@/lib/catalog/product-brand";
 import type { OfficialBrandPublic } from "@/lib/official-brands/types";
 import { applyLocationStockToProduct } from "@/lib/locations/apply-catalog-stock";
+import { isGiftCardCatalogItem } from "@/lib/gift-cards/catalog";
 import { storeUsesRubroProductModule } from "@/lib/rubros/registry";
 import { normalizeCatalogHeaderSettings } from "@/lib/store-settings/catalog-header";
 import { cn } from "@/lib/cn";
@@ -387,6 +389,11 @@ function TransactionalCatalogContent({
     [openProduct, productById],
   );
 
+  const giftCardProduct = useMemo(
+    () => catalogProducts.find((product) => isGiftCardCatalogItem(product)) ?? null,
+    [catalogProducts],
+  );
+
   const header = normalizeCatalogHeaderSettings(
     effectiveDesign.header ?? catalogDesign.header,
   );
@@ -424,6 +431,16 @@ function TransactionalCatalogContent({
         banner={
           <>
             <StorefrontCoverBanner url={coverUrl} storeName={store.name} />
+            {giftCardProduct ? (
+              <StorefrontGiftCardBanner
+                storeSlug={store.slug}
+                productSlug={
+                  giftCardProduct.product_slug?.trim() ||
+                  giftCardProduct.product_id
+                }
+                storeName={store.name}
+              />
+            ) : null}
             <CatalogPromoBannerCarousel
               promoBanner={catalogDesign.promoBanner}
               storeName={store.name}

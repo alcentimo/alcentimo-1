@@ -6,7 +6,7 @@ import { getPublicServerClient } from "@/lib/supabase/public-server";
 import { getDisplayableUsdExchangeRate } from "@/lib/exchange-rate/get-tasa-cambio";
 import { ensureBcvRateFreshForToday } from "@/lib/exchange-rate/ensure-bcv-rate-fresh";
 import { CATALOG_LIST_SELECT, PUBLIC_CATALOG_LIST_SELECT } from "@/lib/inventory/constants";
-import { buildInventorySearchOrFilter } from "@/lib/inventory/search";
+import { buildPublicCatalogSearchOrFilter } from "@/lib/inventory/search";
 import { roundExchangeRate } from "@/lib/format";
 import type { CatalogListItem, ExchangeRate } from "@/lib/database.types";
 import { sortCatalogProducts } from "@/lib/catalog/catalog-browse";
@@ -251,6 +251,7 @@ function catalogProductsCacheKey(options: GetCatalogOptions): string[] {
     "union-own",
     "hub-trend-v1",
     "gift-cards-admin-only",
+    "gift-card-search-v1",
   ];
 }
 
@@ -309,9 +310,17 @@ async function loadCatalogProductsUncached(
 
   const requestedCategory = categorySlug?.trim().toLowerCase() ?? "";
   const unionVisibleIds = (() => {
-    const ids = [...linkedProductIds];
+    const seen = new Set<string>();
+    const ids: string[] = [];
     for (const giftId of giftCardProductIds) {
-      if (!ids.includes(giftId)) ids.push(giftId);
+      if (seen.has(giftId)) continue;
+      seen.add(giftId);
+      ids.push(giftId);
+    }
+    for (const id of linkedProductIds) {
+      if (seen.has(id)) continue;
+      seen.add(id);
+      ids.push(id);
     }
     return ids;
   })();
@@ -365,7 +374,7 @@ async function loadCatalogProductsUncached(
   // Los vínculos dropship enriquecen categorías; no vacían la vitrina si fallan.
   const paginated =
     limit != null && productIds == null && !productSlug?.trim();
-  const searchOr = buildInventorySearchOrFilter(search ?? "") || null;
+  const searchOr = buildPublicCatalogSearchOrFilter(search ?? "") || null;
 
   const trendScores = productIds?.length
     ? new Map<string, number>()
@@ -381,6 +390,9 @@ async function loadCatalogProductsUncached(
     allowedProductIds.length > 0 &&
     supplierIdByProduct.size > 0
       ? [...allowedProductIds].sort((left, right) => {
+          const leftGift = giftCardIdSet.has(left) ? 0 : 1;
+          const rightGift = giftCardIdSet.has(right) ? 0 : 1;
+          if (leftGift !== rightGift) return leftGift - rightGift;
           const leftSupplier = supplierIdByProduct.get(left);
           const rightSupplier = supplierIdByProduct.get(right);
           const delta =
@@ -389,7 +401,14 @@ async function loadCatalogProductsUncached(
           if (delta !== 0) return delta;
           return left.localeCompare(right);
         })
-      : null;
+      : allowedProductIds && allowedProductIds.length > 0 && giftCardIdSet.size > 0
+        ? [...allowedProductIds].sort((left, right) => {
+            const leftGift = giftCardIdSet.has(left) ? 0 : 1;
+            const rightGift = giftCardIdSet.has(right) ? 0 : 1;
+            if (leftGift !== rightGift) return leftGift - rightGift;
+            return left.localeCompare(right);
+          })
+        : null;
 
   const pageProductIds =
     paginated &&
@@ -543,7 +562,7 @@ export async function getCatalogProducts(
 
   const normalizedSlug = options.storeSlug.trim().toLowerCase();
   return withPublicCatalogCache(
-    ["public-catalog-products-v5", ...catalogProductsCacheKey(options)],
+    ["public-catalog-products-v6", ...catalogProductsCacheKey(options)],
     { slug: normalizedSlug, storeId: options.storeId },
     () => loadCatalogProductsUncached({ ...options, storeSlug: normalizedSlug }),
   );

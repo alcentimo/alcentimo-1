@@ -30,12 +30,12 @@ export function excludeGiftCardCategoryOptions(
   );
   if (!adminOwned) return withoutGift;
   return [
-    ...withoutGift,
     {
       slug: GIFT_CARD_CATEGORY_SLUG,
       name: GIFT_CARD_CATEGORY_NAME,
-      sortOrder: withoutGift.length,
+      sortOrder: -1,
     },
+    ...withoutGift,
   ];
 }
 

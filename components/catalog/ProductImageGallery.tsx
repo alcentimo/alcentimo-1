@@ -5,6 +5,8 @@ import { createPortal } from "react-dom";
 import { ChevronLeft, ChevronRight, Expand, X } from "lucide-react";
 import { CatalogProductImage } from "@/components/catalog/CatalogProductImage";
 import { CatalogProductMediaFallback } from "@/components/catalog/CatalogProductMediaFallback";
+import { GiftCardProductArt } from "@/components/catalog/GiftCardProductArt";
+import { GIFT_CARD_PRODUCT_SLUG } from "@/lib/gift-cards/catalog";
 import {
   resolveCatalogProductImages,
   type CatalogProductGalleryImage,
@@ -14,6 +16,7 @@ import { cn } from "@/lib/cn";
 interface ProductImageGalleryProps {
   product: {
     product_name: string;
+    product_slug?: string | null;
     image_alt?: string | null;
     thumb_url?: string | null;
     gallery_images?: unknown;
@@ -154,6 +157,14 @@ export function ProductImageGallery({
   }
 
   if (!activeImage) {
+    if (product.product_slug === GIFT_CARD_PRODUCT_SLUG) {
+      return (
+        <GiftCardProductArt
+          alt={alt}
+          className={cn(fallbackClassName, className)}
+        />
+      );
+    }
     return (
       <CatalogProductMediaFallback
         alt={alt}
@@ -228,6 +239,7 @@ export function ProductImageGallery({
             className={imageClassName}
             loading={loading}
             sizes={sizes}
+            priority={loading === "eager"}
           />
         </div>
 
