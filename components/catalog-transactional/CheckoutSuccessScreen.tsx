@@ -125,8 +125,8 @@ export function CheckoutSuccessScreen({
             Códigos de tu tarjeta de regalo
           </p>
           <p className="mt-1 text-xs text-teal-800/80 dark:text-teal-200/80">
-            Guárdalos o abónalos en Mi perfil. Cada código es de un solo uso
-            para cargar saldo.
+            Enviamos el código al correo del destinatario. También puedes
+            abonarlo en tu billetera desde Mi perfil.
           </p>
           <ul className="mt-2 space-y-1 font-mono text-sm font-semibold tracking-wide text-teal-950 dark:text-teal-50">
             {issuedGiftCardCodes.map((code) => (

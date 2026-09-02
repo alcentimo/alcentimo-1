@@ -65,8 +65,8 @@ export default async function CustomerAccountPage({
         <header className="catalog-subpage-header !px-0">
           <h1 className="catalog-subpage-title">Mis compras</h1>
           <p className="catalog-subpage-desc">
-            Consulta el estado de tus pedidos en {store.name} y las guías de
-            envío en tiempo real.
+            Consulta tu saldo a favor, canjea tarjetas de regalo y revisa el
+            estado de tus pedidos en {store.name}.
           </p>
         </header>
 

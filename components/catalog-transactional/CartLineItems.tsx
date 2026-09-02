@@ -5,6 +5,9 @@ import { Minus, Plus, Trash2 } from "lucide-react";
 import { cartItemKey, type CartItem } from "@/lib/catalog/cart-types";
 import { formatApproxBs, formatUsd } from "@/lib/format";
 import { WholesalePriceBadge } from "@/components/catalog/WholesalePriceBadge";
+import { GiftCardCorporateVisual } from "@/components/catalog/GiftCardCorporateVisual";
+import { isGiftCardCatalogItem } from "@/lib/gift-cards/catalog";
+import { parseGiftCardDeliveryFromModifiers } from "@/lib/gift-cards/delivery";
 import { cn } from "@/lib/cn";
 
 interface CartLineItemsProps {
@@ -72,7 +75,9 @@ export function CartLineItems({
             </button>
 
             <div className="txn-checkout-item-thumb">
-              {item.product.thumb_url ? (
+              {isGiftCardCatalogItem(item.product) ? (
+                <GiftCardCorporateVisual alt={item.product.product_name} />
+              ) : item.product.thumb_url ? (
                 <Image
                   src={item.product.thumb_url}
                   alt={item.product.product_name}
@@ -96,6 +101,13 @@ export function CartLineItems({
                   {item.variantName !== "Estándar" ? (
                     <p className="mt-0.5 truncate text-xs text-zinc-500">
                       {item.variantName}
+                    </p>
+                  ) : null}
+                  {isGiftCardCatalogItem(item.product) ? (
+                    <p className="mt-0.5 truncate text-xs text-teal-800 dark:text-teal-200">
+                      Para:{" "}
+                      {parseGiftCardDeliveryFromModifiers(item.modifiers)
+                        .recipientEmail || "Completa el envío digital"}
                     </p>
                   ) : null}
                   {item.wholesaleApplied ? (

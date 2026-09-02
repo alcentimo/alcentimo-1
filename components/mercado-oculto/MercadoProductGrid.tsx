@@ -218,6 +218,11 @@ function MercadoCardMedia({
       <MercadoProductGallery
         productName={product.product_name}
         imageUrls={imageUrls}
+        product={{
+          thumb_url: product.thumb_url,
+          product_slug: product.product_slug,
+          category_slug: product.category,
+        }}
         mode="card"
         onMediaClick={onOpen}
       />

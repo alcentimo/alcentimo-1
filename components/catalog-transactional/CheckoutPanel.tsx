@@ -38,6 +38,11 @@ import { useGiftCardStorefront } from "@/components/catalog-transactional/GiftCa
 import { validateGiftCardCode } from "@/lib/gift-cards/actions";
 import { applyGiftCardToWallet } from "@/lib/gift-cards/wallet-actions";
 import { giftCardApplyAmount } from "@/lib/gift-cards/code";
+import {
+  isGiftCardDeliveryGroupId,
+  parseGiftCardDeliveryFromModifiers,
+  validateGiftCardDelivery,
+} from "@/lib/gift-cards/delivery";
 import type { AppliedGiftCard } from "@/lib/gift-cards/types";
 import { cartItemsAreGiftCardsOnly } from "@/lib/gift-cards/catalog";
 import {
@@ -794,7 +799,11 @@ export function CheckoutPanel({
       }
       // Fallback por si el builder filtró de más: el servidor resuelve variantes.
       submitLines = items
-        .map((item) => ({
+        .map((item) => {
+          const delivery = validateGiftCardDelivery(
+            parseGiftCardDeliveryFromModifiers(item.modifiers),
+          );
+          return {
           productId: String(item.product?.product_id ?? "").trim(),
           variantId: String(
             item.variantId || item.product?.default_variant_id || "",
@@ -807,13 +816,20 @@ export function CheckoutPanel({
           modifiersExtraUsd: Math.max(
             0,
             Number(
-              item.modifiers?.reduce(
-                (sum, row) => sum + (row.priceExtraUsd || 0),
-                0,
-              ) ?? 0,
+              item.modifiers
+                ?.filter((row) => !isGiftCardDeliveryGroupId(row.groupId))
+                .reduce((sum, row) => sum + (row.priceExtraUsd || 0), 0) ?? 0,
             ) || 0,
           ),
-        }))
+          ...(delivery.ok
+            ? {
+                giftRecipientEmail: delivery.delivery.recipientEmail,
+                giftFromName: delivery.delivery.fromName,
+                giftMessage: delivery.delivery.message,
+              }
+            : {}),
+        };
+        })
         .filter((line) => line.productId.length > 0);
     }
 

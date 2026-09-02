@@ -28,7 +28,10 @@ import {
   resolveSupplierGalleryForProductIds,
 } from "@/lib/catalog/resolve-supplier-gallery";
 import { isPlatformAdminOwnedStore } from "@/lib/gift-cards/admin-store";
-import { GIFT_CARD_CATEGORY_SLUG } from "@/lib/gift-cards/catalog";
+import {
+  applyGiftCardCatalogImage,
+  GIFT_CARD_CATEGORY_SLUG,
+} from "@/lib/gift-cards/catalog";
 import {
   listAdminGiftCardCatalogProductIds,
   stripGiftCardsFromCatalogItems,
@@ -516,6 +519,7 @@ async function loadCatalogProductsUncached(
   }
 
   products = stripGiftCardsFromCatalogItems(products, adminOwned);
+  products = products.map((product) => applyGiftCardCatalogImage(product));
 
   const totalCount = paginated
     ? (trendOrderedIds?.length ?? productsResult.count ?? products.length)
@@ -543,7 +547,7 @@ export async function getCatalogProducts(
 
   const normalizedSlug = options.storeSlug.trim().toLowerCase();
   return withPublicCatalogCache(
-    ["public-catalog-products-v5", ...catalogProductsCacheKey(options)],
+    ["public-catalog-products-v6", ...catalogProductsCacheKey(options)],
     { slug: normalizedSlug, storeId: options.storeId },
     () => loadCatalogProductsUncached({ ...options, storeSlug: normalizedSlug }),
   );

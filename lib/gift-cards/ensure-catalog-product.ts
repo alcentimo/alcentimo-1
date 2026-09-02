@@ -10,10 +10,14 @@ import {
   GIFT_CARD_METADATA_FLAG,
   GIFT_CARD_PRESET_AMOUNTS_USD,
   GIFT_CARD_PRODUCT_SLUG,
+  GIFT_CARD_PUBLIC_IMAGE_PATH,
   GIFT_CARD_VIRTUAL_STOCK,
 } from "@/lib/gift-cards/catalog";
 import { upsertVariantLocationStock } from "@/lib/locations/sync-stock";
 import type { OrderLineItem } from "@/lib/orders/types";
+import { validateGiftCardDelivery } from "@/lib/gift-cards/delivery";
+import { sendPurchasedGiftCardEmail } from "@/lib/gift-cards/send-gift-card-email";
+import { getStoreCustomerAccountUrl } from "@/lib/store-host";
 
 const PRODUCT_NAME = "Tarjeta de regalo";
 const CATEGORY_NAME = "Tarjetas de regalo";
@@ -59,7 +63,10 @@ async function ensureAdminGiftCardCatalogProductWithClient(
     console.error("[gift-card-catalog] lookup", existingError.message);
     return;
   }
-  if (existing?.id) return;
+  if (existing?.id) {
+    await ensureGiftCardProductImage(admin, String(existing.id));
+    return;
+  }
 
   const { data: categoryRow, error: categoryLookupError } = await admin
     .from("categories")
@@ -196,6 +203,8 @@ async function ensureAdminGiftCardCatalogProductWithClient(
     console.error("[gift-card-catalog] price", priceError.message);
   }
 
+  await ensureGiftCardProductImage(admin, productId);
+
   const { data: locations } = await admin
     .from("store_locations")
     .select("id")
@@ -219,6 +228,56 @@ async function ensureAdminGiftCardCatalogProductWithClient(
   });
 }
 
+async function ensureGiftCardProductImage(
+  admin: ReturnType<typeof createAdminClient>,
+  productId: string,
+): Promise<void> {
+  const { data: images, error } = await admin
+    .from("product_images")
+    .select("id, thumb_url")
+    .eq("product_id", productId)
+    .order("sort_order", { ascending: true })
+    .limit(4);
+
+  if (error) {
+    console.error("[gift-card-catalog] image lookup", error.message);
+    return;
+  }
+
+  const rows = (images ?? []) as Array<{ id: string; thumb_url: string | null }>;
+  const hasCorporate = rows.some(
+    (row) => row.thumb_url === GIFT_CARD_PUBLIC_IMAGE_PATH,
+  );
+  if (hasCorporate) return;
+
+  const broken = rows.filter(
+    (row) =>
+      !row.thumb_url?.trim() ||
+      row.thumb_url.includes("undefined") ||
+      row.thumb_url.endsWith("/"),
+  );
+  for (const row of broken) {
+    await admin.from("product_images").delete().eq("id", row.id);
+  }
+
+  const remaining = rows.filter((row) => !broken.some((b) => b.id === row.id));
+  if (remaining.length > 0) return;
+
+  const { error: insertError } = await admin.from("product_images").insert({
+    product_id: productId,
+    thumb_url: GIFT_CARD_PUBLIC_IMAGE_PATH,
+    medium_url: GIFT_CARD_PUBLIC_IMAGE_PATH,
+    full_url: GIFT_CARD_PUBLIC_IMAGE_PATH,
+    alt_text: "Tarjeta de regalo",
+    mime_type: "image/svg+xml",
+    sort_order: 0,
+    is_primary: true,
+  });
+  if (insertError) {
+    console.error("[gift-card-catalog] image insert", insertError.message);
+  }
+}
+
 export async function issuePurchasedGiftCards(input: {
   storeId: string;
   orderId: string;
@@ -235,6 +294,27 @@ export async function issuePurchasedGiftCards(input: {
   }
 
   const admin = createAdminClient();
+  const { data: storeRow } = await admin
+    .from("stores")
+    .select("name, slug, custom_domain, custom_domain_verified")
+    .eq("id", input.storeId)
+    .maybeSingle();
+  const storeName =
+    typeof storeRow?.name === "string" && storeRow.name.trim()
+      ? storeRow.name.trim()
+      : "Alcéntimo";
+  const storeSlug =
+    typeof storeRow?.slug === "string" ? storeRow.slug : "";
+  const profileUrl = storeSlug
+    ? getStoreCustomerAccountUrl(storeSlug, "perfil", {
+        customDomain:
+          typeof storeRow?.custom_domain === "string"
+            ? storeRow.custom_domain
+            : null,
+        customDomainVerified: Boolean(storeRow?.custom_domain_verified),
+      })
+    : "https://alcentimo.com";
+
   const codes: string[] = [];
   const codesByProductKey = new Map<string, string[]>();
 
@@ -247,13 +327,16 @@ export async function issuePurchasedGiftCards(input: {
       let inserted = false;
       for (let attempt = 0; attempt < 4 && !inserted; attempt += 1) {
         const code = generateGiftCardCode();
+        const recipientNote = line.gift_recipient_email
+          ? ` · Para ${line.gift_recipient_email}`
+          : "";
         const { error } = await admin.from("gift_cards").insert({
           store_id: input.storeId,
           code,
           initial_balance_usd: amount,
           current_balance_usd: amount,
           status: "active",
-          note: `Pedido ${input.orderId.slice(0, 8).toUpperCase()} · ${line.variant_name}`,
+          note: `Pedido ${input.orderId.slice(0, 8).toUpperCase()} · ${line.variant_name}${recipientNote}`,
         });
         if (!error) {
           lineCodes.push(code);
@@ -265,16 +348,31 @@ export async function issuePurchasedGiftCards(input: {
         }
       }
     }
-    const key = `${line.product_id}:${line.variant_name}:${amount}`;
+    const key = `${line.product_id}:${line.variant_name}:${amount}:${line.gift_recipient_email ?? ""}`;
     codesByProductKey.set(key, [
       ...(codesByProductKey.get(key) ?? []),
       ...lineCodes,
     ]);
+
+    const delivery = validateGiftCardDelivery({
+      recipientEmail: line.gift_recipient_email,
+      fromName: line.gift_from_name,
+      message: line.gift_message,
+    });
+    if (delivery.ok && lineCodes.length > 0) {
+      await sendPurchasedGiftCardEmail({
+        storeName,
+        profileUrl,
+        amountUsd: amount,
+        codes: lineCodes,
+        delivery: delivery.delivery,
+      });
+    }
   }
 
   const items = input.items.map((item) => {
     if (!item.is_gift_card) return item;
-    const key = `${item.product_id}:${item.variant_name}:${roundGiftUsd(item.unit_price_usd)}`;
+    const key = `${item.product_id}:${item.variant_name}:${roundGiftUsd(item.unit_price_usd)}:${item.gift_recipient_email ?? ""}`;
     return {
       ...item,
       issued_gift_card_codes: codesByProductKey.get(key) ?? [],
