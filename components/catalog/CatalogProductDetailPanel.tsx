@@ -11,6 +11,7 @@ import type { CartModifierSelection } from "@/lib/catalog/cart-types";
 import { MercadoProductGallery } from "@/components/mercado-oculto/MercadoProductGallery";
 import { RubroCatalogVariantSlot } from "@/components/rubros/RubroCatalogVariantSlot";
 import { GiftCardAmountPicker } from "@/components/catalog/GiftCardAmountPicker";
+import { useGiftCardsEnabled } from "@/components/catalog-transactional/GiftCardStorefrontProvider";
 import { fetchCatalogProductDetail } from "@/lib/catalog/fetch-catalog-product-detail";
 import {
   resolveCatalogProductImages,
@@ -218,6 +219,7 @@ export function CatalogProductDetailPanel({
 }: CatalogProductDetailPanelProps) {
   const cartContext = useCartOptional();
   const shellNav = useCatalogShellNavigationOptional();
+  const giftCardsEnabled = useGiftCardsEnabled();
   const activeExchangeRate = exchangeRate ?? product.exchange_rate_used;
   // Buyer PDP: cart is the primary path. WhatsApp only when the store is
   // WhatsApp-only (or cart is unavailable, e.g. reference/preview mode).
@@ -324,7 +326,9 @@ export function CatalogProductDetailPanel({
         cartItemKey(product.product_id, selectedVariantId, selectedModifiers),
     )?.quantity ?? 0;
 
-  const isGiftCard = isGiftCardCatalogItem(product);
+  const isGiftCardProduct = isGiftCardCatalogItem(product);
+  const isGiftCard = isGiftCardProduct && giftCardsEnabled;
+  const giftCardsBlocked = isGiftCardProduct && !giftCardsEnabled;
   const previewQty = Math.max(1, contextCartQuantity || 1);
   const activePricing = resolveUnitPriceUsd({
     retailUsd: product.price_usd ?? 0,
@@ -359,6 +363,7 @@ export function CatalogProductDetailPanel({
     clampGiftCardCustomAmount(modifiersExtra) != null;
 
   const canAddMore =
+    !giftCardsBlocked &&
     !outOfStock &&
     remaining > 0 &&
     onAddToCart &&

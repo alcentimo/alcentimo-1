@@ -18,6 +18,8 @@ import {
   isGiftCardMetadata,
   GIFT_CARD_PRODUCT_SLUG,
 } from "@/lib/gift-cards/catalog";
+import { isPlatformAdminOwnedStore } from "@/lib/gift-cards/admin-store";
+import { GIFT_CARD_STORE_DENIED_MESSAGE } from "@/lib/gift-cards/types";
 
 export async function resolveOrderLinesWithPricing(
   admin: SupabaseClient,
@@ -37,6 +39,7 @@ export async function resolveOrderLinesWithPricing(
 
   const storeSettings = await getStoreSettingsConfig(storeId);
   const wholesaleEnabled = storeSettings.catalogCurrency.wholesaleEnabled;
+  const adminOwnedStore = await isPlatformAdminOwnedStore(storeId);
 
   const productIds = [...new Set(lines.map((line) => line.productId))];
   const { data: products, error: productsError } = await admin
@@ -213,6 +216,10 @@ export async function resolveOrderLinesWithPricing(
       isGiftCardMetadata(
         (product.metadata as Record<string, unknown> | null) ?? null,
       ) || product.slug === GIFT_CARD_PRODUCT_SLUG;
+
+    if (isGiftCard && !adminOwnedStore) {
+      return { items: [], error: GIFT_CARD_STORE_DENIED_MESSAGE };
+    }
 
     const defaultVariantId = defaultVariantByProduct.get(line.productId);
     if (!defaultVariantId) {

@@ -32,6 +32,7 @@ import {
 import type { ProductVariantJson } from "@/lib/products/variants";
 import { syncProductVariants } from "@/lib/products/sync-variants";
 import { getDefaultLocationId } from "@/lib/locations/sync-stock";
+import { isGiftCardSupplierListing } from "@/lib/gift-cards/catalog";
 import {
   isSupplierProductCategory,
   normalizeSupplierProductCategory,
@@ -154,6 +155,7 @@ async function fetchAllActiveSupplierProducts(
     for (const row of chunk) {
       const title = String(row.title ?? "").trim();
       if (!title) continue;
+      if (isGiftCardSupplierListing({ title, category: row.category })) continue;
       if (!isPublishedForDropship(row)) continue;
       const wholesalePriceUsd = resolvePrecioMayoristaUsd(row);
       if (wholesalePriceUsd == null) continue;

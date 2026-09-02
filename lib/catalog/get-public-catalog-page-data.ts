@@ -139,7 +139,7 @@ export async function getPublicCatalogPageData(
   const categoryFilter = Boolean(options?.categoryFilter);
 
   return withPublicCatalogCache(
-    ["public-catalog-page-v5", slug, categorySlug, String(categoryFilter)],
+    ["public-catalog-page-v6", slug, categorySlug, String(categoryFilter)],
     { slug, storeId: store.id },
     () =>
       loadPublicCatalogPageDataUncached(slug, {

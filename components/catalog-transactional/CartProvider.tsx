@@ -22,7 +22,8 @@ import {
   mergeCartItemsPreferLocal,
 } from "@/lib/catalog/cart-lines";
 import { getCatalogVariantOptions } from "@/lib/products/variants";
-import { giftCardWholesaleEnabled } from "@/lib/gift-cards/catalog";
+import { giftCardWholesaleEnabled, isGiftCardCatalogItem } from "@/lib/gift-cards/catalog";
+import { useGiftCardsEnabled } from "@/components/catalog-transactional/GiftCardStorefrontProvider";
 import {
   clearStoredCart,
   readStoredCart,
@@ -169,6 +170,14 @@ function reconcileSyncedCart(
 
 type PersistMode = "guest" | "customer";
 
+function dropDisallowedGiftCardItems(
+  items: CartItem[],
+  giftCardsEnabled: boolean,
+): CartItem[] {
+  if (giftCardsEnabled) return items;
+  return items.filter((item) => !isGiftCardCatalogItem(item.product));
+}
+
 export function CartProvider({
   storeSlug,
   storeId,
@@ -177,6 +186,7 @@ export function CartProvider({
   wholesaleEnabled = false,
   children,
 }: CartProviderProps) {
+  const giftCardsEnabled = useGiftCardsEnabled();
   const [items, setItems] = useState<CartItem[]>([]);
   const [hydrated, setHydrated] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
@@ -204,6 +214,14 @@ export function CartProvider({
   useEffect(() => {
     wholesaleEnabledRef.current = wholesaleEnabled;
   }, [wholesaleEnabled]);
+
+  useEffect(() => {
+    if (giftCardsEnabled) return;
+    setItems((current) => {
+      const next = dropDisallowedGiftCardItems(current, false);
+      return next.length === current.length ? current : next;
+    });
+  }, [giftCardsEnabled]);
 
   const loadCustomerCartState = useCallback(async () => {
     const guestItems = readStoredCart(storeSlug);
@@ -453,6 +471,9 @@ export function CartProvider({
       variant: CatalogVariantOption,
       modifiers: import("@/lib/catalog/cart-types").CartModifierSelection[] = [],
     ) => {
+      if (isGiftCardCatalogItem(product) && !giftCardsEnabled) {
+        return;
+      }
       setItems((current) => {
         const deduped = dedupeCartItems(current);
         const key = cartItemKey(product.product_id, variant.id, modifiers);
@@ -510,7 +531,7 @@ export function CartProvider({
         ];
       });
     },
-    [bumpCartRevision, wholesaleEnabled],
+    [bumpCartRevision, wholesaleEnabled, giftCardsEnabled],
   );
 
   const removeItem = useCallback(
