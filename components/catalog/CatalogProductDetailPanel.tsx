@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState, type UIEvent } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { ArrowLeft, Check, Loader2, MessageCircle, Plus, X } from "lucide-react";
 import { CatalogProductShareMenu } from "@/components/catalog/CatalogProductShareMenu";
@@ -65,7 +65,7 @@ import {
 import { useCartOptional } from "@/components/catalog-transactional/CartProvider";
 import { useCatalogShellNavigationOptional } from "@/components/catalog-transactional/CatalogShellNavigation";
 import dynamic from "next/dynamic";
-import { useHideOnScroll } from "@/lib/hooks/useHideOnScroll";
+import { bindHideOnScroll } from "@/lib/hooks/useHideOnScroll";
 import { cn } from "@/lib/cn";
 
 const TechSpecsChips = dynamic(
@@ -267,8 +267,9 @@ export function CatalogProductDetailPanel({
   >([]);
   const [justAdded, setJustAdded] = useState(false);
   const justAddedTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const [headerHidden, setHeaderHidden] = useState(false);
-  const lastScrollYRef = useRef(0);
+  const scrollRef = useRef<HTMLDivElement | null>(null);
+  const headerRef = useRef<HTMLElement | null>(null);
+  const compactBarRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     return () => {
@@ -304,7 +305,9 @@ export function CatalogProductDetailPanel({
     if (layout !== "overlay") return;
 
     const previousOverflow = document.body.style.overflow;
+    const previousHtmlOverflow = document.documentElement.style.overflow;
     document.body.style.overflow = "hidden";
+    document.documentElement.style.overflow = "hidden";
 
     function handleKeyDown(event: KeyboardEvent) {
       if (event.key === "Escape") onClose?.();
@@ -313,6 +316,7 @@ export function CatalogProductDetailPanel({
     window.addEventListener("keydown", handleKeyDown);
     return () => {
       document.body.style.overflow = previousOverflow;
+      document.documentElement.style.overflow = previousHtmlOverflow;
       window.removeEventListener("keydown", handleKeyDown);
     };
   }, [layout, onClose]);
@@ -479,23 +483,47 @@ export function CatalogProductDetailPanel({
     giftDeliveryValid;
 
   const isPage = layout === "page";
-  const windowHeaderHidden = useHideOnScroll(isPage);
-  const headerCollapsed = isPage ? windowHeaderHidden : headerHidden;
 
   const backHref = catalogHref || "/";
 
-  function handleDetailScroll(event: UIEvent<HTMLDivElement>) {
-    const y = event.currentTarget.scrollTop;
-    const last = lastScrollYRef.current;
-    const diff = y - last;
-    lastScrollYRef.current = y;
-    if (y < 16) {
-      setHeaderHidden(false);
-      return;
+  useEffect(() => {
+    function setCollapsed(hidden: boolean) {
+      headerRef.current?.classList.toggle(
+        "product-detail-header--scroll-hidden",
+        hidden,
+      );
+      compactBarRef.current?.classList.toggle(
+        "product-detail-compact--visible",
+        hidden,
+      );
     }
-    if (diff > 8) setHeaderHidden(true);
-    else if (diff < -8) setHeaderHidden(false);
-  }
+
+    if (isPage) {
+      return bindHideOnScroll({
+        topOffset: 48,
+        delta: 10,
+        getY: () => window.scrollY,
+        onHiddenChange: setCollapsed,
+        addListener: (handler) => {
+          window.addEventListener("scroll", handler, { passive: true });
+          return () => window.removeEventListener("scroll", handler);
+        },
+      });
+    }
+
+    const scroller = scrollRef.current;
+    if (!scroller) return;
+    return bindHideOnScroll({
+      topOffset: 36,
+      delta: 10,
+      getY: () => scroller.scrollTop,
+      onHiddenChange: setCollapsed,
+      addListener: (handler) => {
+        scroller.addEventListener("scroll", handler, { passive: true });
+        return () => scroller.removeEventListener("scroll", handler);
+      },
+    });
+  }, [isPage, product.product_id]);
 
   return (
     <div
@@ -517,12 +545,25 @@ export function CatalogProductDetailPanel({
       )}
 
       <div className="product-detail-panel">
-        <header
-          className={cn(
-            "product-detail-header",
-            headerCollapsed && "product-detail-header--scroll-hidden",
+        <div ref={compactBarRef} className="product-detail-compact">
+          {isPage ? (
+            <Link href={backHref} className="product-detail-compact-back">
+              <ArrowLeft className="h-4 w-4" aria-hidden="true" />
+            </Link>
+          ) : (
+            <button
+              type="button"
+              className="product-detail-compact-back"
+              onClick={onClose}
+              aria-label="Volver al catálogo"
+            >
+              <ArrowLeft className="h-4 w-4" aria-hidden="true" />
+            </button>
           )}
-        >
+          <p className="product-detail-compact-title">{product.product_name}</p>
+        </div>
+        <header ref={headerRef} className="product-detail-header">
+
           {isPage ? (
             <div className="product-detail-back-wrap">
               <Link href={backHref} className="product-detail-back">
@@ -568,7 +609,7 @@ export function CatalogProductDetailPanel({
           </div>
         </header>
 
-        <div className="product-detail-scroll" onScroll={handleDetailScroll}>
+        <div ref={scrollRef} className="product-detail-scroll">
           <div className="product-detail-media">
             <MercadoProductGallery
               productName={product.product_name}
