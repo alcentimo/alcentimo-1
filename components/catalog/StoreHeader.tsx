@@ -9,6 +9,8 @@ import type { LocationHoursSettings } from "@/lib/store-settings/types";
 import { isGifImageUrl } from "@/lib/media/is-gif-url";
 import { storeHasPCBuilderFromStore } from "@/lib/rubros/modules/tecnologia/pc-builder";
 import { getStoreCatalogUrl } from "@/lib/stores";
+import { useHideOnScroll } from "@/lib/hooks/useHideOnScroll";
+import { cn } from "@/lib/cn";
 
 interface StoreHeaderProps {
   store: Store;
@@ -48,6 +50,7 @@ export function StoreHeader({
 }: StoreHeaderProps) {
   const pcBuilderEnabled = storeHasPCBuilderFromStore(store);
   const catalogUrl = getStoreCatalogUrl(store.slug);
+  const scrollHidden = useHideOnScroll();
 
   return (
     <>
@@ -55,7 +58,12 @@ export function StoreHeader({
         <p className="truncate px-4">{store.name}</p>
       </div>
 
-      <header className="store-header safe-area-inset">
+      <header
+        className={cn(
+          "store-header safe-area-inset",
+          scrollHidden && "store-header--scroll-hidden",
+        )}
+      >
         <div className="store-header-inner">
           <Link href={catalogUrl} className="flex min-w-0 items-center gap-3">
             <StoreLogo store={store} />

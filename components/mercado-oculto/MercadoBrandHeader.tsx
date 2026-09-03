@@ -3,6 +3,7 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { cn } from "@/lib/cn";
+import { useHideOnScroll } from "@/lib/hooks/useHideOnScroll";
 
 export interface MercadoBrandHeaderProps {
   brandHref: string;
@@ -15,6 +16,8 @@ export interface MercadoBrandHeaderProps {
   /** Buscador central (vitrina marketplace). */
   search?: ReactNode;
   className?: string;
+  /** Si es false, la cabecera no se oculta al hacer scroll. */
+  hideOnScroll?: boolean;
 }
 
 /**
@@ -29,9 +32,18 @@ export function MercadoBrandHeader({
   nav,
   search = null,
   className,
+  hideOnScroll = true,
 }: MercadoBrandHeaderProps) {
+  const scrollHidden = useHideOnScroll(hideOnScroll);
+
   return (
-    <header className={cn("mercado-mp-header", className)}>
+    <header
+      className={cn(
+        "mercado-mp-header",
+        scrollHidden && "mercado-mp-header--scroll-hidden",
+        className,
+      )}
+    >
       <div
         className={cn(
           "mercado-mp-header-top",

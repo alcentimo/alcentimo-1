@@ -3,6 +3,11 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Check, Copy, MessageCircle, Share2 } from "lucide-react";
 import { cn } from "@/lib/cn";
+import {
+  buildNativeShareData,
+  buildProductShareText,
+  buildWhatsAppShareHref,
+} from "@/lib/catalog/product-share";
 
 function TelegramIcon({ className }: { className?: string }) {
   return (
@@ -33,6 +38,8 @@ function FacebookIcon({ className }: { className?: string }) {
 interface CatalogProductShareMenuProps {
   productName: string;
   shareUrl: string;
+  priceUsd?: number | null;
+  storeName?: string | null;
   className?: string;
 }
 
@@ -46,29 +53,57 @@ function facebookShareHref(url: string): string {
   return `https://www.facebook.com/sharer/sharer.php?${params.toString()}`;
 }
 
-function whatsappShareHref(url: string, text: string): string {
-  const params = new URLSearchParams({ text: `${text}\n${url}` });
-  return `https://wa.me/?${params.toString()}`;
-}
-
 function telegramShareHref(url: string, text: string): string {
   const params = new URLSearchParams({ url, text });
   return `https://t.me/share/url?${params.toString()}`;
 }
 
+function resolveShareUrl(shareUrl: string): string {
+  if (typeof window === "undefined") return shareUrl;
+  const trimmed = shareUrl.trim();
+  if (!trimmed) return window.location.href;
+  if (/^https?:\/\//i.test(trimmed) || trimmed.startsWith("//")) {
+    return trimmed;
+  }
+  if (trimmed.startsWith("/")) {
+    return `${window.location.origin}${trimmed}`;
+  }
+  return trimmed;
+}
+
 export function CatalogProductShareMenu({
   productName,
   shareUrl,
+  priceUsd = null,
+  storeName = null,
   className,
 }: CatalogProductShareMenuProps) {
   const [open, setOpen] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [canNativeShare, setCanNativeShare] = useState(false);
   const rootRef = useRef<HTMLDivElement | null>(null);
   const copiedTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const canNativeShare = useMemo(() => {
-    if (typeof navigator === "undefined") return false;
-    return typeof navigator.share === "function";
+  const payload = useMemo(
+    () => ({
+      productName,
+      shareUrl: resolveShareUrl(shareUrl),
+      priceUsd,
+      storeName,
+    }),
+    [productName, shareUrl, priceUsd, storeName],
+  );
+  const shareText = useMemo(
+    () => buildProductShareText(payload),
+    [payload],
+  );
+  const whatsappHref = useMemo(
+    () => buildWhatsAppShareHref(shareText),
+    [shareText],
+  );
+
+  useEffect(() => {
+    setCanNativeShare(typeof navigator !== "undefined" && typeof navigator.share === "function");
   }, []);
 
   useEffect(() => {
@@ -100,7 +135,7 @@ export function CatalogProductShareMenu({
 
   async function handleCopy() {
     try {
-      await navigator.clipboard.writeText(shareUrl);
+      await navigator.clipboard.writeText(shareUrl || shareText);
       setCopied(true);
       if (copiedTimerRef.current) clearTimeout(copiedTimerRef.current);
       copiedTimerRef.current = setTimeout(() => setCopied(false), 2000);
@@ -111,15 +146,19 @@ export function CatalogProductShareMenu({
 
   async function handleNativeShare() {
     try {
-      await navigator.share({
-        title: productName,
-        text: productName,
-        url: shareUrl,
-      });
+      await navigator.share(buildNativeShareData(payload));
       setOpen(false);
     } catch {
       // El usuario canceló o el navegador no completó el share.
     }
+  }
+
+  async function handlePrimaryShare() {
+    if (canNativeShare) {
+      await handleNativeShare();
+      return;
+    }
+    window.open(whatsappHref, "_blank", "noopener,noreferrer");
   }
 
   const itemClass =
@@ -127,17 +166,27 @@ export function CatalogProductShareMenu({
 
   return (
     <div ref={rootRef} className={cn("relative", className)}>
-      <button
-        type="button"
-        onClick={() => setOpen((value) => !value)}
-        className="product-detail-share-btn"
-        aria-expanded={open}
-        aria-haspopup="menu"
-        aria-label="Compartir producto"
-      >
-        <Share2 className="h-4 w-4" aria-hidden="true" />
-        Compartir
-      </button>
+      <div className="product-detail-share-cluster">
+        <button
+          type="button"
+          onClick={() => void handlePrimaryShare()}
+          className="product-detail-share-btn"
+          aria-label="Compartir producto"
+        >
+          <Share2 className="h-4 w-4" aria-hidden="true" />
+          Compartir
+        </button>
+        <button
+          type="button"
+          onClick={() => setOpen((value) => !value)}
+          className="product-detail-share-more"
+          aria-expanded={open}
+          aria-haspopup="menu"
+          aria-label="Más opciones para compartir"
+        >
+          <span aria-hidden="true">▾</span>
+        </button>
+      </div>
 
       {open ? (
         <div
@@ -164,7 +213,7 @@ export function CatalogProductShareMenu({
           <a
             role="menuitem"
             className={itemClass}
-            href={whatsappShareHref(shareUrl, productName)}
+            href={whatsappHref}
             target="_blank"
             rel="noopener noreferrer"
             onClick={() => setOpen(false)}

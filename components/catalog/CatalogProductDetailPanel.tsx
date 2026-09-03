@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type UIEvent } from "react";
 import Link from "next/link";
 import { ArrowLeft, Check, Loader2, MessageCircle, Plus, X } from "lucide-react";
 import { CatalogProductShareMenu } from "@/components/catalog/CatalogProductShareMenu";
@@ -65,6 +65,7 @@ import {
 import { useCartOptional } from "@/components/catalog-transactional/CartProvider";
 import { useCatalogShellNavigationOptional } from "@/components/catalog-transactional/CatalogShellNavigation";
 import dynamic from "next/dynamic";
+import { useHideOnScroll } from "@/lib/hooks/useHideOnScroll";
 import { cn } from "@/lib/cn";
 
 const TechSpecsChips = dynamic(
@@ -266,6 +267,8 @@ export function CatalogProductDetailPanel({
   >([]);
   const [justAdded, setJustAdded] = useState(false);
   const justAddedTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [headerHidden, setHeaderHidden] = useState(false);
+  const lastScrollYRef = useRef(0);
 
   useEffect(() => {
     return () => {
@@ -476,11 +479,31 @@ export function CatalogProductDetailPanel({
     giftDeliveryValid;
 
   const isPage = layout === "page";
+  const windowHeaderHidden = useHideOnScroll(isPage);
+  const headerCollapsed = isPage ? windowHeaderHidden : headerHidden;
+
   const backHref = catalogHref || "/";
+
+  function handleDetailScroll(event: UIEvent<HTMLDivElement>) {
+    const y = event.currentTarget.scrollTop;
+    const last = lastScrollYRef.current;
+    const diff = y - last;
+    lastScrollYRef.current = y;
+    if (y < 16) {
+      setHeaderHidden(false);
+      return;
+    }
+    if (diff > 8) setHeaderHidden(true);
+    else if (diff < -8) setHeaderHidden(false);
+  }
 
   return (
     <div
-      className={isPage ? "product-detail-page" : "product-detail-overlay"}
+      className={
+        isPage
+          ? "product-detail-page product-detail-enter"
+          : "product-detail-overlay product-detail-overlay--immersive product-detail-enter"
+      }
       role={isPage ? undefined : "dialog"}
       aria-modal={isPage ? undefined : true}
     >
@@ -494,7 +517,12 @@ export function CatalogProductDetailPanel({
       )}
 
       <div className="product-detail-panel">
-        <header className="product-detail-header">
+        <header
+          className={cn(
+            "product-detail-header",
+            headerCollapsed && "product-detail-header--scroll-hidden",
+          )}
+        >
           {isPage ? (
             <div className="product-detail-back-wrap">
               <Link href={backHref} className="product-detail-back">
@@ -505,17 +533,27 @@ export function CatalogProductDetailPanel({
                 <p className="product-detail-kicker">{publicCategoryLabel}</p>
               ) : null}
             </div>
-          ) : publicCategoryLabel ? (
-            <p className="product-detail-kicker">{publicCategoryLabel}</p>
           ) : (
-            <p className="product-detail-kicker" aria-hidden="true">
-              &nbsp;
-            </p>
+            <div className="product-detail-back-wrap">
+              <button
+                type="button"
+                className="product-detail-back"
+                onClick={onClose}
+              >
+                <ArrowLeft className="h-4 w-4" aria-hidden="true" />
+                Volver al catálogo
+              </button>
+              {publicCategoryLabel ? (
+                <p className="product-detail-kicker">{publicCategoryLabel}</p>
+              ) : null}
+            </div>
           )}
           <div className="product-detail-header-actions">
             <CatalogProductShareMenu
               productName={product.product_name}
               shareUrl={shareUrl || (typeof window !== "undefined" ? window.location.href : "")}
+              priceUsd={displayPriceUsd}
+              storeName={product.store_name}
             />
             {isPage ? null : (
               <button
@@ -530,7 +568,7 @@ export function CatalogProductDetailPanel({
           </div>
         </header>
 
-        <div className="product-detail-scroll">
+        <div className="product-detail-scroll" onScroll={handleDetailScroll}>
           <div className="product-detail-media">
             <MercadoProductGallery
               productName={product.product_name}

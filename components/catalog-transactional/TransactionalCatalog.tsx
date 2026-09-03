@@ -445,7 +445,7 @@ function TransactionalCatalogContent({
               promoBanner={catalogDesign.promoBanner}
               storeName={store.name}
               storeSlug={store.slug}
-              onOpenProduct={previewMode ? openProductById : undefined}
+              onOpenProduct={openProductById}
             />
             {!previewMode ? <CatalogLocationPicker /> : null}
           </>
@@ -457,7 +457,7 @@ function TransactionalCatalogContent({
           categoryOptions={categoryOptions}
           mercadoCards={mercadoCards}
           storeSlug={store.slug}
-          onActivateProduct={previewMode ? handleActivateProduct : undefined}
+          onActivateProduct={handleActivateProduct}
           onSelectBrand={handleSelectBrand}
           featuredBrands={brandOptions}
           exchangeRate={exchangeRate}
