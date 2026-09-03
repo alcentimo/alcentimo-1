@@ -1,5 +1,7 @@
 "use client";
 
+import { useEffect, useState, type ReactNode } from "react";
+import { createPortal } from "react-dom";
 import {
   CatalogProductDetailProvider,
   useCatalogProductDetail,
@@ -9,7 +11,6 @@ import type { CatalogListItem } from "@/lib/database.types";
 import type { CatalogVariantOption } from "@/lib/products/variants";
 import type { CartModifierSelection } from "@/lib/catalog/cart-types";
 import type { CheckoutType } from "@/lib/store-settings/types";
-import type { ReactNode } from "react";
 
 interface CatalogProductDetailHostProps {
   children: ReactNode;
@@ -43,10 +44,15 @@ function CatalogProductDetailLayer({
   onSelectBrand,
 }: Omit<CatalogProductDetailHostProps, "children" | "storeId" | "storeSlug">) {
   const { selectedProduct, closeProduct } = useCatalogProductDetail();
+  const [mounted, setMounted] = useState(false);
 
-  if (!selectedProduct) return null;
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
-  return (
+  if (!selectedProduct || !mounted) return null;
+
+  const panel = (
     <CatalogProductDetailPanel
       product={selectedProduct}
       exchangeRate={exchangeRate}
@@ -61,6 +67,8 @@ function CatalogProductDetailLayer({
       onAddToCart={onAddToCart}
     />
   );
+
+  return createPortal(panel, document.body);
 }
 
 export function CatalogProductDetailHost({

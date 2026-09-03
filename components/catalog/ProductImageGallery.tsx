@@ -197,6 +197,41 @@ export function ProductImageGallery({
     );
   }
 
+  if (!isDetail && activeImage) {
+    return (
+      <div
+        className={cn(
+          "product-image-gallery product-image-gallery-card product-image-gallery-lite",
+          className,
+        )}
+        onClick={onMediaClick}
+        onKeyDown={
+          onMediaClick
+            ? (event) => {
+                if (event.key === "Enter" || event.key === " ") {
+                  event.preventDefault();
+                  onMediaClick();
+                }
+              }
+            : undefined
+        }
+        role={onMediaClick ? "button" : undefined}
+        tabIndex={onMediaClick ? 0 : undefined}
+      >
+        <div className="product-image-gallery-stage">
+          <CatalogProductImage
+            src={galleryDisplayUrl(activeImage, "card")}
+            alt={alt}
+            className={imageClassName}
+            loading={loading}
+            sizes={sizes}
+            priority={loading === "eager"}
+          />
+        </div>
+      </div>
+    );
+  }
+
   if (!activeImage) {
     if (product.product_slug === GIFT_CARD_PRODUCT_SLUG) {
       return (
