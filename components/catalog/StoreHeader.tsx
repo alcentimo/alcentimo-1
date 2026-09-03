@@ -22,37 +22,58 @@ interface StoreHeaderProps {
 }
 
 function StoreLogo({ store }: { store: Store }) {
-  const [logoFailed, setLogoFailed] = useState(false);
+  const [logoReady, setLogoReady] = useState(false);
   const logoUrl = store.logo_url?.trim() || null;
 
   useEffect(() => {
-    setLogoFailed(false);
+    setLogoReady(false);
   }, [logoUrl]);
 
-  if (logoUrl && !logoFailed) {
-    return (
-      <span className="inline-flex h-10 max-h-10 w-auto max-w-[11rem] shrink-0 items-center justify-center overflow-hidden rounded-lg bg-zinc-100/80 px-1.5 py-1">
-        <Image
-          src={logoUrl}
-          alt=""
-          width={176}
-          height={40}
-          sizes="176px"
-          className="h-full max-h-8 w-auto max-w-[10.5rem] object-contain object-left"
-          unoptimized={isGifImageUrl(logoUrl)}
-          onError={() => setLogoFailed(true)}
-        />
-      </span>
-    );
-  }
-
-  return (
+  const initials = (
     <span
       className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-zinc-900 text-[11px] font-semibold tracking-tight text-white"
       aria-hidden="true"
     >
       {getCatalogStoreInitials(store.name)}
     </span>
+  );
+
+  if (!logoUrl) {
+    return initials;
+  }
+
+  return (
+    <>
+      <Image
+        src={logoUrl}
+        alt=""
+        width={1}
+        height={1}
+        className="sr-only"
+        unoptimized={isGifImageUrl(logoUrl)}
+        onLoad={(event) => {
+          if (event.currentTarget.naturalWidth > 0) {
+            setLogoReady(true);
+          }
+        }}
+        onError={() => setLogoReady(false)}
+      />
+      {logoReady ? (
+        <span className="inline-flex h-10 max-h-10 w-auto max-w-[11rem] shrink-0 items-center justify-center overflow-hidden rounded-lg bg-transparent">
+          <Image
+            src={logoUrl}
+            alt=""
+            width={176}
+            height={40}
+            sizes="176px"
+            className="h-full max-h-8 w-auto max-w-[10.5rem] object-contain object-left"
+            unoptimized={isGifImageUrl(logoUrl)}
+          />
+        </span>
+      ) : (
+        initials
+      )}
+    </>
   );
 }
 

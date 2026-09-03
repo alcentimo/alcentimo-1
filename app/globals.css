@@ -14170,7 +14170,7 @@ button.catalog-profile-footer-link {
 }
 
 .mercado-brand-mark--logo {
-  @apply h-8 w-auto max-h-10 max-w-[9.5rem] overflow-hidden bg-[color-mix(in_srgb,var(--mo-header-fg)_8%,transparent)] px-1.5 py-1 ring-0 sm:h-10 sm:max-w-[11.5rem] sm:px-2;
+  @apply h-8 w-auto max-h-10 max-w-[9.5rem] overflow-hidden rounded-lg bg-transparent p-0 ring-0 sm:h-10 sm:max-w-[11.5rem];
 }
 
 .mercado-brand-mark-img {
@@ -14357,7 +14357,7 @@ button.mercado-mp-card-btn {
 }
 
 .storefront-mp-shell .mercado-brand-mark--logo {
-  @apply h-8 w-auto max-h-9 max-w-[9.5rem] bg-[color-mix(in_srgb,white_12%,transparent)] px-1.5 py-0.5 ring-0 sm:h-9 sm:max-w-[11.5rem];
+  @apply h-8 w-auto max-h-9 max-w-[9.5rem] rounded-lg bg-transparent p-0 ring-0 sm:h-9 sm:max-w-[11.5rem];
 }
 
 .storefront-mp-shell .mercado-brand-mark-img {

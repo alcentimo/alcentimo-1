@@ -30,36 +30,45 @@ function MercadoBrandMark({
   brandTitle: string;
   brandMarkText: string;
 }) {
-  const [logoFailed, setLogoFailed] = useState(false);
+  const [logoReady, setLogoReady] = useState(false);
   const trimmedLogo = logoUrl?.trim() || null;
 
   useEffect(() => {
-    setLogoFailed(false);
+    setLogoReady(false);
   }, [trimmedLogo]);
 
   const initials = getCatalogStoreInitials(
     brandTitle.trim() || brandMarkText || "T",
   );
-  const showLogo = Boolean(trimmedLogo) && !logoFailed;
 
-  if (showLogo && trimmedLogo) {
-    return (
-      <span className="mercado-brand-mark mercado-brand-mark--logo">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
+  return (
+    <>
+      {trimmedLogo ? (
+        // eslint-disable-next-line @next/next/no-img-element
         <img
           src={trimmedLogo}
           alt=""
-          className="mercado-brand-mark-img"
-          onError={() => setLogoFailed(true)}
+          className="sr-only"
+          aria-hidden="true"
+          onLoad={(event) => {
+            if (event.currentTarget.naturalWidth > 0) {
+              setLogoReady(true);
+            }
+          }}
+          onError={() => setLogoReady(false)}
         />
-      </span>
-    );
-  }
-
-  return (
-    <span className="mercado-brand-mark" aria-hidden="true">
-      {initials}
-    </span>
+      ) : null}
+      {trimmedLogo && logoReady ? (
+        <span className="mercado-brand-mark mercado-brand-mark--logo">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={trimmedLogo} alt="" className="mercado-brand-mark-img" />
+        </span>
+      ) : (
+        <span className="mercado-brand-mark" aria-hidden="true">
+          {initials}
+        </span>
+      )}
+    </>
   );
 }
 
