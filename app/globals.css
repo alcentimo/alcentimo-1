@@ -3011,7 +3011,7 @@ html:has(.landing-shell) {
 }
 
 .product-detail-page .product-detail-panel {
-  @apply max-h-none overflow-visible rounded-2xl shadow-md;
+  @apply max-h-none overflow-visible rounded-none shadow-none;
   max-width: none;
   height: auto;
 }
@@ -3127,7 +3127,28 @@ html:has(.landing-shell) {
 }
 
 .product-detail-media {
-  @apply max-w-full bg-zinc-50 p-3 sm:p-5 lg:overflow-y-auto;
+  @apply relative max-w-full bg-zinc-50 p-0 lg:overflow-y-auto sm:p-0;
+}
+
+.product-detail-media-toolbar {
+  @apply pointer-events-none absolute inset-x-0 top-0 z-20 flex items-start justify-between gap-2 p-3;
+}
+
+.product-detail-media-toolbar > * {
+  pointer-events: auto;
+}
+
+.product-detail-back-fab,
+.product-detail-close-fab {
+  @apply flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-zinc-200/80 bg-white/95 text-zinc-800 shadow-md backdrop-blur-sm;
+}
+
+.product-detail-quick-actions--on-media .product-detail-icon-btn {
+  @apply h-10 min-h-10 min-w-10 justify-center px-0 shadow-md backdrop-blur-sm;
+}
+
+.product-detail-quick-actions--on-media .product-detail-icon-btn-label {
+  @apply sr-only;
 }
 
 .product-detail-media .mercado-mp-detail-gallery {
@@ -13871,7 +13892,27 @@ button.catalog-profile-footer-link {
 .mercado-mp-header--scroll-hidden {
   opacity: 0;
   pointer-events: none;
-  transform: translateY(-100%);
+  transform: translateY(-110%);
+}
+
+.storefront-mp-shell--product .mercado-mp-header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 50;
+}
+
+.storefront-mp-shell--product .mercado-main {
+  @apply max-w-none px-0 py-0;
+}
+
+.storefront-mp-shell--product .mercado-mp-main {
+  @apply max-w-none px-0 pt-0;
+}
+
+.storefront-mp-shell--product .product-detail-page {
+  @apply py-0;
 }
 
 @media (prefers-reduced-motion: reduce) {

@@ -34,6 +34,7 @@ function MercadoChromeInner({ email, children }: MercadoChromeProps) {
 
   const onDirectory =
     pathname === "/mercado-oculto" || pathname === "/mercado-oculto/";
+  const onProduct = pathname.includes("/mercado-oculto/producto/");
   const onPurchases = pathname.startsWith("/mercado-oculto/conversaciones");
   const onCart = pathname.startsWith("/mercado-oculto/carrito");
   const activeCategory = catalog?.filters.category ?? "";
@@ -73,12 +74,19 @@ function MercadoChromeInner({ email, children }: MercadoChromeProps) {
   const pending = Boolean(catalog?.pending) || navPending;
 
   return (
-    <div className={cn("mercado-shell", pending && "mercado-shell-pending")}>
+    <div
+      className={cn(
+        "mercado-shell",
+        pending && "mercado-shell-pending",
+        onProduct && "storefront-mp-shell--product",
+      )}
+    >
       <MercadoBrandHeader
         brandHref="/mercado-oculto"
         brandMarkText="M"
         brandKicker="Curaduría mayorista"
         brandTitle="Moriche"
+        scrollMode={onProduct ? "reveal-on-down" : "hide-on-down"}
         nav={
           <>
             <Link

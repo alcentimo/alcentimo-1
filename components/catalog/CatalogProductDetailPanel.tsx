@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { ArrowLeft, Check, MessageCircle, Plus, X } from "lucide-react";
 import { CatalogProductShareMenu } from "@/components/catalog/CatalogProductShareMenu";
@@ -68,7 +68,6 @@ import { TechSpecsChips } from "@/components/rubros/tecnologia/TechSpecsChips";
 import { CollectibleBadges } from "@/components/rubros/coleccionables/CollectibleBadges";
 import { BeautyBadges } from "@/components/rubros/salud-belleza/BeautyBadges";
 import { StationeryBadges } from "@/components/rubros/papeleria-libreria-oficina/StationeryBadges";
-import { useHideOnScroll } from "@/lib/hooks/useHideOnScroll";
 import { cn } from "@/lib/cn";
 
 interface CatalogProductDetailPanelProps {
@@ -243,9 +242,6 @@ export function CatalogProductDetailPanel({
   const justAddedTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const isPage = layout === "page";
-  const headerHidden = useHideOnScroll(true, {
-    targetRef: isPage ? undefined : scrollRef,
-  });
 
   useEffect(() => {
     return () => {
@@ -287,6 +283,14 @@ export function CatalogProductDetailPanel({
       cancelled = true;
     };
   }, [product.product_id, product.product_slug, product.store_slug]);
+
+  useLayoutEffect(() => {
+    if (isPage) {
+      window.scrollTo({ top: 0, left: 0, behavior: "instant" });
+      return;
+    }
+    scrollRef.current?.scrollTo({ top: 0, left: 0, behavior: "instant" });
+  }, [isPage, product.product_id]);
 
   useEffect(() => {
     if (layout !== "overlay") return;
@@ -488,59 +492,47 @@ export function CatalogProductDetailPanel({
       )}
 
       <div className="product-detail-panel">
-        <header
-          className={cn(
-            "product-detail-header",
-            headerHidden && "product-detail-header--scroll-hidden",
-          )}
-        >
-          {isPage ? (
-            <div className="product-detail-back-wrap">
-              <Link href={backHref} className="product-detail-back">
-                <ArrowLeft className="h-4 w-4" aria-hidden="true" />
-                Volver al catálogo
-              </Link>
-              {publicCategoryLabel ? (
-                <p className="product-detail-kicker">{publicCategoryLabel}</p>
-              ) : null}
-            </div>
-          ) : (
-            <div className="product-detail-back-wrap">
-              <button
-                type="button"
-                className="product-detail-back"
-                onClick={onClose}
-              >
-                <ArrowLeft className="h-4 w-4" aria-hidden="true" />
-                Volver al catálogo
-              </button>
-              {publicCategoryLabel ? (
-                <p className="product-detail-kicker">{publicCategoryLabel}</p>
-              ) : null}
-            </div>
-          )}
-          <div className="product-detail-header-actions">
-            <CatalogProductShareMenu
-              productName={product.product_name}
-              shareUrl={shareUrl || (typeof window !== "undefined" ? window.location.href : "")}
-              priceUsd={displayPriceUsd}
-              storeName={product.store_name}
-            />
-            {isPage ? null : (
-              <button
-                type="button"
-                onClick={onClose}
-                className="product-detail-close"
-                aria-label="Cerrar"
-              >
-                <X className="h-5 w-5" />
-              </button>
-            )}
-          </div>
-        </header>
-
         <div className="product-detail-scroll" ref={scrollRef}>
           <div className="product-detail-media">
+            <div className="product-detail-media-toolbar">
+              {isPage ? (
+                <Link href={backHref} className="product-detail-back-fab">
+                  <ArrowLeft className="h-5 w-5" aria-hidden="true" />
+                  <span className="sr-only">Volver al catálogo</span>
+                </Link>
+              ) : (
+                <button
+                  type="button"
+                  className="product-detail-back-fab"
+                  onClick={onClose}
+                  aria-label="Volver al catálogo"
+                >
+                  <ArrowLeft className="h-5 w-5" aria-hidden="true" />
+                </button>
+              )}
+              <div className="product-detail-header-actions">
+                <CatalogProductShareMenu
+                  productName={product.product_name}
+                  shareUrl={
+                    shareUrl ||
+                    (typeof window !== "undefined" ? window.location.href : "")
+                  }
+                  priceUsd={displayPriceUsd}
+                  storeName={product.store_name}
+                  onMedia
+                />
+                {isPage ? null : (
+                  <button
+                    type="button"
+                    onClick={onClose}
+                    className="product-detail-close-fab"
+                    aria-label="Cerrar"
+                  >
+                    <X className="h-5 w-5" />
+                  </button>
+                )}
+              </div>
+            </div>
             <MercadoProductGallery
               productName={product.product_name}
               images={detailImages.length > 0 ? detailImages : undefined}
@@ -559,6 +551,9 @@ export function CatalogProductDetailPanel({
           </div>
 
           <div className="product-detail-body">
+            {publicCategoryLabel ? (
+              <p className="product-detail-kicker">{publicCategoryLabel}</p>
+            ) : null}
             {brandName ? (
               onSelectBrand ? (
                 <button

@@ -116,6 +116,7 @@ export function StorefrontMoricheChrome({
           }
           nav={<StorefrontMoricheNav storeSlug={storeSlug} />}
           className="storefront-mp-header"
+          scrollMode={productChrome ? "reveal-on-down" : "hide-on-down"}
         />
 
         {productChrome ? null : banner ? (

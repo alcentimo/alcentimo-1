@@ -15,6 +15,8 @@ interface CatalogProductShareMenuProps {
   priceUsd?: number | null;
   storeName?: string | null;
   className?: string;
+  /** Iconos sobre la galería (ficha tipo Mercado Libre). */
+  onMedia?: boolean;
 }
 
 function resolveShareUrl(shareUrl: string): string {
@@ -36,6 +38,7 @@ export function CatalogProductShareMenu({
   priceUsd = null,
   storeName = null,
   className,
+  onMedia = false,
 }: CatalogProductShareMenuProps) {
   const [canNativeShare, setCanNativeShare] = useState(false);
 
@@ -77,7 +80,13 @@ export function CatalogProductShareMenu({
   }
 
   return (
-    <div className={cn("product-detail-quick-actions", className)}>
+    <div
+      className={cn(
+        "product-detail-quick-actions",
+        onMedia && "product-detail-quick-actions--on-media",
+        className,
+      )}
+    >
       <button
         type="button"
         onClick={() => void handleNativeShare()}
