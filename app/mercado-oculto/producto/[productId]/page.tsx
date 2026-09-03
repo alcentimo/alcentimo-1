@@ -9,6 +9,7 @@ import { MercadoChatPanel } from "@/components/mercado-oculto/MercadoChatPanel";
 import { MercadoProductBuyBox } from "@/components/mercado-oculto/MercadoProductBuyBox";
 import { MercadoProductGallery } from "@/components/mercado-oculto/MercadoProductGallery";
 import { MercadoSellerQuestions } from "@/components/mercado-oculto/MercadoSellerQuestions";
+import { CatalogProductShareMenu } from "@/components/catalog/CatalogProductShareMenu";
 import { formatUsd } from "@/lib/format";
 import {
   listSupplierFashionCatalogSkus,
@@ -65,7 +66,7 @@ export default async function MercadoProductoPage({
   const chatAccessMode = isAuthenticated ? "subscriber" : "anonymous";
 
   return (
-    <div className="mercado-mp-detail">
+    <div className="mercado-mp-detail product-detail-enter">
       <nav className="mercado-ml-breadcrumb" aria-label="Navegación">
         <Link href="/mercado-oculto">Catálogo</Link>
         <span aria-hidden="true">›</span>
@@ -95,7 +96,15 @@ export default async function MercadoProductoPage({
           <p className="mercado-mp-card-meta mt-3">
             {product.category_name} · Vendido por {brandLabel}
           </p>
-          <h1 className="mercado-mp-detail-title">{product.product_name}</h1>
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <h1 className="mercado-mp-detail-title">{product.product_name}</h1>
+            <CatalogProductShareMenu
+              productName={product.product_name}
+              shareUrl={`/mercado-oculto/producto/${product.product_id}`}
+              priceUsd={product.price_usd}
+              storeName={brandLabel}
+            />
+          </div>
 
           <div className="mercado-mp-detail-stock">
             <Boxes className="h-4 w-4 text-emerald-700" aria-hidden="true" />

@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import { CatalogProductShareMenu } from "@/components/catalog/CatalogProductShareMenu";
 import { formatUsd } from "@/lib/format";
 import {
   supplierPublicCatalogPath,
@@ -179,9 +180,20 @@ export function SupplierPublicCatalogProductView({
           <p className="text-xs uppercase tracking-wide text-zinc-500">
             {product.category_name}
           </p>
-          <h1 className="mt-2 text-2xl font-semibold text-zinc-900 dark:text-zinc-50">
-            {product.product_name}
-          </h1>
+          <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
+            <h1 className="text-2xl font-semibold text-zinc-900 dark:text-zinc-50">
+              {product.product_name}
+            </h1>
+            <CatalogProductShareMenu
+              productName={product.product_name}
+              shareUrl={supplierPublicCatalogProductPath(
+                profile.slug,
+                product.product_id,
+              )}
+              priceUsd={product.price_usd}
+              storeName={profile.companyName}
+            />
+          </div>
           <p className="mt-4 text-2xl font-semibold text-zinc-900 dark:text-zinc-50">
             {formatUsd(product.price_usd)}
           </p>
