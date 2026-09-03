@@ -10,19 +10,10 @@ import { LandingFooter } from "@/components/landing/LandingFooter";
 import { LandingNav } from "@/components/landing/LandingNav";
 import { LandingAssistantChat } from "@/components/landing/LandingAssistantChat";
 import { LandingVisitTracker } from "@/components/landing/LandingVisitTracker";
-import { withTimeoutFallback } from "@/lib/async/with-timeout-fallback";
-import { getCurrentExchangeRate } from "@/lib/catalog";
 
 export const revalidate = 300;
 
 export default async function Home() {
-  const exchangeRate = await withTimeoutFallback(
-    getCurrentExchangeRate(),
-    4000,
-    null,
-    "landing:getCurrentExchangeRate",
-  );
-
   return (
     <>
       <AdminPwaServiceWorkerRegister />
@@ -32,7 +23,7 @@ export default async function Home() {
       <LandingNav />
 
       <main className="landing-shell">
-        <Hero exchangeRate={exchangeRate?.rate ?? null} />
+        <Hero />
         <LandingAudiencePaths />
         <LandingCustomerExperience />
         <LandingBenefits />

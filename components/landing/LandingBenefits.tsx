@@ -3,7 +3,7 @@ import { MessageCircle, PackageOpen, Sparkles } from "lucide-react";
 const benefits = [
   {
     icon: PackageOpen,
-    title: "Sin inventario ni logística",
+    title: "Sin inventario",
     description:
       "Catálogo de productos listos para vender. Tú consigues clientes; el stock y el envío no son tu problema.",
   },
@@ -38,10 +38,10 @@ export function LandingBenefits() {
           </p>
         </div>
 
-        <ul className="mx-auto mt-16 grid max-w-5xl grid-cols-1 gap-12 md:mt-20 md:grid-cols-3 md:gap-10 lg:gap-14">
+        <ul className="landing-benefit-grid">
           {benefits.map(({ icon: Icon, title, description }) => (
-            <li key={title} className="landing-benefit text-center md:text-left">
-              <div className="landing-benefit-icon mx-auto md:mx-0">
+            <li key={title} className="landing-benefit-card">
+              <div className="landing-benefit-icon">
                 <Icon className="h-5 w-5" strokeWidth={1.75} aria-hidden="true" />
               </div>
               <h3 className="mt-5 text-lg font-semibold tracking-tight text-zinc-900 dark:text-zinc-50">
