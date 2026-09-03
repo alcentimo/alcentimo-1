@@ -7,11 +7,6 @@ interface UseHideOnScrollOptions {
   topOffset?: number;
   /** Delta de scroll para cambiar de estado (evita jitter). */
   delta?: number;
-  /**
-   * Contenedor con overflow (ficha overlay). Si se omite, usa `window`.
-   * No provoca re-renders: aplica clases CSS en el elemento destino.
-   */
-  scrollerRef?: RefObject<HTMLElement | null>;
 }
 
 export interface BindHideOnScrollOptions {

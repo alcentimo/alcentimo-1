@@ -487,13 +487,15 @@ export function CatalogProductDetailPanel({
   const backHref = catalogHref || "/";
 
   useEffect(() => {
-    const header = headerRef.current;
-    const compact = compactBarRef.current;
-    if (!header) return;
-
     function setCollapsed(hidden: boolean) {
-      header.classList.toggle("product-detail-header--scroll-hidden", hidden);
-      compact?.classList.toggle("product-detail-compact--visible", hidden);
+      headerRef.current?.classList.toggle(
+        "product-detail-header--scroll-hidden",
+        hidden,
+      );
+      compactBarRef.current?.classList.toggle(
+        "product-detail-compact--visible",
+        hidden,
+      );
     }
 
     if (isPage) {
