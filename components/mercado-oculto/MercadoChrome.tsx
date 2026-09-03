@@ -86,7 +86,7 @@ function MercadoChromeInner({ email, children }: MercadoChromeProps) {
         brandMarkText="M"
         brandKicker="Curaduría mayorista"
         brandTitle="Moriche"
-        scrollMode={onProduct ? "reveal-on-down" : "hide-on-down"}
+        scrollMode={onProduct ? "fade-with-scroll" : "hide-on-down"}
         nav={
           <>
             <Link

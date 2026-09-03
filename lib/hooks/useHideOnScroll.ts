@@ -2,7 +2,10 @@
 
 import { useLayoutEffect, useRef, useState, type RefObject } from "react";
 
-export type StoreHeaderScrollMode = "hide-on-down" | "reveal-on-down";
+export type StoreHeaderScrollMode =
+  | "hide-on-down"
+  | "reveal-on-down"
+  | "fade-with-scroll";
 
 interface UseHideOnScrollOptions {
   topOffset?: number;
@@ -102,4 +105,55 @@ export function useHideOnScroll(
   }, [delta, enabled, mode, targetRef, topOffset]);
 
   return hidden;
+}
+
+/**
+ * Opacidad 0→1 según la posición de scroll (ficha de producto).
+ * En 0 la barra está transparente; al bajar se revela de forma progresiva.
+ */
+export function useHeaderScrollProgress(
+  enabled = true,
+  {
+    rangePx = 112,
+    targetRef,
+  }: {
+    rangePx?: number;
+    targetRef?: RefObject<HTMLElement | null>;
+  } = {},
+): number {
+  const [progress, setProgress] = useState(0);
+
+  useLayoutEffect(() => {
+    if (!enabled) {
+      setProgress(1);
+      return;
+    }
+
+    setProgress(0);
+    const target = targetRef?.current ?? null;
+    const readY = () => (target ? target.scrollTop : window.scrollY);
+    let ticking = false;
+
+    function update() {
+      ticking = false;
+      const y = Math.max(0, readY());
+      const next = Math.min(1, y / Math.max(1, rangePx));
+      setProgress((current) =>
+        Math.abs(current - next) < 0.01 ? current : next,
+      );
+    }
+
+    function onScroll() {
+      if (ticking) return;
+      ticking = true;
+      window.requestAnimationFrame(update);
+    }
+
+    update();
+    const node: HTMLElement | Window = target ?? window;
+    node.addEventListener("scroll", onScroll, { passive: true });
+    return () => node.removeEventListener("scroll", onScroll);
+  }, [enabled, rangePx, targetRef]);
+
+  return progress;
 }

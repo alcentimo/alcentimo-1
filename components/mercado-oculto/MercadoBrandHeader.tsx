@@ -1,29 +1,27 @@
 "use client";
 
 import Link from "next/link";
-import type { ReactNode } from "react";
+import type { CSSProperties, ReactNode } from "react";
 import { cn } from "@/lib/cn";
-import { useHideOnScroll, type StoreHeaderScrollMode } from "@/lib/hooks/useHideOnScroll";
+import {
+  useHeaderScrollProgress,
+  useHideOnScroll,
+  type StoreHeaderScrollMode,
+} from "@/lib/hooks/useHideOnScroll";
 
 export interface MercadoBrandHeaderProps {
   brandHref: string;
   brandTitle: string;
   brandKicker?: string;
-  /** Inicial o marca corta cuando no hay logo. */
   brandMarkText?: string;
   logoUrl?: string | null;
   nav?: ReactNode;
-  /** Buscador central (vitrina marketplace). */
   search?: ReactNode;
   className?: string;
   hideOnScroll?: boolean;
-  /** En ficha de producto: cabecera oculta al inicio y al subir. */
   scrollMode?: StoreHeaderScrollMode;
 }
 
-/**
- * Cabecera compacta de vitrina Moriche (compartida por Mercado Oculto y tiendas públicas).
- */
 export function MercadoBrandHeader({
   brandHref,
   brandTitle,
@@ -36,15 +34,31 @@ export function MercadoBrandHeader({
   hideOnScroll = true,
   scrollMode = "hide-on-down",
 }: MercadoBrandHeaderProps) {
-  const scrollHidden = useHideOnScroll(hideOnScroll, { mode: scrollMode });
+  const fadeWithScroll = scrollMode === "fade-with-scroll";
+  const scrollHidden = useHideOnScroll(hideOnScroll && !fadeWithScroll, {
+    mode: scrollMode === "reveal-on-down" ? "reveal-on-down" : "hide-on-down",
+  });
+  const fadeProgress = useHeaderScrollProgress(hideOnScroll && fadeWithScroll);
+
+  const fadeStyle: CSSProperties | undefined = fadeWithScroll
+    ? {
+        opacity: fadeProgress,
+        transform: `translate3d(0, ${(1 - fadeProgress) * -10}px, 0)`,
+        pointerEvents: fadeProgress < 0.08 ? "none" : "auto",
+      }
+    : undefined;
 
   return (
     <header
       className={cn(
         "mercado-mp-header",
-        scrollHidden && "mercado-mp-header--scroll-hidden",
+        fadeWithScroll && "mercado-mp-header--scroll-fade",
+        !fadeWithScroll && scrollHidden && "mercado-mp-header--scroll-hidden",
         className,
       )}
+      style={fadeStyle}
+      aria-hidden={fadeWithScroll && fadeProgress < 0.08}
+      inert={fadeWithScroll && fadeProgress < 0.08 ? true : undefined}
     >
       <div
         className={cn(

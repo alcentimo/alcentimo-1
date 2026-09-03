@@ -2631,9 +2631,7 @@ html:has(.landing-shell) {
 
 .store-header {
   @apply sticky top-0 z-20 border-b border-zinc-200/80 bg-white/95 backdrop-blur-md;
-  transition:
-    opacity 0.28s ease,
-    transform 0.28s ease;
+  transition: opacity 0.3s ease, transform 0.3s ease;
 }
 
 .store-header--scroll-hidden {
@@ -3040,9 +3038,7 @@ html:has(.landing-shell) {
 
 .product-detail-header {
   @apply sticky top-0 z-20 flex items-start justify-between gap-3 border-b border-zinc-100 bg-white/95 px-4 py-3 backdrop-blur-md sm:px-6;
-  transition:
-    opacity 0.28s ease,
-    transform 0.28s ease;
+  transition: opacity 0.3s ease, transform 0.3s ease;
 }
 
 .product-detail-header--scroll-hidden {
@@ -13884,9 +13880,11 @@ button.catalog-profile-footer-link {
 .mercado-mp-header {
   @apply sticky top-0 z-40 max-w-full overflow-x-clip border-b border-white/8 bg-[color-mix(in_srgb,var(--mo-forest)_92%,transparent)] shadow-[0_10px_30px_rgba(3,24,18,0.18)];
   backdrop-filter: blur(14px);
-  transition:
-    opacity 0.28s ease,
-    transform 0.28s ease;
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+.mercado-mp-header--scroll-fade {
+  will-change: opacity, transform;
 }
 
 .mercado-mp-header--scroll-hidden {
@@ -13913,6 +13911,10 @@ button.catalog-profile-footer-link {
 
 .storefront-mp-shell--product .product-detail-page {
   @apply py-0;
+}
+
+.storefront-mp-shell--product .product-image-gallery-detail {
+  @apply rounded-none;
 }
 
 @media (prefers-reduced-motion: reduce) {
