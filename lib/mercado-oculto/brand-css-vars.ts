@@ -9,7 +9,7 @@ const DEFAULT_PRIMARY = "#0e5c42";
 
 /**
  * Remapea tokens Moriche (`--mo-*`) al color principal de una tienda.
- * La barra superior usa el color de marca a pleno (estilo marketplace).
+ * La marca se usa en acentos (carrito, CTAs); la cabecera de vitrina es clara.
  */
 export function buildMercadoBrandCssVars(
   primaryColor: string | null | undefined,

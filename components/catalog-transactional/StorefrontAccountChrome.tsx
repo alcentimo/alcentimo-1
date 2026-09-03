@@ -20,8 +20,8 @@ interface StorefrontAccountChromeProps {
 }
 
 /**
- * Cabecera Moriche sin hero (cuenta, perfil, registro).
- * Mantiene Pedidos / Carrito / Cuenta visibles fuera del catálogo.
+ * Cabecera de tienda sin hero (cuenta, perfil, registro).
+ * Carrito y menú de cuenta permanecen visibles fuera del catálogo.
  */
 export function StorefrontAccountChrome({
   storeSlug,
