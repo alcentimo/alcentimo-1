@@ -2,13 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import {
-  LayoutGrid,
-  ShoppingBag,
-  ShoppingCart,
-  UserPlus,
-  UserRound,
-} from "lucide-react";
+import { LogIn, LogOut, Package, ShoppingBag, UserPlus, UserRound } from "lucide-react";
 import { cn } from "@/lib/cn";
 import { buildCustomerRegisterPath } from "@/lib/customers/middleware-access";
 import {
@@ -18,20 +12,25 @@ import {
 import { useCartOptional } from "@/components/catalog-transactional/CartProvider";
 import { useCatalogShellNavigationOptional } from "@/components/catalog-transactional/CatalogShellNavigation";
 import { useCustomerSessionOptional } from "@/components/catalog-transactional/CustomerSessionProvider";
+import {
+  DropdownMenu,
+  DropdownMenuItem,
+} from "@/components/ui/dropdown-menu";
 
 interface StorefrontMoricheNavProps {
   storeSlug: string;
-  /** Compact labels for narrow headers on account pages. */
+  /** Reservado para cabeceras estrechas; la barra usa solo íconos. */
   compact?: boolean;
 }
 
+const ICON_STROKE = 1.5;
+
 /**
- * Accesos superiores de la plantilla marketplace:
- * Pedidos · Carrito · Cuenta | Entrar + Crear cuenta
+ * Acciones de la cabecera: carrito + menú de cuenta.
+ * Pedidos y registro viven dentro del desplegable de perfil.
  */
 export function StorefrontMoricheNav({
   storeSlug,
-  compact = false,
 }: StorefrontMoricheNavProps) {
   const pathname = usePathname();
   const router = useRouter();
@@ -56,106 +55,156 @@ export function StorefrontMoricheNav({
     pathname === profileHref ||
     pathname.startsWith(`${profileHref}/`);
 
-  function goToCategories() {
-    const target = document.getElementById("storefront-categorias");
-    if (target) {
-      target.scrollIntoView({ behavior: "smooth", block: "start" });
+  function openAuth(mode: "login" | "register") {
+    if (shellNav) {
+      shellNav.openRegister(mode);
       return;
     }
-    router.push(`${catalogHref}#storefront-categorias`);
+    router.push(buildCustomerRegisterPath(storeSlug, catalogHref));
   }
 
-  function goToOrders() {
-    if (isCustomer) {
-      router.push(accountHref);
-      return;
-    }
-    if (shellNav) {
-      shellNav.openRegister("login");
-      return;
-    }
-    router.push(buildCustomerRegisterPath(storeSlug, accountHref));
+  async function handleSignOut() {
+    await customerSession?.signOut();
+    router.push(catalogHref);
   }
 
   return (
     <>
       <button
         type="button"
-        className="mercado-nav-link"
-        onClick={goToCategories}
-      >
-        <LayoutGrid className="h-4 w-4" aria-hidden="true" />
-        <span className="mercado-nav-label">Categorías</span>
-      </button>
-
-      <button
-        type="button"
-        className={cn("mercado-nav-link", onAccount && "mercado-nav-link-active")}
-        onClick={goToOrders}
-      >
-        <ShoppingBag className="h-4 w-4" aria-hidden="true" />
-        <span className="mercado-nav-label">Pedidos</span>
-      </button>
-
-      <button
-        type="button"
         className={cn(
-          "mercado-nav-link mercado-mp-cart-link",
+          "mercado-nav-link mercado-mp-cart-link storefront-mp-icon-btn",
           shellNav?.cartActive && "mercado-nav-link-active",
         )}
         onClick={() => shellNav?.openCart()}
         aria-label={
           itemCount > 0
-            ? `Carrito, ${itemCount} artículos`
+            ? `Carrito, ${itemCount} productos`
             : "Carrito de compras"
         }
       >
-        <ShoppingCart className="h-4 w-4" aria-hidden="true" />
-        <span className="mercado-nav-label">Carrito</span>
+        <ShoppingBag
+          className="h-5 w-5"
+          strokeWidth={ICON_STROKE}
+          aria-hidden="true"
+        />
         {itemCount > 0 ? (
-          <span className="mercado-mp-cart-badge">{itemCount}</span>
+          <span className="mercado-mp-cart-badge">
+            {itemCount > 99 ? "99+" : itemCount}
+          </span>
         ) : null}
       </button>
 
-      {isCustomer ? (
-        <Link
-          href={profileHref}
-          prefetch
-          className={cn(
-            "mercado-nav-link",
-            (pathname === profileHref ||
-              pathname.startsWith(`${profileHref}/`)) &&
-              "mercado-nav-link-active",
-          )}
-          title={customerSession?.displayName ?? "Cuenta"}
-        >
-          <UserRound className="h-4 w-4" aria-hidden="true" />
-          <span className="mercado-nav-label">
-            {compact ? "Cuenta" : "Mi cuenta"}
-          </span>
-        </Link>
-      ) : (
-        <>
+      <DropdownMenu
+        align="end"
+        className="storefront-mp-account-menu"
+        menuClassName="storefront-mp-account-dropdown min-w-[13.5rem] p-1"
+        trigger={
           <button
             type="button"
-            className="mercado-nav-link mercado-mp-auth-link"
-            onClick={() => shellNav?.openRegister("login")}
+            className={cn(
+              "mercado-nav-link storefront-mp-icon-btn",
+              onAccount && "mercado-nav-link-active",
+            )}
+            aria-haspopup="menu"
+            aria-label={isCustomer ? "Mi cuenta" : "Acceder a tu cuenta"}
+            title={
+              isCustomer
+                ? (customerSession?.displayName ?? "Mi cuenta")
+                : "Acceder"
+            }
           >
-            <UserRound className="h-4 w-4" aria-hidden="true" />
-            <span className="mercado-nav-label">Entrar</span>
+            <UserRound
+              className="h-5 w-5"
+              strokeWidth={ICON_STROKE}
+              aria-hidden="true"
+            />
           </button>
-          <button
-            type="button"
-            className="mercado-nav-link"
-            onClick={() => shellNav?.openRegister("register")}
-          >
-            <UserPlus className="h-4 w-4" aria-hidden="true" />
-            <span className="mercado-nav-label">
-              {compact ? "Crear" : "Crea tu cuenta"}
-            </span>
-          </button>
-        </>
-      )}
+        }
+      >
+        {(close) =>
+          isCustomer ? (
+            <>
+              <p className="storefront-mp-account-dropdown-label">
+                {customerSession?.displayName?.trim() || "Mi cuenta"}
+              </p>
+              <Link
+                href={profileHref}
+                prefetch
+                role="menuitem"
+                onClick={close}
+                className="storefront-mp-account-item"
+              >
+                <UserRound
+                  className="h-4 w-4"
+                  strokeWidth={ICON_STROKE}
+                  aria-hidden="true"
+                />
+                Mi perfil
+              </Link>
+              <Link
+                href={accountHref}
+                prefetch
+                role="menuitem"
+                onClick={close}
+                className="storefront-mp-account-item"
+              >
+                <Package
+                  className="h-4 w-4"
+                  strokeWidth={ICON_STROKE}
+                  aria-hidden="true"
+                />
+                Pedidos
+              </Link>
+              <DropdownMenuItem
+                destructive
+                disabled={customerSession?.signOutPending}
+                onClick={() => {
+                  close();
+                  void handleSignOut();
+                }}
+              >
+                <LogOut
+                  className="h-4 w-4"
+                  strokeWidth={ICON_STROKE}
+                  aria-hidden="true"
+                />
+                Cerrar sesión
+              </DropdownMenuItem>
+            </>
+          ) : (
+            <>
+              <p className="storefront-mp-account-dropdown-label">Acceder</p>
+              <DropdownMenuItem
+                onClick={() => {
+                  close();
+                  openAuth("login");
+                }}
+              >
+                <LogIn
+                  className="h-4 w-4"
+                  strokeWidth={ICON_STROKE}
+                  aria-hidden="true"
+                />
+                Entrar
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => {
+                  close();
+                  openAuth("register");
+                }}
+              >
+                <UserPlus
+                  className="h-4 w-4"
+                  strokeWidth={ICON_STROKE}
+                  aria-hidden="true"
+                />
+                Crea tu cuenta
+              </DropdownMenuItem>
+            </>
+          )
+        }
+      </DropdownMenu>
     </>
   );
 }
