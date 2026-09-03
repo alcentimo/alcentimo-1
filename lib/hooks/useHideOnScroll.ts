@@ -1,40 +1,50 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useLayoutEffect, useRef, useState, type RefObject } from "react";
 
 interface UseHideOnScrollOptions {
   /** Distancia mínima desde el tope para permitir ocultar. */
   topOffset?: number;
   /** Delta de scroll para cambiar de estado (evita jitter). */
   delta?: number;
+  /** Contenedor con overflow; por defecto el viewport. */
+  targetRef?: RefObject<HTMLElement | null>;
 }
 
 /**
- * Oculta la barra al hacer scroll hacia abajo y la muestra al subir,
- * con un umbral para que el gesto se sienta nativo.
+ * Oculta la barra al hacer scroll hacia abajo y la muestra al subir.
+ * No modifica el flujo del documento (solo clase visual).
  */
 export function useHideOnScroll(
   enabled = true,
-  { topOffset = 24, delta = 8 }: UseHideOnScrollOptions = {},
+  { topOffset = 16, delta = 6, targetRef }: UseHideOnScrollOptions = {},
 ): boolean {
   const [hidden, setHidden] = useState(false);
+  const hiddenRef = useRef(false);
 
-  useEffect(() => {
-    if (!enabled || typeof window === "undefined") return;
+  useLayoutEffect(() => {
+    if (!enabled) {
+      hiddenRef.current = false;
+      setHidden(false);
+      return;
+    }
 
-    let lastY = window.scrollY;
+    const target = targetRef?.current ?? null;
+    const readY = () =>
+      target ? target.scrollTop : window.scrollY;
+
+    let lastY = readY();
     let ticking = false;
-    let currentHidden = false;
 
     function apply(nextHidden: boolean) {
-      if (nextHidden === currentHidden) return;
-      currentHidden = nextHidden;
+      if (nextHidden === hiddenRef.current) return;
+      hiddenRef.current = nextHidden;
       setHidden(nextHidden);
     }
 
     function update() {
       ticking = false;
-      const y = window.scrollY;
+      const y = readY();
       const diff = y - lastY;
 
       if (y <= topOffset) {
@@ -61,9 +71,10 @@ export function useHideOnScroll(
       window.requestAnimationFrame(update);
     }
 
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
-  }, [delta, enabled, topOffset]);
+    const node: HTMLElement | Window = target ?? window;
+    node.addEventListener("scroll", onScroll, { passive: true });
+    return () => node.removeEventListener("scroll", onScroll);
+  }, [delta, enabled, targetRef, topOffset]);
 
   return hidden;
 }

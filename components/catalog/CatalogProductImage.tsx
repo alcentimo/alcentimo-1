@@ -28,42 +28,42 @@ export function CatalogProductImage({
     setStatus("loading");
   }, [src]);
 
-  if (status === "error") {
-    return (
-      <CatalogProductMediaFallback
-        alt={alt}
-        className="catalog-product-image-fallback"
-      />
-    );
-  }
-
   return (
     <>
-      <div
-        className={cn(
-          "catalog-product-image-placeholder",
-          status === "loaded" && "catalog-product-image-placeholder-done",
-        )}
-        aria-hidden="true"
-      >
-        <div className="catalog-product-image-shimmer" />
-      </div>
-      <Image
-        src={src}
-        alt={alt}
-        fill
-        sizes={sizes}
-        quality={80}
-        priority={priority}
-        loading={priority ? undefined : loading}
-        className={cn(
-          "object-contain object-center catalog-product-image-el",
-          status === "loading" ? "opacity-0" : "opacity-100",
-          className,
-        )}
-        onLoad={() => setStatus("loaded")}
-        onError={() => setStatus("error")}
-      />
+      {status === "error" ? (
+        <CatalogProductMediaFallback
+          alt={alt}
+          className={cn("catalog-product-image-fallback", className)}
+        />
+      ) : (
+        <>
+          <div
+            className={cn(
+              "catalog-product-image-placeholder",
+              status === "loaded" && "catalog-product-image-placeholder-done",
+            )}
+            aria-hidden="true"
+          >
+            <div className="catalog-product-image-shimmer" />
+          </div>
+          <Image
+            src={src}
+            alt={alt}
+            fill
+            sizes={sizes}
+            quality={80}
+            priority={priority}
+            loading={priority ? undefined : loading}
+            className={cn(
+              "object-contain object-center catalog-product-image-el",
+              status === "loading" ? "opacity-0" : "opacity-100",
+              className,
+            )}
+            onLoad={() => setStatus("loaded")}
+            onError={() => setStatus("error")}
+          />
+        </>
+      )}
     </>
   );
 }

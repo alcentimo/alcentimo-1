@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState, type UIEvent } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { ArrowLeft, Check, Loader2, MessageCircle, Plus, X } from "lucide-react";
+import { ArrowLeft, Check, MessageCircle, Plus, X } from "lucide-react";
 import { CatalogProductShareMenu } from "@/components/catalog/CatalogProductShareMenu";
 import { getStoreProductDeepLinkPath } from "@/lib/store-host";
 import type { CatalogListItem } from "@/lib/database.types";
@@ -64,38 +64,12 @@ import {
 } from "@/src/config/categories";
 import { useCartOptional } from "@/components/catalog-transactional/CartProvider";
 import { useCatalogShellNavigationOptional } from "@/components/catalog-transactional/CatalogShellNavigation";
-import dynamic from "next/dynamic";
+import { TechSpecsChips } from "@/components/rubros/tecnologia/TechSpecsChips";
+import { CollectibleBadges } from "@/components/rubros/coleccionables/CollectibleBadges";
+import { BeautyBadges } from "@/components/rubros/salud-belleza/BeautyBadges";
+import { StationeryBadges } from "@/components/rubros/papeleria-libreria-oficina/StationeryBadges";
 import { useHideOnScroll } from "@/lib/hooks/useHideOnScroll";
 import { cn } from "@/lib/cn";
-
-const TechSpecsChips = dynamic(
-  () =>
-    import("@/components/rubros/tecnologia/TechSpecsChips").then(
-      (mod) => mod.TechSpecsChips,
-    ),
-  { ssr: false },
-);
-const CollectibleBadges = dynamic(
-  () =>
-    import("@/components/rubros/coleccionables/CollectibleBadges").then(
-      (mod) => mod.CollectibleBadges,
-    ),
-  { ssr: false },
-);
-const BeautyBadges = dynamic(
-  () =>
-    import("@/components/rubros/salud-belleza/BeautyBadges").then(
-      (mod) => mod.BeautyBadges,
-    ),
-  { ssr: false },
-);
-const StationeryBadges = dynamic(
-  () =>
-    import("@/components/rubros/papeleria-libreria-oficina/StationeryBadges").then(
-      (mod) => mod.StationeryBadges,
-    ),
-  { ssr: false },
-);
 
 interface CatalogProductDetailPanelProps {
   product: CatalogListItem;
@@ -267,8 +241,11 @@ export function CatalogProductDetailPanel({
   >([]);
   const [justAdded, setJustAdded] = useState(false);
   const justAddedTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const [headerHidden, setHeaderHidden] = useState(false);
-  const lastScrollYRef = useRef(0);
+  const scrollRef = useRef<HTMLDivElement | null>(null);
+  const isPage = layout === "page";
+  const headerHidden = useHideOnScroll(true, {
+    targetRef: isPage ? undefined : scrollRef,
+  });
 
   useEffect(() => {
     return () => {
@@ -279,17 +256,28 @@ export function CatalogProductDetailPanel({
   useEffect(() => {
     let cancelled = false;
     setDetailLoading(true);
-    setDetailDescription(null);
-    setDetailImages(resolveCatalogProductImages(product));
+    setDetailDescription(
+      product.short_description?.trim() || null,
+    );
 
     void fetchCatalogProductDetail(product.store_slug, product.product_slug).then(
       (result) => {
         if (cancelled) return;
         setDetailLoading(false);
         if (result.detail) {
-          setDetailDescription(result.detail.description);
+          const nextDescription = result.detail.description?.trim() || null;
+          if (nextDescription) setDetailDescription(nextDescription);
           if (result.detail.images.length > 0) {
-            setDetailImages(result.detail.images);
+            setDetailImages((current) => {
+              const next = result.detail!.images;
+              if (
+                current.length === next.length &&
+                current[0]?.id === next[0]?.id
+              ) {
+                return current;
+              }
+              return next;
+            });
           }
         }
       },
@@ -478,24 +466,7 @@ export function CatalogProductDetailPanel({
     giftCustomValid &&
     giftDeliveryValid;
 
-  const isPage = layout === "page";
-  const windowHeaderHidden = useHideOnScroll(isPage);
-  const headerCollapsed = isPage ? windowHeaderHidden : headerHidden;
-
   const backHref = catalogHref || "/";
-
-  function handleDetailScroll(event: UIEvent<HTMLDivElement>) {
-    const y = event.currentTarget.scrollTop;
-    const last = lastScrollYRef.current;
-    const diff = y - last;
-    lastScrollYRef.current = y;
-    if (y < 16) {
-      setHeaderHidden(false);
-      return;
-    }
-    if (diff > 8) setHeaderHidden(true);
-    else if (diff < -8) setHeaderHidden(false);
-  }
 
   return (
     <div
@@ -520,7 +491,7 @@ export function CatalogProductDetailPanel({
         <header
           className={cn(
             "product-detail-header",
-            headerCollapsed && "product-detail-header--scroll-hidden",
+            headerHidden && "product-detail-header--scroll-hidden",
           )}
         >
           {isPage ? (
@@ -568,7 +539,7 @@ export function CatalogProductDetailPanel({
           </div>
         </header>
 
-        <div className="product-detail-scroll" onScroll={handleDetailScroll}>
+        <div className="product-detail-scroll" ref={scrollRef}>
           <div className="product-detail-media">
             <MercadoProductGallery
               productName={product.product_name}
@@ -695,17 +666,20 @@ export function CatalogProductDetailPanel({
               </dl>
             ) : null}
 
-            {descriptionText ? (
-              <section className="product-detail-description">
-                <h3>Descripción</h3>
+            <section
+              className="product-detail-description"
+              aria-busy={detailLoading && !descriptionText}
+            >
+              <h3>Descripción</h3>
+              {descriptionText ? (
                 <p>{descriptionText}</p>
-              </section>
-            ) : detailLoading ? (
-              <div className="product-detail-loading">
-                <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
-                Cargando descripción…
-              </div>
-            ) : null}
+              ) : (
+                <div
+                  className="product-detail-description-skel"
+                  aria-hidden="true"
+                />
+              )}
+            </section>
 
             {showOrderOptions ? (
               <div className="product-detail-options">

@@ -39,6 +39,8 @@ export interface StorefrontMoricheChromeProps {
   style?: CSSProperties;
   /** Cabecera + categorías fijas al hacer scroll (ficha de producto). */
   pinNavigation?: boolean;
+  /** Ficha de producto: sin rieles de categoría para evitar saltos. */
+  productChrome?: boolean;
 }
 
 /**
@@ -69,6 +71,7 @@ export function StorefrontMoricheChrome({
   className,
   style,
   pinNavigation = false,
+  productChrome = false,
 }: StorefrontMoricheChromeProps) {
   const pathname = usePathname();
   const brandHref = getStoreCatalogBasePath(storeSlug, { pathname });
@@ -88,6 +91,7 @@ export function StorefrontMoricheChrome({
     <div
       className={cn(
         "mercado-shell storefront-moriche-shell storefront-mp-shell",
+        productChrome && "storefront-mp-shell--product",
         className,
       )}
       style={{ ...brandVars, ...style }}
@@ -114,25 +118,29 @@ export function StorefrontMoricheChrome({
           className="storefront-mp-header"
         />
 
-        {banner ? <StorefrontHeroStage>{banner}</StorefrontHeroStage> : null}
-
-        {lead ? (
-          <p className="storefront-mp-lead">{lead}</p>
+        {productChrome ? null : banner ? (
+          <StorefrontHeroStage>{banner}</StorefrontHeroStage>
         ) : null}
 
-        <StorefrontCategoryRail
-          categories={categories}
-          activeCategoryId={activeCategoryId}
-          onSelectCategory={onSelectCategory}
-        />
+        {productChrome || !lead ? null : (
+          <p className="storefront-mp-lead">{lead}</p>
+        )}
 
-        {onSelectBrand ? (
+        {productChrome ? null : (
+          <StorefrontCategoryRail
+            categories={categories}
+            activeCategoryId={activeCategoryId}
+            onSelectCategory={onSelectCategory}
+          />
+        )}
+
+        {productChrome || !onSelectBrand ? null : (
           <StorefrontBrandRail
             brands={brands}
             activeBrand={activeBrand}
             onSelectBrand={onSelectBrand}
           />
-        ) : null}
+        )}
       </div>
 
       <main className="mercado-main mercado-mp-main">{children}</main>
