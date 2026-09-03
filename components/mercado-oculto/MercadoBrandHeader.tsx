@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import type { ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
+import { getCatalogStoreInitials } from "@/components/catalog/CatalogStoreBrandingContext";
 import { cn } from "@/lib/cn";
 import { useHideOnScroll } from "@/lib/hooks/useHideOnScroll";
 
@@ -18,6 +19,48 @@ export interface MercadoBrandHeaderProps {
   className?: string;
   /** Si es false, la cabecera no se oculta al hacer scroll. */
   hideOnScroll?: boolean;
+}
+
+function MercadoBrandMark({
+  logoUrl,
+  brandTitle,
+  brandMarkText,
+}: {
+  logoUrl?: string | null;
+  brandTitle: string;
+  brandMarkText: string;
+}) {
+  const [logoFailed, setLogoFailed] = useState(false);
+  const trimmedLogo = logoUrl?.trim() || null;
+
+  useEffect(() => {
+    setLogoFailed(false);
+  }, [trimmedLogo]);
+
+  const initials = getCatalogStoreInitials(
+    brandTitle.trim() || brandMarkText || "T",
+  );
+  const showLogo = Boolean(trimmedLogo) && !logoFailed;
+
+  if (showLogo && trimmedLogo) {
+    return (
+      <span className="mercado-brand-mark mercado-brand-mark--logo">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={trimmedLogo}
+          alt=""
+          className="mercado-brand-mark-img"
+          onError={() => setLogoFailed(true)}
+        />
+      </span>
+    );
+  }
+
+  return (
+    <span className="mercado-brand-mark" aria-hidden="true">
+      {initials}
+    </span>
+  );
 }
 
 /**
@@ -50,17 +93,17 @@ export function MercadoBrandHeader({
           search ? "mercado-mp-header-top--search" : undefined,
         )}
       >
-        <Link href={brandHref} className="mercado-mp-brand" prefetch>
-          {logoUrl ? (
-            <span className="mercado-brand-mark mercado-brand-mark--logo">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={logoUrl} alt="" className="mercado-brand-mark-img" />
-            </span>
-          ) : (
-            <span className="mercado-brand-mark" aria-hidden="true">
-              {brandMarkText.slice(0, 2).toUpperCase()}
-            </span>
-          )}
+        <Link
+          href={brandHref}
+          className="mercado-mp-brand"
+          prefetch
+          aria-label={brandTitle}
+        >
+          <MercadoBrandMark
+            logoUrl={logoUrl}
+            brandTitle={brandTitle}
+            brandMarkText={brandMarkText}
+          />
           <span className="mercado-mp-brand-text">
             {brandKicker ? (
               <span className="mercado-mp-brand-kicker">{brandKicker}</span>
