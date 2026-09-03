@@ -13,14 +13,20 @@ const CATALOG_PRODUCTS = [
 type FlowPhase = "idle" | "syncing" | "synced";
 
 export function HeroDropshippingFlow() {
-  const [phase, setPhase] = useState<FlowPhase>("idle");
   const [reduceMotion, setReduceMotion] = useState(false);
+  const [phase, setPhase] = useState<FlowPhase>("idle");
   const cycleRef = useRef<number | null>(null);
   const headingId = useId();
 
   useEffect(() => {
     const media = window.matchMedia("(prefers-reduced-motion: reduce)");
-    const apply = () => setReduceMotion(media.matches);
+    const apply = () => {
+      const prefersReduce = media.matches;
+      setReduceMotion(prefersReduce);
+      if (prefersReduce) {
+        window.setTimeout(() => setPhase("synced"), 0);
+      }
+    };
     apply();
     media.addEventListener("change", apply);
     return () => media.removeEventListener("change", apply);
@@ -38,7 +44,6 @@ export function HeroDropshippingFlow() {
 
   useEffect(() => {
     if (reduceMotion) {
-      setPhase("synced");
       return;
     }
 
