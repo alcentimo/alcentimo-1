@@ -46,8 +46,6 @@ export interface GoogleSignInButtonProps {
   /** Ejecutar GIS en el origen actual (página centralizada en alcentimo.com). */
   skipCentralizedRedirect?: boolean;
   onError?: (message: string) => void;
-  /** Notifica al padre que la redirección post-auth comenzó. */
-  onRedirecting?: () => void;
 }
 
 export function GoogleSignInButton({
@@ -59,12 +57,10 @@ export function GoogleSignInButton({
   buttonClassName,
   skipCentralizedRedirect = false,
   onError,
-  onRedirecting,
 }: GoogleSignInButtonProps) {
   const clientId = getGoogleClientId();
   const [noncePair, setNoncePair] = useState<[string, string] | null>(null);
   const [busy, setBusy] = useState(false);
-  const [waitingForPopup, setWaitingForPopup] = useState(false);
   const [localError, setLocalError] = useState<string | null>(null);
   const [useCentralizedAuth, setUseCentralizedAuth] = useState(false);
 
@@ -88,13 +84,11 @@ export function GoogleSignInButton({
     const token = credentialResponse.credential?.trim();
     if (!token || !noncePair) {
       const message = "No se recibió el token de Google.";
-      setWaitingForPopup(false);
       setLocalError(message);
       onError?.(message);
       return;
     }
 
-    setWaitingForPopup(false);
     setBusy(true);
     setLocalError(null);
 
@@ -112,7 +106,6 @@ export function GoogleSignInButton({
       }
 
       markPostLoginNotify();
-      onRedirecting?.();
       window.location.assign(result.redirectTo);
     } catch (error) {
       const message = formatAuthError(
@@ -126,7 +119,6 @@ export function GoogleSignInButton({
   }
 
   function handleGoogleError() {
-    setWaitingForPopup(false);
     const message = "Google canceló o rechazó el inicio de sesión.";
     setLocalError(message);
     onError?.(message);
@@ -140,7 +132,6 @@ export function GoogleSignInButton({
     setLocalError(null);
 
     markPostLoginNotify();
-    onRedirecting?.();
     window.location.assign(
       buildCentralizedGoogleAuthUrl({
         postAuthPath,
@@ -161,8 +152,7 @@ export function GoogleSignInButton({
     );
   }
 
-  const showSpinner = busy || waitingForPopup;
-  const isDisabled = disabled || showSpinner || (!useCentralizedAuth && !noncePair);
+  const isDisabled = disabled || busy || (!useCentralizedAuth && !noncePair);
 
   if (useCentralizedAuth) {
     return (
@@ -176,7 +166,7 @@ export function GoogleSignInButton({
             buttonClassName,
           )}
         >
-          {showSpinner ? (
+          {busy ? (
             <>
               <Loader2 className="h-5 w-5 animate-spin" aria-hidden="true" />
               Redirigiendo a Google…
@@ -208,12 +198,6 @@ export function GoogleSignInButton({
           "relative w-full min-h-12",
           isDisabled && "pointer-events-none opacity-60",
         )}
-        onClick={() => {
-          if (!isDisabled && noncePair) {
-            setWaitingForPopup(true);
-            setLocalError(null);
-          }
-        }}
       >
         {noncePair ? (
           <div className="absolute inset-0 z-10 overflow-hidden opacity-[0.01]">
@@ -237,10 +221,10 @@ export function GoogleSignInButton({
           )}
           aria-hidden="true"
         >
-          {showSpinner ? (
+          {busy ? (
             <>
               <Loader2 className="h-5 w-5 animate-spin" aria-hidden="true" />
-              {busy ? "Conectando con Google…" : "Abriendo Google…"}
+              Conectando con Google…
             </>
           ) : (
             <>
