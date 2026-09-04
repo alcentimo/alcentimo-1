@@ -3262,8 +3262,8 @@ html:has(.landing-shell) {
   }
 }
 
-/* Ficha táctil: una columna, sin lupa ni riel lateral (gana sobre el layout lg). */
-@media (max-width: 1023px), (hover: none), (pointer: coarse) {
+/* Ficha táctil: una columna, sin lupa ni riel lateral. */
+@media (max-width: 1023px) {
   .product-image-gallery-detail,
   .product-image-gallery-detail.product-image-gallery-multi,
   .product-image-gallery-detail--mobile {
@@ -3992,7 +3992,7 @@ html:has(.landing-shell) {
   .product-detail-page--immersive .product-image-gallery-detail {
     aspect-ratio: 1 / 1;
     width: 100%;
-    min-height: min(100vw, calc(100dvh - 11rem));
+    min-height: 0;
     border-radius: 0;
   }
 
