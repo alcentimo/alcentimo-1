@@ -24,6 +24,7 @@ interface CatalogProductDetailHostProps {
   whatsappPhone?: string | null;
   syncProductUrl?: boolean;
   onSelectBrand?: (brand: string) => void;
+  catalogProducts?: CatalogListItem[];
   onAddToCart?: (
     product: CatalogListItem,
     variant: CatalogVariantOption,
@@ -41,8 +42,9 @@ function CatalogProductDetailLayer({
   whatsappPhone,
   onAddToCart,
   onSelectBrand,
+  catalogProducts,
 }: Omit<CatalogProductDetailHostProps, "children" | "storeId" | "storeSlug">) {
-  const { selectedProduct, closeProduct } = useCatalogProductDetail();
+  const { selectedProduct, closeProduct, openProduct } = useCatalogProductDetail();
 
   if (!selectedProduct) return null;
 
@@ -58,6 +60,8 @@ function CatalogProductDetailLayer({
       whatsappPhone={whatsappPhone}
       onClose={closeProduct}
       onSelectBrand={onSelectBrand}
+      catalogProducts={catalogProducts}
+      onSelectRelated={openProduct}
       onAddToCart={onAddToCart}
     />
   );
@@ -77,6 +81,7 @@ export function CatalogProductDetailHost({
   syncProductUrl = true,
   onAddToCart,
   onSelectBrand,
+  catalogProducts,
 }: CatalogProductDetailHostProps) {
   return (
     <CatalogProductDetailProvider
@@ -95,6 +100,7 @@ export function CatalogProductDetailHost({
         whatsappPhone={whatsappPhone}
         onAddToCart={onAddToCart}
         onSelectBrand={onSelectBrand}
+        catalogProducts={catalogProducts}
       />
     </CatalogProductDetailProvider>
   );

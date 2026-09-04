@@ -9,6 +9,8 @@ import type { CatalogListItem } from "@/lib/database.types";
 import type { CatalogVariantOption } from "@/lib/products/variants";
 import type { CartModifierSelection } from "@/lib/catalog/cart-types";
 import { MercadoProductGallery } from "@/components/mercado-oculto/MercadoProductGallery";
+import { CatalogRelatedProducts } from "@/components/catalog/CatalogRelatedProducts";
+import { pickRelatedCatalogProducts } from "@/lib/catalog/related-catalog-products";
 import { RubroCatalogVariantSlot } from "@/components/rubros/RubroCatalogVariantSlot";
 import { GiftCardAmountPicker } from "@/components/catalog/GiftCardAmountPicker";
 import { useGiftCardsEnabled } from "@/components/catalog-transactional/GiftCardStorefrontProvider";
@@ -107,6 +109,8 @@ interface CatalogProductDetailPanelProps {
   catalogHref?: string;
   onClose?: () => void;
   onSelectBrand?: (brand: string) => void;
+  catalogProducts?: CatalogListItem[];
+  onSelectRelated?: (product: CatalogListItem) => void;
   onAddToCart?: (
     product: CatalogListItem,
     variant: CatalogVariantOption,
@@ -217,6 +221,8 @@ export function CatalogProductDetailPanel({
   catalogHref,
   onClose,
   onSelectBrand,
+  catalogProducts,
+  onSelectRelated,
   onAddToCart,
 }: CatalogProductDetailPanelProps) {
   const cartContext = useCartOptional();
@@ -420,6 +426,11 @@ export function CatalogProductDetailPanel({
     product.short_description?.trim() ||
     null;
 
+  const relatedProducts = useMemo(
+    () => pickRelatedCatalogProducts(product, catalogProducts),
+    [product, catalogProducts],
+  );
+
   const shareUrl = useMemo(() => {
     if (typeof window === "undefined") return "";
     const path = getStoreProductDeepLinkPath(
@@ -569,196 +580,214 @@ export function CatalogProductDetailPanel({
         </header>
 
         <div ref={scrollRef} className="product-detail-scroll">
-          <div className="product-detail-media">
-            <MercadoProductGallery
-              productName={product.product_name}
-              images={detailImages.length > 0 ? detailImages : undefined}
-              product={{
-                thumb_url: product.thumb_url,
-                image_alt: product.image_alt,
-                gallery_images: product.gallery_images,
-                product_slug: product.product_slug,
-                metadata: product.metadata,
-                category_slug: product.category_slug,
-              }}
-              mode="detail"
-              loading="eager"
-              sizes="(max-width: 1023px) 100vw, 640px"
-            />
-          </div>
-
-          <div className="product-detail-body">
-            {brandName ? (
-              onSelectBrand ? (
-                <button
-                  type="button"
-                  className="product-detail-brand product-detail-brand-link"
-                  onClick={() => {
-                    onSelectBrand(brandName);
-                    onClose?.();
+          <div className="product-detail-master">
+            <div className="product-detail-top">
+              <div className="product-detail-media">
+                <MercadoProductGallery
+                  productName={product.product_name}
+                  images={detailImages.length > 0 ? detailImages : undefined}
+                  product={{
+                    thumb_url: product.thumb_url,
+                    image_alt: product.image_alt,
+                    gallery_images: product.gallery_images,
+                    product_slug: product.product_slug,
+                    metadata: product.metadata,
+                    category_slug: product.category_slug,
                   }}
-                >
-                  {brandName}
-                </button>
-              ) : (
-                <p className="product-detail-brand">{brandName}</p>
-              )
-            ) : null}
-
-            {isPage ? (
-              <h1 className="product-detail-title">{product.product_name}</h1>
-            ) : (
-              <h2 className="product-detail-title">{product.product_name}</h2>
-            )}
-
-            <div className="product-detail-stock-row">
-              {outOfStock ? (
-                <span className="product-detail-stock-badge product-detail-stock-badge--out">
-                  <span className="product-detail-stock-dot" aria-hidden="true" />
-                  Agotado
-                </span>
-              ) : shouldShowExactStockQuantity(displayStock) &&
-                displayStock <= threshold ? (
-                <span className="product-detail-stock-badge product-detail-stock-badge--low">
-                  <span className="product-detail-stock-dot" aria-hidden="true" />
-                  En stock · Quedan {displayStock}
-                </span>
-              ) : (
-                <span className="product-detail-stock-badge product-detail-stock-badge--in">
-                  <span className="product-detail-stock-dot" aria-hidden="true" />
-                  Disponible
-                </span>
-              )}
-            </div>
-
-            {storeUsesRubroProductModule(storeRubro, "tecnologia") ? (
-              <TechSpecsChips product={product} />
-            ) : null}
-            {storeUsesRubroProductModule(storeRubro, "coleccionables") ? (
-              <CollectibleBadges product={product} />
-            ) : null}
-            {storeUsesRubroProductModule(storeRubro, "salud-belleza") ? (
-              <BeautyBadges product={product} />
-            ) : null}
-            {storeUsesRubroProductModule(storeRubro, "papeleria-libreria-oficina") ? (
-              <StationeryBadges product={product} />
-            ) : null}
-
-            <div
-              className={
-                hasDiscount
-                  ? "product-detail-pricing product-detail-pricing--sale"
-                  : "product-detail-pricing"
-              }
-            >
-              {hasDiscount ? (
-                <span className="product-detail-sale-badge">OFERTA</span>
-              ) : null}
-              <div className="product-detail-price-row">
-                {hasDiscount && product.compare_at_usd != null ? (
-                  <p
-                    className="product-detail-price-compare"
-                    aria-label={`Precio regular ${formatUsd(product.compare_at_usd)}`}
-                  >
-                    {formatUsd(product.compare_at_usd)}
-                  </p>
-                ) : null}
-                <p
-                  className="product-detail-price"
-                  aria-label={`Precio actual ${formatUsd(displayPriceUsd)}`}
-                >
-                  {formatUsd(displayPriceUsd)}
-                </p>
-              </div>
-
-              {showBsConversion && priceVes != null ? (
-                <p className="product-detail-price-ves">{formatApproxBs(priceVes)}</p>
-              ) : null}
-              {showOfficialRate &&
-              activeExchangeRate != null &&
-              Number.isFinite(activeExchangeRate) &&
-              activeExchangeRate > 0 ? (
-                <p className="product-detail-rate">
-                  Tasa oficial BCV: Bs. {formatExchangeRate(activeExchangeRate)} / USD
-                </p>
-              ) : null}
-            </div>
-
-            {attributeEntries.length > 0 ? (
-              <dl className="product-detail-attributes">
-                {attributeEntries.map(([key, value]) => (
-                  <div key={key}>
-                    <dt>{formatAttributeLabel(key)}</dt>
-                    <dd>{value as string}</dd>
-                  </div>
-                ))}
-              </dl>
-            ) : null}
-
-            {descriptionText ? (
-              <section className="product-detail-description">
-                <h3>Descripción</h3>
-                <p>{descriptionText}</p>
-              </section>
-            ) : detailLoading ? (
-              <div className="product-detail-loading">
-                <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
-                Cargando descripción…
-              </div>
-            ) : null}
-
-            {showOrderOptions ? (
-              <div className="product-detail-options">
-                {isGiftCard ? (
-                  <GiftCardAmountPicker
-                    product={product}
-                    variantOptions={variantOptions}
-                    selectedVariantId={selectedVariantId}
-                    onSelectVariant={setSelectedVariantId}
-                    selectedModifiers={selectedModifiers}
-                    onModifiersChange={setSelectedModifiers}
-                  />
-                ) : (
-                  <RubroCatalogVariantSlot
-                    rubro={storeRubro}
-                    product={product}
-                    variantOptions={variantOptions}
-                    selectedVariantId={selectedVariantId}
-                    onSelect={setSelectedVariantId}
-                    selectedModifiers={selectedModifiers}
-                    onModifiersChange={setSelectedModifiers}
-                    showVariants={showVariantSelector}
-                    density="detail"
-                  />
-                )}
-              </div>
-            ) : null}
-
-            {isGiftCard && !giftDeliveryValid && onAddToCart ? (
-              <p className="mt-2 text-xs text-amber-700 dark:text-amber-300">
-                Completa el correo del destinatario, de parte de y el mensaje
-                para añadir al carrito.
-              </p>
-            ) : null}
-
-            {showFooter ? (
-              <div className="product-detail-actions">
-                <ProductDetailActionButtons
-                  onAddToCart={onAddToCart}
-                  handleBuyNow={handleBuyNow}
-                  handleAdd={handleAdd}
-                  handleWhatsAppOrder={handleWhatsAppOrder}
-                  outOfStock={outOfStock}
-                  canAddMore={Boolean(canAddMore)}
-                  inCart={inCart}
-                  justAdded={justAdded}
-                  contextCartQuantity={contextCartQuantity}
-                  showWhatsAppOrder={showWhatsAppOrder}
-                  whatsappReady={whatsappReady}
-                  whatsappPrimary={whatsappPrimary}
-                  canWhatsAppOrder={canWhatsAppOrder}
+                  mode="detail"
+                  loading="eager"
+                  sizes="(max-width: 1023px) 100vw, 520px"
                 />
               </div>
+
+              <div className="product-detail-body">
+                {brandName ? (
+                  onSelectBrand ? (
+                    <button
+                      type="button"
+                      className="product-detail-brand product-detail-brand-link"
+                      onClick={() => {
+                        onSelectBrand(brandName);
+                        onClose?.();
+                      }}
+                    >
+                      {brandName}
+                    </button>
+                  ) : (
+                    <p className="product-detail-brand">{brandName}</p>
+                  )
+                ) : null}
+
+                {isPage ? (
+                  <h1 className="product-detail-title">{product.product_name}</h1>
+                ) : (
+                  <h2 className="product-detail-title">{product.product_name}</h2>
+                )}
+
+                <div className="product-detail-stock-row">
+                  {outOfStock ? (
+                    <span className="product-detail-stock-badge product-detail-stock-badge--out">
+                      <span className="product-detail-stock-dot" aria-hidden="true" />
+                      Agotado
+                    </span>
+                  ) : shouldShowExactStockQuantity(displayStock) &&
+                    displayStock <= threshold ? (
+                    <span className="product-detail-stock-badge product-detail-stock-badge--low">
+                      <span className="product-detail-stock-dot" aria-hidden="true" />
+                      En stock · Quedan {displayStock}
+                    </span>
+                  ) : (
+                    <span className="product-detail-stock-badge product-detail-stock-badge--in">
+                      <span className="product-detail-stock-dot" aria-hidden="true" />
+                      Disponible
+                    </span>
+                  )}
+                </div>
+
+                {storeUsesRubroProductModule(storeRubro, "tecnologia") ? (
+                  <TechSpecsChips product={product} />
+                ) : null}
+                {storeUsesRubroProductModule(storeRubro, "coleccionables") ? (
+                  <CollectibleBadges product={product} />
+                ) : null}
+                {storeUsesRubroProductModule(storeRubro, "salud-belleza") ? (
+                  <BeautyBadges product={product} />
+                ) : null}
+                {storeUsesRubroProductModule(storeRubro, "papeleria-libreria-oficina") ? (
+                  <StationeryBadges product={product} />
+                ) : null}
+
+                <div
+                  className={
+                    hasDiscount
+                      ? "product-detail-pricing product-detail-pricing--sale"
+                      : "product-detail-pricing"
+                  }
+                >
+                  {hasDiscount ? (
+                    <span className="product-detail-sale-badge">OFERTA</span>
+                  ) : null}
+                  <div className="product-detail-price-row">
+                    {hasDiscount && product.compare_at_usd != null ? (
+                      <p
+                        className="product-detail-price-compare"
+                        aria-label={`Precio regular ${formatUsd(product.compare_at_usd)}`}
+                      >
+                        {formatUsd(product.compare_at_usd)}
+                      </p>
+                    ) : null}
+                    <p
+                      className="product-detail-price"
+                      aria-label={`Precio actual ${formatUsd(displayPriceUsd)}`}
+                    >
+                      {formatUsd(displayPriceUsd)}
+                    </p>
+                  </div>
+
+                  {showBsConversion && priceVes != null ? (
+                    <p className="product-detail-price-ves">{formatApproxBs(priceVes)}</p>
+                  ) : null}
+                  {showOfficialRate &&
+                  activeExchangeRate != null &&
+                  Number.isFinite(activeExchangeRate) &&
+                  activeExchangeRate > 0 ? (
+                    <p className="product-detail-rate">
+                      Tasa oficial BCV: Bs. {formatExchangeRate(activeExchangeRate)} / USD
+                    </p>
+                  ) : null}
+                </div>
+
+                {showOrderOptions ? (
+                  <div className="product-detail-options">
+                    {isGiftCard ? (
+                      <GiftCardAmountPicker
+                        product={product}
+                        variantOptions={variantOptions}
+                        selectedVariantId={selectedVariantId}
+                        onSelectVariant={setSelectedVariantId}
+                        selectedModifiers={selectedModifiers}
+                        onModifiersChange={setSelectedModifiers}
+                      />
+                    ) : (
+                      <RubroCatalogVariantSlot
+                        rubro={storeRubro}
+                        product={product}
+                        variantOptions={variantOptions}
+                        selectedVariantId={selectedVariantId}
+                        onSelect={setSelectedVariantId}
+                        selectedModifiers={selectedModifiers}
+                        onModifiersChange={setSelectedModifiers}
+                        showVariants={showVariantSelector}
+                        density="detail"
+                      />
+                    )}
+                  </div>
+                ) : null}
+
+                {isGiftCard && !giftDeliveryValid && onAddToCart ? (
+                  <p className="mt-2 break-words text-xs text-amber-700 dark:text-amber-300">
+                    Completa el correo del destinatario, de parte de y el mensaje
+                    para añadir al carrito.
+                  </p>
+                ) : null}
+
+                {showFooter ? (
+                  <div className="product-detail-actions">
+                    <ProductDetailActionButtons
+                      onAddToCart={onAddToCart}
+                      handleBuyNow={handleBuyNow}
+                      handleAdd={handleAdd}
+                      handleWhatsAppOrder={handleWhatsAppOrder}
+                      outOfStock={outOfStock}
+                      canAddMore={Boolean(canAddMore)}
+                      inCart={inCart}
+                      justAdded={justAdded}
+                      contextCartQuantity={contextCartQuantity}
+                      showWhatsAppOrder={showWhatsAppOrder}
+                      whatsappReady={whatsappReady}
+                      whatsappPrimary={whatsappPrimary}
+                      canWhatsAppOrder={canWhatsAppOrder}
+                    />
+                  </div>
+                ) : null}
+              </div>
+            </div>
+
+            {(attributeEntries.length > 0 || descriptionText || detailLoading) ? (
+            <div className="product-detail-below">
+              {attributeEntries.length > 0 ? (
+                <section className="product-detail-specs">
+                  <h3 className="product-detail-below-title">Características principales</h3>
+                  <dl className="product-detail-attributes">
+                    {attributeEntries.map(([key, value]) => (
+                      <div key={key}>
+                        <dt>{formatAttributeLabel(key)}</dt>
+                        <dd>{value as string}</dd>
+                      </div>
+                    ))}
+                  </dl>
+                </section>
+              ) : null}
+
+              {descriptionText ? (
+                <section className="product-detail-description">
+                  <h3 className="product-detail-below-title">Descripción</h3>
+                  <p>{descriptionText}</p>
+                </section>
+              ) : detailLoading ? (
+                <div className="product-detail-loading">
+                  <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+                  Cargando descripción…
+                </div>
+              ) : null}
+            </div>
+            ) : null}
+
+            {relatedProducts.length > 0 && onSelectRelated ? (
+              <CatalogRelatedProducts
+                products={relatedProducts}
+                onSelect={onSelectRelated}
+              />
             ) : null}
           </div>
         </div>

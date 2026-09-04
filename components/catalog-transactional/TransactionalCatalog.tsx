@@ -174,6 +174,7 @@ function TransactionalCatalogInner({
       syncProductUrl={!previewMode}
       onAddToCart={referenceMode ? undefined : addItem}
       onSelectBrand={(brand) => brandFilterRef.current(brand)}
+      catalogProducts={products}
     >
       <TransactionalCatalogContent
         store={store}
