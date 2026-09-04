@@ -45,6 +45,9 @@ interface ProductImageGalleryProps {
   onMediaClick?: () => void;
 }
 
+const DESKTOP_GALLERY_MQ =
+  "(hover: hover) and (pointer: fine) and (min-width: 1024px)";
+
 function galleryDisplayUrl(
   image: CatalogProductGalleryImage,
   mode: "card" | "detail",
@@ -53,6 +56,13 @@ function galleryDisplayUrl(
     return image.full_url ?? image.medium_url ?? image.thumb_url;
   }
   return image.thumb_url;
+}
+
+function matchesDesktopGallery(): boolean {
+  return (
+    typeof window !== "undefined" &&
+    window.matchMedia(DESKTOP_GALLERY_MQ).matches
+  );
 }
 
 export function ProductImageGallery({
@@ -84,6 +94,7 @@ export function ProductImageGallery({
     top: number;
   } | null>(null);
   const [zoomPaneStyle, setZoomPaneStyle] = useState<CSSProperties | null>(null);
+  const [desktopGallery, setDesktopGallery] = useState(false);
   const touchStartX = useRef<number | null>(null);
   const stageRef = useRef<HTMLDivElement | null>(null);
   const zoomFactor = 2.45;
@@ -98,7 +109,7 @@ export function ProductImageGallery({
   });
   const isDetail = mode === "detail";
   const hasMultiple = images.length > 1;
-  const showThumbs = isDetail && images.length > 0;
+  const showThumbs = isDetail && desktopGallery && images.length > 0;
 
   const goTo = useCallback(
     (index: number) => {
@@ -112,11 +123,28 @@ export function ProductImageGallery({
 
   const goPrev = useCallback(() => goTo(activeIndex - 1), [activeIndex, goTo]);
   const goNext = useCallback(() => goTo(activeIndex + 1), [activeIndex, goTo]);
-  const canEnlarge = isDetail && !onMediaClick;
+  const canEnlarge = isDetail && !onMediaClick && desktopGallery;
 
   useEffect(() => {
     setActiveIndex(0);
   }, [product.product_name, images.length, images[0]?.id]);
+
+  useEffect(() => {
+    const media = window.matchMedia(DESKTOP_GALLERY_MQ);
+    const sync = () => {
+      const matches = media.matches;
+      setDesktopGallery(matches);
+      if (!matches) {
+        setMagnifierOn(false);
+        setZoomPaneStyle(null);
+        setLensStyle(null);
+        setLightboxOpen(false);
+      }
+    };
+    sync();
+    media.addEventListener("change", sync);
+    return () => media.removeEventListener("change", sync);
+  }, []);
 
   useEffect(() => {
     setLightboxMounted(true);
@@ -149,12 +177,7 @@ export function ProductImageGallery({
   }, [lightboxOpen, goPrev, goNext]);
 
   function canUseHoverZoom() {
-    return (
-      typeof window !== "undefined" &&
-      window.matchMedia(
-        "(hover: hover) and (pointer: fine) and (min-width: 1024px)",
-      ).matches
-    );
+    return desktopGallery || matchesDesktopGallery();
   }
 
   function updateMagnifier(event: React.MouseEvent<HTMLDivElement>) {
@@ -254,9 +277,13 @@ export function ProductImageGallery({
         className={cn(
           "product-image-gallery",
           isDetail && "product-image-gallery-detail",
+          isDetail &&
+            (desktopGallery
+              ? "product-image-gallery-detail--desktop"
+              : "product-image-gallery-detail--mobile"),
           !isDetail && "product-image-gallery-card",
           hasMultiple && "product-image-gallery-multi",
-          magnifierOn && "product-image-gallery-zooming",
+          magnifierOn && desktopGallery && "product-image-gallery-zooming",
           className,
         )}
       onTouchStart={hasMultiple ? handleTouchStart : undefined}
@@ -268,7 +295,7 @@ export function ProductImageGallery({
           "product-image-gallery-stage",
           (onMediaClick || canEnlarge) && "cursor-pointer",
           canEnlarge && "product-image-gallery-stage-zoomable",
-          magnifierOn && "product-image-gallery-stage-zooming",
+          magnifierOn && canEnlarge && "product-image-gallery-stage-zooming",
         )}
         onMouseEnter={(event) => {
           if (!canEnlarge) return;
@@ -290,6 +317,7 @@ export function ProductImageGallery({
                   onMediaClick();
                   return;
                 }
+                if (!canUseHoverZoom()) return;
                 setMagnifierOn(false);
                 setLightboxOpen(true);
               }
@@ -396,7 +424,7 @@ export function ProductImageGallery({
         ) : null}
       </div>
 
-      {isDetail && magnifierOn && zoomPaneStyle ? (
+      {isDetail && desktopGallery && magnifierOn && zoomPaneStyle ? (
         <div
           className="product-image-gallery-zoom-pane"
           style={zoomPaneStyle}

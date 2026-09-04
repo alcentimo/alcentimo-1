@@ -3143,7 +3143,13 @@ html:has(.landing-shell) {
 }
 
 .product-image-gallery-detail.product-image-gallery-multi .product-image-gallery-dots {
-  @apply hidden md:hidden;
+  @apply flex md:flex;
+}
+
+@media (min-width: 1024px) {
+  .product-image-gallery-detail.product-image-gallery-multi .product-image-gallery-dots {
+    display: none;
+  }
 }
 
 .product-image-gallery-detail .product-detail-gallery-image,
@@ -3253,6 +3259,100 @@ html:has(.landing-shell) {
 
   .product-image-gallery-detail.product-image-gallery-zooming .product-image-gallery-zoom {
     opacity: 0;
+  }
+}
+
+/* Ficha táctil: una columna, sin lupa ni riel lateral (gana sobre el layout lg). */
+@media (max-width: 1023px), (hover: none), (pointer: coarse) {
+  .product-image-gallery-detail,
+  .product-image-gallery-detail.product-image-gallery-multi,
+  .product-image-gallery-detail--mobile {
+    width: 100% !important;
+    max-width: 100% !important;
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    aspect-ratio: 1 / 1;
+    overflow: hidden;
+    grid-template-areas: "stage";
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1fr);
+    column-gap: 0;
+  }
+
+  .product-image-gallery-detail .product-image-gallery-stage {
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: none !important;
+    height: 100% !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    border-radius: 0;
+    box-shadow: none;
+  }
+
+  .product-image-gallery-detail .product-image-gallery-thumbs-detail,
+  .product-image-gallery-detail .product-image-gallery-thumbs-single {
+    display: none !important;
+  }
+
+  .product-image-gallery-detail.product-image-gallery-multi .product-image-gallery-dots {
+    display: flex !important;
+  }
+
+  .product-image-gallery-detail.product-image-gallery-multi .product-image-gallery-nav,
+  .product-image-gallery-detail.product-image-gallery-multi .product-image-gallery-count {
+    display: flex;
+  }
+
+  .product-image-gallery-detail .product-image-gallery-count {
+    display: inline-flex;
+  }
+
+  .product-image-gallery-zoom-pane,
+  .product-image-gallery-zoom-lens,
+  .product-image-gallery-zoom,
+  .product-image-gallery-detail .product-image-gallery-zoom {
+    display: none !important;
+  }
+
+  .product-image-gallery-stage-zooming,
+  .product-image-gallery-stage-zoomable {
+    cursor: pointer;
+  }
+
+  .product-detail-top {
+    display: flex !important;
+    flex-direction: column;
+    grid-template-columns: none !important;
+    gap: 0;
+  }
+
+  .product-detail-media {
+    min-width: 0 !important;
+    width: 100%;
+    max-width: 100%;
+    overflow: hidden;
+    padding: 0;
+    background: #fff;
+  }
+
+  .product-detail-media .mercado-mp-detail-gallery {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin-inline: 0;
+  }
+
+  .product-detail-body {
+    position: static;
+    min-height: 0;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+  }
+
+  .product-detail-page--marketplace .product-detail-footer {
+    display: block;
   }
 }
 
@@ -3903,7 +4003,7 @@ html:has(.landing-shell) {
 }
 
 .product-detail-media .mercado-mp-detail-gallery {
-  @apply mx-auto w-max max-w-full rounded-none border-0 bg-transparent p-0 shadow-none;
+  @apply mx-auto w-full max-w-full rounded-none border-0 bg-transparent p-0 shadow-none;
 }
 
 .product-detail-media .mercado-mp-detail-gallery .product-image-gallery-detail {
@@ -3911,6 +4011,11 @@ html:has(.landing-shell) {
 }
 
 @media (min-width: 1024px) {
+  .product-detail-media .mercado-mp-detail-gallery {
+    width: max-content;
+    max-width: none;
+  }
+
   .product-detail-media .product-image-gallery {
     position: relative;
     inset: auto;
@@ -11582,6 +11687,44 @@ button.customer-promo-banner-link {
   overflow: hidden;
   border-radius: 1.25rem;
   background: #fff;
+}
+
+.catalog-preview-viewport--mobile .product-detail-top,
+.catalog-preview-viewport--mobile .product-image-gallery-detail,
+.catalog-preview-viewport--mobile .product-image-gallery-detail.product-image-gallery-multi {
+  display: flex;
+  flex-direction: column;
+  grid-template-columns: none !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  height: auto !important;
+  min-height: 0 !important;
+}
+
+.catalog-preview-viewport--mobile .product-image-gallery-detail {
+  display: grid;
+  grid-template-areas: "stage";
+  grid-template-columns: minmax(0, 1fr);
+  aspect-ratio: 1 / 1;
+}
+
+.catalog-preview-viewport--mobile .product-image-gallery-detail .product-image-gallery-stage {
+  width: 100% !important;
+  min-width: 0 !important;
+  max-width: none !important;
+  height: 100% !important;
+}
+
+.catalog-preview-viewport--mobile .product-image-gallery-thumbs-detail,
+.catalog-preview-viewport--mobile .product-image-gallery-zoom-pane,
+.catalog-preview-viewport--mobile .product-image-gallery-zoom-lens,
+.catalog-preview-viewport--mobile .product-image-gallery-zoom {
+  display: none !important;
+}
+
+.catalog-preview-viewport--mobile .product-detail-media .mercado-mp-detail-gallery {
+  width: 100% !important;
+  max-width: 100% !important;
 }
 
 .catalog-preview-viewport--desktop {
