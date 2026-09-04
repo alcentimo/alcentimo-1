@@ -443,7 +443,8 @@ function TransactionalCatalogContent({
         activeBrand={browse.brand}
         onSelectBrand={handleSelectBrand}
         pending={browse.loadingFilter}
-        pinNavigation={showingProduct}
+        pinNavigation={false}
+        className={showingProduct ? "storefront-pdp-scroll" : undefined}
         banner={
           showingProduct ? null : (
           <>

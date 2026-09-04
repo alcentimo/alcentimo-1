@@ -90,8 +90,8 @@ export function StorefrontProductChrome({
       categories={categories}
       activeCategoryId={null}
       onSelectCategory={onSelectCategory}
-      pinNavigation
-      className={cn("storefront-product-chrome", className)}
+      pinNavigation={false}
+      className={cn("storefront-product-chrome storefront-pdp-scroll", className)}
     >
       {children}
     </StorefrontMoricheChrome>

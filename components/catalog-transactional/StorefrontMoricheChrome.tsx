@@ -37,7 +37,7 @@ export interface StorefrontMoricheChromeProps {
   children: ReactNode;
   className?: string;
   style?: CSSProperties;
-  /** Cabecera + categorías fijas al hacer scroll (ficha de producto). */
+  /** Cabecera + categorías fijas al hacer scroll (listado). En ficha de producto no se usa. */
   pinNavigation?: boolean;
 }
 

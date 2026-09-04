@@ -3420,6 +3420,33 @@ html:has(.landing-shell) {
 .product-detail-page--marketplace .product-detail-scroll {
   @apply flex flex-col overflow-visible;
   flex: none;
+  min-height: 0;
+  max-height: none;
+  height: auto;
+}
+
+.catalog-shell-content:has(.product-detail-page--marketplace),
+.txn-catalog-root:has(.product-detail-page--marketplace),
+.txn-catalog:has(.product-detail-page--marketplace),
+.mercado-shell:has(.product-detail-page--marketplace) {
+  overflow: visible;
+  max-height: none;
+  height: auto;
+}
+
+/* En la ficha, la barra de tienda viaja con el documento (sin sticky que recorte el scroll). */
+.storefront-pdp-scroll .mercado-mp-header,
+.storefront-product-chrome .mercado-mp-header {
+  position: relative;
+  top: auto;
+  inset: auto;
+}
+
+@media (min-width: 1024px) {
+  .product-detail-page--marketplace .product-detail-body {
+    position: relative;
+    top: auto;
+  }
 }
 
 .product-detail-breadcrumb {
