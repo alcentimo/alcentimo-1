@@ -363,6 +363,7 @@ export function AuthPanel({ defaultMode }: { defaultMode?: "login" | "signup" } 
           logAuthEvent("google_signin_error", { message }, "warn");
           setError(formatAuthError(message));
         }}
+        onRedirecting={() => setRedirecting(true)}
       />
 
       <div className="relative my-6">
