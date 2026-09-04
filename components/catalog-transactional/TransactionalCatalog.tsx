@@ -240,7 +240,7 @@ function TransactionalCatalogContent({
   addItem: ReturnType<typeof useCart>["addItem"];
   brandFilterRef: MutableRefObject<(brand: string) => void>;
 }) {
-  const { openProduct, closeProduct } = useCatalogProductDetail();
+  const { openProduct, closeProduct, selectedProduct } = useCatalogProductDetail();
   const openProductById = useOpenCatalogProductById(
     store.slug,
     products,
@@ -429,6 +429,7 @@ function TransactionalCatalogContent({
         activeBrand={browse.brand}
         onSelectBrand={handleSelectBrand}
         pending={browse.loadingFilter}
+        pinNavigation={Boolean(selectedProduct)}
         banner={
           <>
             <StorefrontCoverBanner url={coverUrl} storeName={store.name} />

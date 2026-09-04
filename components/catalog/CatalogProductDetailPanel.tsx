@@ -306,7 +306,7 @@ export function CatalogProductDetailPanel({
     const desktopQuery = window.matchMedia("(min-width: 1024px)");
 
     function applyBodyLock() {
-      const unlockPageScroll = layout === "page" && desktopQuery.matches;
+      const unlockPageScroll = desktopQuery.matches;
       document.body.style.overflow = unlockPageScroll ? previousOverflow : "hidden";
     }
 
@@ -322,7 +322,7 @@ export function CatalogProductDetailPanel({
       desktopQuery.removeEventListener("change", applyBodyLock);
       window.removeEventListener("keydown", handleKeyDown);
     };
-  }, [layout, onClose]);
+  }, [onClose]);
 
   const selectedVariant = useMemo(
     () =>

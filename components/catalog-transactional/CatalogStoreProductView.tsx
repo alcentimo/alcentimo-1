@@ -11,6 +11,7 @@ import type {
 import type { StoreLocation, VariantLocationStock } from "@/lib/locations/types";
 import type { CatalogCategoryOption } from "@/lib/catalog/extract-categories";
 import { CatalogProductDetailPanel } from "@/components/catalog/CatalogProductDetailPanel";
+import { StorefrontProductChrome } from "@/components/catalog-transactional/StorefrontProductChrome";
 import { useCart } from "@/components/catalog-transactional/CartProvider";
 import {
   CatalogCartHost,
@@ -48,6 +49,8 @@ interface CatalogStoreProductViewProps {
 export function CatalogStoreProductView({
   store,
   product,
+  products = [],
+  storeCategories = [],
   exchangeRate,
   purchaseInfo,
   catalogDesign,
@@ -64,6 +67,8 @@ export function CatalogStoreProductView({
       <CatalogStoreProductViewInner
         store={store}
         product={product}
+        products={products}
+        storeCategories={storeCategories}
         exchangeRate={exchangeRate}
         purchaseInfo={purchaseInfo}
         catalogDesign={catalogDesign}
@@ -76,6 +81,8 @@ export function CatalogStoreProductView({
 function CatalogStoreProductViewInner({
   store,
   product,
+  products = [],
+  storeCategories = [],
   exchangeRate,
   purchaseInfo,
   catalogDesign,
@@ -83,6 +90,8 @@ function CatalogStoreProductViewInner({
 }: {
   store: Store;
   product: CatalogListItem;
+  products?: CatalogListItem[];
+  storeCategories?: CatalogCategoryOption[];
   exchangeRate: ExchangeRate | null;
   purchaseInfo: PublicPurchaseInfo;
   catalogDesign: CatalogDesignSettings;
@@ -142,20 +151,27 @@ function CatalogStoreProductViewInner({
       )}
       style={getCatalogThemeStyle(catalogDesign, store.rubro_tienda)}
     >
-      <CatalogProductDetailPanel
-        product={stockedProduct}
-        layout="page"
-        catalogHref={catalogHref}
-        exchangeRate={liveExchangeRate}
-        showBsConversion={showBsConversion}
-        showOfficialRate={showOfficialRate}
-        storeRubro={store.rubro_tienda}
-        wholesaleEnabled={false}
-        checkoutType={purchaseInfo.checkoutType}
-        whatsappPhone={purchaseInfo.whatsappPhone}
-        onAddToCart={addItem}
-        onClose={() => router.push(catalogHref)}
-      />
+      <StorefrontProductChrome
+        store={store}
+        products={products}
+        storeCategories={storeCategories}
+        primaryColor={catalogDesign.primaryColor}
+      >
+        <CatalogProductDetailPanel
+          product={stockedProduct}
+          layout="page"
+          catalogHref={catalogHref}
+          exchangeRate={liveExchangeRate}
+          showBsConversion={showBsConversion}
+          showOfficialRate={showOfficialRate}
+          storeRubro={store.rubro_tienda}
+          wholesaleEnabled={false}
+          checkoutType={purchaseInfo.checkoutType}
+          whatsappPhone={purchaseInfo.whatsappPhone}
+          onAddToCart={addItem}
+          onClose={() => router.push(catalogHref)}
+        />
+      </StorefrontProductChrome>
       <CatalogCartHost
         store={store}
         purchaseInfo={purchaseInfo}
