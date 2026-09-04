@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { ArrowLeft, Check, Loader2, MessageCircle, Plus, X } from "lucide-react";
 import { CatalogProductShareMenu } from "@/components/catalog/CatalogProductShareMenu";
@@ -65,7 +65,6 @@ import {
 import { useCartOptional } from "@/components/catalog-transactional/CartProvider";
 import { useCatalogShellNavigationOptional } from "@/components/catalog-transactional/CatalogShellNavigation";
 import dynamic from "next/dynamic";
-import { useProductHeaderFade } from "@/lib/hooks/useProductHeaderFade";
 import { cn } from "@/lib/cn";
 
 const TechSpecsChips = dynamic(
@@ -267,8 +266,6 @@ export function CatalogProductDetailPanel({
   >([]);
   const [justAdded, setJustAdded] = useState(false);
   const justAddedTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const { headerRef, onScroll: handleDetailScroll, reset: resetHeaderFade } =
-    useProductHeaderFade();
   const scrollRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
@@ -303,8 +300,7 @@ export function CatalogProductDetailPanel({
 
   useEffect(() => {
     if (scrollRef.current) scrollRef.current.scrollTop = 0;
-    resetHeaderFade();
-  }, [product.product_id, resetHeaderFade]);
+  }, [product.product_id]);
 
   useEffect(() => {
     const previousOverflow = document.body.style.overflow;
@@ -505,12 +501,7 @@ export function CatalogProductDetailPanel({
       )}
 
       <div className="product-detail-panel">
-        <header
-          ref={headerRef}
-          className="product-detail-header"
-          data-at-top=""
-          style={{ "--product-header-progress": 0 } as CSSProperties}
-        >
+        <header className="product-detail-header">
           {isPage ? (
             <div className="product-detail-back-wrap">
               <Link href={backHref} className="product-detail-back">
@@ -556,11 +547,7 @@ export function CatalogProductDetailPanel({
           </div>
         </header>
 
-        <div
-          ref={scrollRef}
-          className="product-detail-scroll"
-          onScroll={handleDetailScroll}
-        >
+        <div ref={scrollRef} className="product-detail-scroll">
           <div className="product-detail-media">
             <MercadoProductGallery
               productName={product.product_name}

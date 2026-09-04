@@ -4,7 +4,6 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 import { StoreBrandMark } from "@/components/catalog/StoreBrandMark";
 import { cn } from "@/lib/cn";
-import { useHideOnScroll } from "@/lib/hooks/useHideOnScroll";
 
 export interface MercadoBrandHeaderProps {
   brandHref: string;
@@ -17,12 +16,11 @@ export interface MercadoBrandHeaderProps {
   /** Buscador central (vitrina marketplace). */
   search?: ReactNode;
   className?: string;
-  /** Si es false, la cabecera no se oculta al hacer scroll. */
-  hideOnScroll?: boolean;
 }
 
 /**
  * Cabecera compacta de vitrina Moriche (compartida por Mercado Oculto y tiendas públicas).
+ * Sticky nativa: sin listeners de scroll ni re-renders al desplazar.
  */
 export function MercadoBrandHeader({
   brandHref,
@@ -33,18 +31,9 @@ export function MercadoBrandHeader({
   nav,
   search = null,
   className,
-  hideOnScroll = true,
 }: MercadoBrandHeaderProps) {
-  const scrollHidden = useHideOnScroll(hideOnScroll);
-
   return (
-    <header
-      className={cn(
-        "mercado-mp-header",
-        scrollHidden && "mercado-mp-header--scroll-hidden",
-        className,
-      )}
-    >
+    <header className={cn("mercado-mp-header", className)}>
       <div
         className={cn(
           "mercado-mp-header-top",
