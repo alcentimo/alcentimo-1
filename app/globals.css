@@ -3275,35 +3275,6 @@ html:has(.landing-shell) {
   flex: none;
 }
 
-.product-detail-back-wrap {
-  @apply min-w-0 flex-1;
-}
-
-.product-detail-back {
-  @apply mb-1 inline-flex items-center gap-1.5 text-sm font-medium text-zinc-800;
-  min-height: 2.5rem;
-  border-radius: 999px;
-  padding: 0.35rem 0.7rem 0.35rem 0.45rem;
-  background: color-mix(
-    in srgb,
-    white calc((1 - var(--product-header-progress)) * 92%),
-    transparent
-  );
-  box-shadow: 0 4px 14px
-    color-mix(
-      in srgb,
-      rgb(24 24 27 / 0.16) calc((1 - var(--product-header-progress)) * 100%),
-      transparent
-    );
-}
-
-.product-detail-back-label {
-  max-width: calc(var(--product-header-progress) * 12rem);
-  overflow: hidden;
-  white-space: nowrap;
-  opacity: var(--product-header-progress);
-}
-
 .product-detail-backdrop {
   @apply absolute inset-0 border-0 bg-black/50 backdrop-blur-[2px];
 }
@@ -3317,31 +3288,29 @@ html:has(.landing-shell) {
 @property --product-header-progress {
   syntax: "<number>";
   inherits: true;
-  initial-value: 1;
+  initial-value: 0;
 }
 
 .product-detail-header {
-  --product-header-progress: 1;
+  --product-header-progress: 0;
   position: absolute;
   inset-inline: 0;
   top: 0;
   z-index: 30;
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: space-between;
-  gap: 0.75rem;
-  padding: calc(0.65rem + env(safe-area-inset-top, 0px)) 0.85rem 0.65rem;
+  gap: 0.5rem;
+  padding: calc(0.45rem + env(safe-area-inset-top, 0px)) 0.55rem 0.45rem;
   pointer-events: none;
-  transition: opacity 0.2s ease;
-  will-change: opacity;
+  background: transparent;
 }
 
 @supports (animation-timeline: scroll()) {
   .product-detail-header {
-    --product-header-progress: 0;
     animation: product-header-fade-progress linear both;
     animation-timeline: --product-detail-scroll;
-    animation-range: 0px 112px;
+    animation-range: 0px 120px;
   }
 
   @keyframes product-header-fade-progress {
@@ -3359,18 +3328,14 @@ html:has(.landing-shell) {
   position: absolute;
   inset: 0;
   pointer-events: none;
-  background: color-mix(in srgb, white calc(var(--product-header-progress) * 100%), transparent);
-  border-bottom: 1px solid
-    color-mix(in srgb, rgb(244 244 245) calc(var(--product-header-progress) * 100%), transparent);
-  box-shadow: 0 8px 24px
-    color-mix(in srgb, rgb(24 24 27 / 0.08) calc(var(--product-header-progress) * 100%), transparent);
+  background: var(--txn-primary, var(--brand-primary, var(--brand)));
   opacity: var(--product-header-progress);
-  transition: opacity 0.2s ease;
-  will-change: opacity;
+  transform: translateZ(0);
 }
 
-.product-detail-header .product-detail-back-wrap,
-.product-detail-header .product-detail-header-actions {
+.product-detail-header .product-detail-header-actions,
+.product-detail-header > .product-detail-icon-btn,
+.product-detail-header > a.product-detail-icon-btn {
   position: relative;
   z-index: 1;
   pointer-events: auto;
@@ -3381,9 +3346,54 @@ html:has(.landing-shell) {
   pointer-events: none;
 }
 
-.product-detail-kicker {
-  @apply text-[11px] font-semibold uppercase tracking-[0.14em] text-zinc-500;
-  opacity: var(--product-header-progress);
+.product-detail-icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  flex-shrink: 0;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: color-mix(
+    in srgb,
+    #18181b calc((1 - var(--product-header-progress)) * 100%),
+    var(--txn-primary-fg, #18181b)
+  );
+  filter: drop-shadow(
+    0 1px 1.5px rgb(255 255 255 / calc((1 - var(--product-header-progress)) * 0.92))
+  );
+}
+
+.product-detail-icon-btn:hover {
+  background: color-mix(
+    in srgb,
+    rgb(24 24 27 / 0.08) calc((1 - var(--product-header-progress)) * 100%),
+    rgb(255 255 255 / 0.14)
+  );
+}
+
+.product-detail-cart-icon {
+  position: relative;
+}
+
+.product-detail-cart-badge {
+  position: absolute;
+  top: 0.2rem;
+  right: 0.15rem;
+  display: inline-flex;
+  min-width: 0.95rem;
+  height: 0.95rem;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  padding: 0 0.2rem;
+  font-size: 9px;
+  font-weight: 700;
+  line-height: 1;
+  background: #18181b;
+  color: #fff;
 }
 
 .product-detail-close {
@@ -3402,22 +3412,12 @@ html:has(.landing-shell) {
 }
 
 .product-detail-header-actions {
-  @apply flex shrink-0 items-center gap-1;
+  @apply flex shrink-0 items-center;
 }
 
 .product-detail-share-cluster {
-  @apply inline-flex items-stretch overflow-hidden rounded-full border border-zinc-200/80;
-  background: color-mix(
-    in srgb,
-    white calc((0.55 + var(--product-header-progress) * 0.45) * 100%),
-    transparent
-  );
-  box-shadow: 0 4px 14px
-    color-mix(
-      in srgb,
-      rgb(24 24 27 / 0.12) calc((1 - var(--product-header-progress)) * 100%),
-      transparent
-    );
+  @apply inline-flex items-stretch overflow-hidden rounded-full border border-zinc-200/80 bg-white;
+  box-shadow: 0 4px 14px rgb(24 24 27 / 0.12);
 }
 
 .product-detail-share-btn {
@@ -3497,7 +3497,7 @@ html:has(.landing-shell) {
 
   .product-detail-overlay--immersive .product-image-gallery-count,
   .product-detail-page--immersive .product-image-gallery-count {
-    top: 4.75rem;
+    top: 3.65rem;
   }
 }
 
@@ -14259,6 +14259,7 @@ button.catalog-profile-footer-link {
   .product-detail-header {
     transition: none;
     transform: none;
+    animation: none;
   }
 }
 

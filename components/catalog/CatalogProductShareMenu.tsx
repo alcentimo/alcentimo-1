@@ -41,6 +41,8 @@ interface CatalogProductShareMenuProps {
   priceUsd?: number | null;
   storeName?: string | null;
   className?: string;
+  /** `icon`: solo el pictograma nativo, como en Mercado Libre. */
+  variant?: "default" | "icon";
 }
 
 function twitterShareHref(url: string, text: string): string {
@@ -77,6 +79,7 @@ export function CatalogProductShareMenu({
   priceUsd = null,
   storeName = null,
   className,
+  variant = "default",
 }: CatalogProductShareMenuProps) {
   const [open, setOpen] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -164,29 +167,50 @@ export function CatalogProductShareMenu({
   const itemClass =
     "flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm text-zinc-700 transition hover:bg-zinc-100 dark:text-zinc-200 dark:hover:bg-zinc-800";
 
+  async function handleIconShare() {
+    if (canNativeShare) {
+      await handleNativeShare();
+      return;
+    }
+    setOpen((value) => !value);
+  }
+
   return (
     <div ref={rootRef} className={cn("relative", className)}>
-      <div className="product-detail-share-cluster">
+      {variant === "icon" ? (
         <button
           type="button"
-          onClick={() => void handlePrimaryShare()}
-          className="product-detail-share-btn"
-          aria-label="Compartir producto"
-        >
-          <Share2 className="h-4 w-4" aria-hidden="true" />
-          Compartir
-        </button>
-        <button
-          type="button"
-          onClick={() => setOpen((value) => !value)}
-          className="product-detail-share-more"
+          onClick={() => void handleIconShare()}
+          className="product-detail-icon-btn"
+          aria-label="Compartir"
           aria-expanded={open}
-          aria-haspopup="menu"
-          aria-label="Más opciones para compartir"
+          aria-haspopup={canNativeShare ? undefined : "menu"}
         >
-          <span aria-hidden="true">▾</span>
+          <Share2 className="h-5 w-5" aria-hidden="true" />
         </button>
-      </div>
+      ) : (
+        <div className="product-detail-share-cluster">
+          <button
+            type="button"
+            onClick={() => void handlePrimaryShare()}
+            className="product-detail-share-btn"
+            aria-label="Compartir producto"
+          >
+            <Share2 className="h-4 w-4" aria-hidden="true" />
+            Compartir
+          </button>
+          <button
+            type="button"
+            onClick={() => setOpen((value) => !value)}
+            className="product-detail-share-more"
+            aria-expanded={open}
+            aria-haspopup="menu"
+            aria-label="Más opciones para compartir"
+          >
+            <span aria-hidden="true">▾</span>
+          </button>
+        </div>
+      )}
 
       {open ? (
         <div
