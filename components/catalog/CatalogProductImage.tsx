@@ -53,9 +53,10 @@ export function CatalogProductImage({
         alt={alt}
         fill
         sizes={sizes}
-        quality={80}
+        quality={72}
         priority={priority}
         loading={priority ? undefined : loading}
+        decoding="async"
         className={cn(
           "object-contain object-center catalog-product-image-el",
           status === "loading" ? "opacity-0" : "opacity-100",
