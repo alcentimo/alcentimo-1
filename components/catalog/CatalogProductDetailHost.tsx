@@ -9,6 +9,7 @@ import type { CatalogListItem } from "@/lib/database.types";
 import type { CatalogVariantOption } from "@/lib/products/variants";
 import type { CartModifierSelection } from "@/lib/catalog/cart-types";
 import type { CheckoutType } from "@/lib/store-settings/types";
+import type { PublicPurchaseInfo } from "@/lib/store-settings/purchase-info";
 import type { ReactNode } from "react";
 import { cn } from "@/lib/cn";
 
@@ -25,6 +26,8 @@ interface CatalogProductDetailHostProps {
   whatsappPhone?: string | null;
   syncProductUrl?: boolean;
   onSelectBrand?: (brand: string) => void;
+  catalogProducts?: CatalogListItem[];
+  purchaseInfo?: Pick<PublicPurchaseInfo, "payments" | "installments"> | null;
   onAddToCart?: (
     product: CatalogListItem,
     variant: CatalogVariantOption,
@@ -42,8 +45,10 @@ function CatalogProductDetailLayer({
   whatsappPhone,
   onAddToCart,
   onSelectBrand,
+  catalogProducts,
+  purchaseInfo,
 }: Omit<CatalogProductDetailHostProps, "children" | "storeId" | "storeSlug">) {
-  const { selectedProduct, closeProduct } = useCatalogProductDetail();
+  const { selectedProduct, closeProduct, openProduct } = useCatalogProductDetail();
 
   if (!selectedProduct) return null;
 
@@ -59,6 +64,9 @@ function CatalogProductDetailLayer({
       whatsappPhone={whatsappPhone}
       onClose={closeProduct}
       onSelectBrand={onSelectBrand}
+      catalogProducts={catalogProducts}
+      purchaseInfo={purchaseInfo}
+      onSelectRelated={openProduct}
       onAddToCart={onAddToCart}
     />
   );
@@ -75,6 +83,8 @@ function CatalogProductDetailHostLayout({
   whatsappPhone,
   onAddToCart,
   onSelectBrand,
+  catalogProducts,
+  purchaseInfo,
 }: CatalogProductDetailHostProps) {
   const { selectedProduct } = useCatalogProductDetail();
 
@@ -96,6 +106,8 @@ function CatalogProductDetailHostLayout({
         whatsappPhone={whatsappPhone}
         onAddToCart={onAddToCart}
         onSelectBrand={onSelectBrand}
+        catalogProducts={catalogProducts}
+        purchaseInfo={purchaseInfo}
       />
     </div>
   );
@@ -115,6 +127,8 @@ export function CatalogProductDetailHost({
   syncProductUrl = true,
   onAddToCart,
   onSelectBrand,
+  catalogProducts,
+  purchaseInfo,
 }: CatalogProductDetailHostProps) {
   return (
     <CatalogProductDetailProvider
@@ -134,6 +148,8 @@ export function CatalogProductDetailHost({
         whatsappPhone={whatsappPhone}
         onAddToCart={onAddToCart}
         onSelectBrand={onSelectBrand}
+        catalogProducts={catalogProducts}
+        purchaseInfo={purchaseInfo}
       >
         {children}
       </CatalogProductDetailHostLayout>

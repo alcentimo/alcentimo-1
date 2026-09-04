@@ -408,6 +408,7 @@ export function ProductImageGallery({
           className={cn(
             "product-image-gallery-thumbs",
             "product-image-gallery-thumbs-detail",
+            !hasMultiple && "product-image-gallery-thumbs-single",
           )}
           role="tablist"
           aria-label="Miniaturas del producto"
