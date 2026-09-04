@@ -3223,6 +3223,10 @@ html:has(.landing-shell) {
   @apply mx-auto w-full max-w-6xl px-0 py-4 sm:px-0 sm:py-6;
 }
 
+.product-detail-page--immersive {
+  @apply mx-0 max-w-none p-0;
+}
+
 .product-detail-enter {
   animation: none;
 }
