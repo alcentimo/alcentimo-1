@@ -78,7 +78,7 @@ export function CatalogStoreProductView({
 function CatalogStoreProductViewInner({
   store,
   product,
-  products,
+  products = [],
   exchangeRate,
   purchaseInfo,
   catalogDesign,
@@ -86,7 +86,7 @@ function CatalogStoreProductViewInner({
 }: {
   store: Store;
   product: CatalogListItem;
-  products: CatalogListItem[];
+  products?: CatalogListItem[];
   exchangeRate: ExchangeRate | null;
   purchaseInfo: PublicPurchaseInfo;
   catalogDesign: CatalogDesignSettings;
@@ -157,6 +157,8 @@ function CatalogStoreProductViewInner({
         wholesaleEnabled={false}
         checkoutType={purchaseInfo.checkoutType}
         whatsappPhone={purchaseInfo.whatsappPhone}
+        relatedProducts={products}
+        purchaseInfo={purchaseInfo}
         onAddToCart={addItem}
         catalogProducts={products}
         onSelectRelated={(next) =>

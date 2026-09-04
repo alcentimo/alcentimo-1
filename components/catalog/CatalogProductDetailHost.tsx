@@ -9,6 +9,7 @@ import type { CatalogListItem } from "@/lib/database.types";
 import type { CatalogVariantOption } from "@/lib/products/variants";
 import type { CartModifierSelection } from "@/lib/catalog/cart-types";
 import type { CheckoutType } from "@/lib/store-settings/types";
+import type { PublicPurchaseInfo } from "@/lib/store-settings/purchase-info";
 import type { ReactNode } from "react";
 
 interface CatalogProductDetailHostProps {
@@ -25,6 +26,7 @@ interface CatalogProductDetailHostProps {
   syncProductUrl?: boolean;
   onSelectBrand?: (brand: string) => void;
   catalogProducts?: CatalogListItem[];
+  purchaseInfo?: Pick<PublicPurchaseInfo, "payments" | "installments"> | null;
   onAddToCart?: (
     product: CatalogListItem,
     variant: CatalogVariantOption,
@@ -43,6 +45,7 @@ function CatalogProductDetailLayer({
   onAddToCart,
   onSelectBrand,
   catalogProducts,
+  purchaseInfo,
 }: Omit<CatalogProductDetailHostProps, "children" | "storeId" | "storeSlug">) {
   const { selectedProduct, closeProduct, openProduct } = useCatalogProductDetail();
 
@@ -61,6 +64,7 @@ function CatalogProductDetailLayer({
       onClose={closeProduct}
       onSelectBrand={onSelectBrand}
       catalogProducts={catalogProducts}
+      purchaseInfo={purchaseInfo}
       onSelectRelated={openProduct}
       onAddToCart={onAddToCart}
     />
@@ -82,6 +86,7 @@ export function CatalogProductDetailHost({
   onAddToCart,
   onSelectBrand,
   catalogProducts,
+  purchaseInfo,
 }: CatalogProductDetailHostProps) {
   return (
     <CatalogProductDetailProvider
@@ -101,6 +106,7 @@ export function CatalogProductDetailHost({
         onAddToCart={onAddToCart}
         onSelectBrand={onSelectBrand}
         catalogProducts={catalogProducts}
+        purchaseInfo={purchaseInfo}
       />
     </CatalogProductDetailProvider>
   );

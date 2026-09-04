@@ -4,20 +4,26 @@ import type { CatalogListItem } from "@/lib/database.types";
 import { formatUsd } from "@/lib/format";
 import { CatalogProductImage } from "@/components/catalog/CatalogProductImage";
 import { CatalogProductMediaFallback } from "@/components/catalog/CatalogProductMediaFallback";
+import { cn } from "@/lib/cn";
 
 interface CatalogRelatedProductsProps {
   products: CatalogListItem[];
   onSelect: (product: CatalogListItem) => void;
+  className?: string;
 }
 
 export function CatalogRelatedProducts({
   products,
   onSelect,
+  className,
 }: CatalogRelatedProductsProps) {
   if (products.length === 0) return null;
 
   return (
-    <section className="product-detail-related" aria-labelledby="product-detail-related-title">
+    <section
+      className={cn("product-detail-related", className)}
+      aria-labelledby="product-detail-related-title"
+    >
       <h2 id="product-detail-related-title" className="product-detail-related-title">
         Quienes vieron este producto también compraron
       </h2>

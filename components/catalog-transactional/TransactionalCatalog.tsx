@@ -175,6 +175,7 @@ function TransactionalCatalogInner({
       onAddToCart={referenceMode ? undefined : addItem}
       onSelectBrand={(brand) => brandFilterRef.current(brand)}
       catalogProducts={products}
+      purchaseInfo={purchaseInfo}
     >
       <TransactionalCatalogContent
         store={store}
