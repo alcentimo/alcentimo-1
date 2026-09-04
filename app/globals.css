@@ -2859,18 +2859,22 @@ html:has(.landing-shell) {
 }
 
 .store-header {
-  @apply sticky top-0 z-20 border-b border-zinc-200/80 bg-white/95;
-  transform: translate3d(0, 0, 0);
+  @apply sticky top-0 z-20 border-b border-zinc-200/80 bg-white/95 backdrop-blur-md;
+  max-height: 8rem;
+  overflow: hidden;
   transition:
-    opacity 0.22s ease,
-    transform 0.22s ease;
-  will-change: opacity, transform;
+    opacity 0.28s ease,
+    transform 0.28s ease,
+    max-height 0.28s ease,
+    border-color 0.28s ease;
 }
 
 .store-header--scroll-hidden {
+  max-height: 0;
   opacity: 0;
   pointer-events: none;
-  transform: translate3d(0, -100%, 0);
+  transform: translateY(-8px);
+  border-bottom-color: transparent;
 }
 
 .store-header-inner {
@@ -3190,27 +3194,27 @@ html:has(.landing-shell) {
 }
 
 .product-detail-overlay {
-  @apply fixed inset-0 z-[70] flex max-w-full items-stretch justify-center overflow-hidden;
+  @apply fixed inset-0 z-[60] flex max-w-full items-stretch justify-center overflow-hidden;
 }
 
 .product-detail-overlay--immersive .product-detail-backdrop {
-  @apply bg-black/50;
-  animation: product-detail-fade-in 220ms ease both;
+  @apply bg-black/45 backdrop-blur-[3px];
+  animation: product-detail-fade-in 280ms ease both;
 }
 
 .product-detail-overlay--immersive .product-detail-panel {
   @apply max-h-none h-full max-w-none w-full rounded-none shadow-none sm:rounded-none;
   height: 100dvh;
   max-height: 100dvh;
-  animation: product-detail-sheet-in 380ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation: product-detail-sheet-in 340ms cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
 .product-detail-page {
-  @apply relative mx-auto w-full max-w-6xl px-0 py-0 sm:px-0 sm:py-0;
+  @apply mx-auto w-full max-w-6xl px-0 py-4 sm:px-0 sm:py-6;
 }
 
 .product-detail-enter {
-  animation: product-detail-page-in 280ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation: product-detail-page-in 320ms cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
 @keyframes product-detail-fade-in {
@@ -3224,36 +3228,23 @@ html:has(.landing-shell) {
 
 @keyframes product-detail-sheet-in {
   from {
-    opacity: 0.72;
-    transform: translate3d(0, 100%, 0);
+    opacity: 0;
+    transform: scale(0.96) translateY(12px);
   }
   to {
     opacity: 1;
-    transform: translate3d(0, 0, 0);
+    transform: scale(1) translateY(0);
   }
 }
 
 @keyframes product-detail-page-in {
   from {
     opacity: 0;
-    transform: translate3d(0, 12px, 0);
+    transform: scale(0.985) translateY(8px);
   }
   to {
     opacity: 1;
-    transform: translate3d(0, 0, 0);
-  }
-}
-
-@media (min-width: 768px) {
-  @keyframes product-detail-sheet-in {
-    from {
-      opacity: 0;
-      transform: translate3d(0, 18px, 0);
-    }
-    to {
-      opacity: 1;
-      transform: translate3d(0, 0, 0);
-    }
+    transform: scale(1) translateY(0);
   }
 }
 
@@ -3276,13 +3267,8 @@ html:has(.landing-shell) {
 }
 
 .product-detail-page .product-detail-scroll {
-  @apply min-h-0 overflow-visible;
+  @apply min-h-0 overflow-visible lg:overflow-visible;
   flex: none;
-}
-
-.product-detail-page .product-detail-compact--visible {
-  position: sticky;
-  top: 0;
 }
 
 .product-detail-back-wrap {
@@ -3294,55 +3280,34 @@ html:has(.landing-shell) {
 }
 
 .product-detail-backdrop {
-  @apply absolute inset-0 border-0 bg-black/50;
+  @apply absolute inset-0 border-0 bg-black/50 backdrop-blur-[2px];
 }
 
 .product-detail-panel {
-  @apply relative z-10 flex max-h-[min(94dvh,920px)] w-full max-w-full flex-col overflow-hidden bg-white shadow-2xl;
+  @apply relative z-10 flex max-h-[min(94dvh,920px)] w-full max-w-full flex-col overflow-hidden rounded-t-2xl bg-white shadow-2xl sm:rounded-2xl;
   max-width: min(100%, 72rem);
 }
 
 .product-detail-header {
-  @apply absolute inset-x-0 top-0 z-20 flex items-start justify-between gap-3 px-4 py-3 sm:px-6;
-  background: linear-gradient(
-    to bottom,
-    rgb(255 255 255 / 0.96) 0%,
-    rgb(255 255 255 / 0.82) 55%,
-    rgb(255 255 255 / 0)
-  );
-  transform: translate3d(0, 0, 0);
+  @apply flex items-start justify-between gap-3 border-b border-zinc-100 px-4 py-3 sm:px-6;
+  max-height: 8rem;
+  overflow: hidden;
   transition:
-    opacity 0.22s ease,
-    transform 0.22s ease;
-  will-change: opacity, transform;
+    opacity 0.28s ease,
+    transform 0.28s ease,
+    max-height 0.28s ease,
+    padding 0.28s ease,
+    border-color 0.28s ease;
 }
 
 .product-detail-header--scroll-hidden {
+  max-height: 0;
   opacity: 0;
   pointer-events: none;
-  transform: translate3d(0, -12px, 0);
-}
-
-.product-detail-compact {
-  @apply pointer-events-none absolute inset-x-0 top-0 z-30 flex items-center gap-2 border-b border-zinc-200/80 bg-white/95 px-3 py-2 opacity-0 shadow-sm sm:px-4;
-  transform: translate3d(0, -8px, 0);
-  transition:
-    opacity 0.22s ease,
-    transform 0.22s ease;
-  will-change: opacity, transform;
-}
-
-.product-detail-compact--visible {
-  @apply pointer-events-auto opacity-100;
-  transform: translate3d(0, 0, 0);
-}
-
-.product-detail-compact-back {
-  @apply inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-zinc-700 transition hover:bg-zinc-100;
-}
-
-.product-detail-compact-title {
-  @apply m-0 min-w-0 flex-1 truncate text-sm font-semibold text-zinc-900;
+  padding-top: 0;
+  padding-bottom: 0;
+  border-bottom-color: transparent;
+  transform: translateY(-8px);
 }
 
 .product-detail-kicker {
@@ -3411,13 +3376,11 @@ html:has(.landing-shell) {
 }
 
 .product-detail-scroll {
-  @apply grid min-h-0 min-w-0 flex-1 grid-cols-1 overflow-x-hidden overflow-y-auto lg:grid-cols-[minmax(0,1.15fr)_minmax(18rem,0.95fr)];
-  overscroll-behavior: contain;
-  -webkit-overflow-scrolling: touch;
+  @apply grid min-h-0 min-w-0 flex-1 grid-cols-1 overflow-x-hidden overflow-y-auto lg:grid-cols-[minmax(0,1.15fr)_minmax(18rem,0.95fr)] lg:overflow-hidden;
 }
 
 .product-detail-media {
-  @apply max-w-full bg-zinc-50 p-3 pt-16 sm:p-5 sm:pt-16;
+  @apply max-w-full bg-zinc-50 p-3 sm:p-5 lg:overflow-y-auto;
 }
 
 .product-detail-media .mercado-mp-detail-gallery {
@@ -3441,7 +3404,7 @@ html:has(.landing-shell) {
 }
 
 .product-detail-body {
-  @apply space-y-4 px-4 py-4 sm:px-6 sm:py-5;
+  @apply space-y-4 px-4 py-4 sm:px-6 sm:py-5 lg:overflow-y-auto;
 }
 
 .product-detail-title {
@@ -14140,17 +14103,23 @@ button.catalog-profile-footer-link {
 
 .mercado-mp-header {
   @apply sticky top-0 z-40 max-w-full overflow-x-clip border-b border-white/8 bg-[color-mix(in_srgb,var(--mo-forest)_92%,transparent)] shadow-[0_10px_30px_rgba(3,24,18,0.18)];
-  transform: translate3d(0, 0, 0);
+  backdrop-filter: blur(14px);
+  max-height: 16rem;
   transition:
-    opacity 0.22s ease,
-    transform 0.22s ease;
-  will-change: opacity, transform;
+    opacity 0.32s ease,
+    transform 0.32s ease,
+    max-height 0.32s ease,
+    border-color 0.32s ease,
+    box-shadow 0.32s ease;
 }
 
 .mercado-mp-header--scroll-hidden {
+  max-height: 0;
   opacity: 0;
   pointer-events: none;
-  transform: translate3d(0, -100%, 0);
+  transform: translateY(-10px);
+  border-bottom-color: transparent;
+  box-shadow: none;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -15046,26 +15015,12 @@ button.mercado-mp-card-btn {
   @apply grid w-full min-w-0 max-w-full grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-5 xl:grid-cols-4;
 }
 
-.mercado-mp-grid-item {
-  content-visibility: auto;
-  contain-intrinsic-size: auto 22rem;
-  contain: layout style paint;
-}
-
 .mercado-mp-card {
-  @apply flex h-full min-w-0 max-w-full flex-col overflow-hidden rounded-[1.35rem] border border-[var(--mo-border)]/70 bg-[var(--mo-surface)] shadow-[0_8px_28px_rgba(20,32,28,0.05)];
+  @apply flex h-full min-w-0 max-w-full flex-col overflow-hidden rounded-[1.35rem] border border-[var(--mo-border)]/70 bg-[color-mix(in_srgb,var(--mo-surface)_88%,transparent)] shadow-[0_8px_28px_rgba(20,32,28,0.05)] backdrop-blur-sm transition duration-300 ease-out hover:-translate-y-1.5 hover:border-[color-mix(in_srgb,var(--mo-gold)_35%,var(--mo-border))] hover:shadow-[0_22px_44px_rgba(6,40,31,0.12)];
 }
 
 .mercado-mp-card-media {
   @apply relative aspect-[4/5] overflow-hidden bg-[var(--mo-emerald-soft)] no-underline;
-}
-
-.mercado-mp-card-media-hit {
-  @apply absolute inset-0 block h-full w-full border-0 bg-transparent p-0;
-}
-
-.mercado-mp-card-image {
-  @apply object-contain object-center;
 }
 
 .mercado-mp-card-status-row {
