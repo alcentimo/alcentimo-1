@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { ArrowLeft, Check, Loader2, MessageCircle, Plus, X } from "lucide-react";
+import { ArrowLeft, Check, Loader2, MessageCircle, Plus, Search, ShoppingCart } from "lucide-react";
 import { CatalogProductShareMenu } from "@/components/catalog/CatalogProductShareMenu";
 import { getStoreProductDeepLinkPath } from "@/lib/store-host";
 import type { CatalogListItem } from "@/lib/database.types";
@@ -58,14 +58,11 @@ import {
   hasFoodModifiers,
   parseFoodModifiersFromMetadata,
 } from "@/lib/rubros/modules/alimentos";
-import {
-  normalizeStoreRubro,
-  resolvePublicCategoryLabel,
-} from "@/src/config/categories";
 import { useCartOptional } from "@/components/catalog-transactional/CartProvider";
 import { useCatalogShellNavigationOptional } from "@/components/catalog-transactional/CatalogShellNavigation";
 import dynamic from "next/dynamic";
 import { cn } from "@/lib/cn";
+import { useProductHeaderFade } from "@/lib/hooks/useProductHeaderFade";
 
 const TechSpecsChips = dynamic(
   () =>
@@ -266,7 +263,9 @@ export function CatalogProductDetailPanel({
   >([]);
   const [justAdded, setJustAdded] = useState(false);
   const justAddedTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const headerRef = useRef<HTMLElement | null>(null);
   const scrollRef = useRef<HTMLDivElement | null>(null);
+  useProductHeaderFade(headerRef, scrollRef, product.product_id);
 
   useEffect(() => {
     return () => {
@@ -395,11 +394,6 @@ export function CatalogProductDetailPanel({
     computeUsdToVes(displayPriceUsd, activeExchangeRate) ?? product.price_ves;
 
   const isAlimentos = storeUsesRubroProductModule(storeRubro, "alimentos");
-  const publicCategoryLabel = resolvePublicCategoryLabel(
-    product.category_slug,
-    product.category_name,
-    normalizeStoreRubro(storeRubro),
-  );
   const brandName = resolveCatalogProductBrand(product);
   const foodHasModifiers =
     isAlimentos &&
@@ -501,49 +495,68 @@ export function CatalogProductDetailPanel({
       )}
 
       <div className="product-detail-panel">
-        <header className="product-detail-header">
+        <header ref={headerRef} className="product-detail-header">
           {isPage ? (
-            <div className="product-detail-back-wrap">
-              <Link href={backHref} className="product-detail-back">
-                <ArrowLeft className="h-4 w-4" aria-hidden="true" />
-                <span className="product-detail-back-label">Volver al catálogo</span>
-              </Link>
-              {publicCategoryLabel ? (
-                <p className="product-detail-kicker">{publicCategoryLabel}</p>
-              ) : null}
-            </div>
+            <Link href={backHref} className="product-detail-icon-btn" aria-label="Volver al catálogo">
+              <ArrowLeft className="h-5 w-5" aria-hidden="true" />
+            </Link>
           ) : (
-            <div className="product-detail-back-wrap">
-              <button
-                type="button"
-                className="product-detail-back"
-                onClick={onClose}
-              >
-                <ArrowLeft className="h-4 w-4" aria-hidden="true" />
-                <span className="product-detail-back-label">Volver al catálogo</span>
-              </button>
-              {publicCategoryLabel ? (
-                <p className="product-detail-kicker">{publicCategoryLabel}</p>
-              ) : null}
-            </div>
+            <button
+              type="button"
+              className="product-detail-icon-btn"
+              onClick={onClose}
+              aria-label="Volver"
+            >
+              <ArrowLeft className="h-5 w-5" aria-hidden="true" />
+            </button>
           )}
           <div className="product-detail-header-actions">
+            {shellNav ? (
+              <button
+                type="button"
+                className="product-detail-icon-btn"
+                aria-label="Buscar"
+                onClick={() => {
+                  onClose?.();
+                  shellNav.focusSearch();
+                }}
+              >
+                <Search className="h-5 w-5" aria-hidden="true" />
+              </button>
+            ) : isPage && catalogHref ? (
+              <Link href={catalogHref} className="product-detail-icon-btn" aria-label="Buscar">
+                <Search className="h-5 w-5" aria-hidden="true" />
+              </Link>
+            ) : null}
             <CatalogProductShareMenu
+              variant="icon"
               productName={product.product_name}
               shareUrl={shareUrl || (typeof window !== "undefined" ? window.location.href : "")}
               priceUsd={displayPriceUsd}
               storeName={product.store_name}
             />
-            {isPage ? null : (
+            {shellNav ? (
               <button
                 type="button"
-                onClick={onClose}
-                className="product-detail-close"
-                aria-label="Cerrar"
+                className="product-detail-icon-btn product-detail-cart-icon"
+                onClick={() => {
+                  onClose?.();
+                  shellNav.openCart();
+                }}
+                aria-label={
+                  (cartContext?.itemCount ?? 0) > 0
+                    ? `Carrito, ${cartContext?.itemCount} artículos`
+                    : "Carrito"
+                }
               >
-                <X className="h-5 w-5" />
+                <ShoppingCart className="h-5 w-5" aria-hidden="true" />
+                {(cartContext?.itemCount ?? 0) > 0 ? (
+                  <span className="product-detail-cart-badge">
+                    {(cartContext?.itemCount ?? 0) > 99 ? "99+" : cartContext?.itemCount}
+                  </span>
+                ) : null}
               </button>
-            )}
+            ) : null}
           </div>
         </header>
 
