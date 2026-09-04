@@ -1,6 +1,13 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type CSSProperties,
+} from "react";
 import { createPortal } from "react-dom";
 import { ChevronLeft, ChevronRight, Expand, X } from "lucide-react";
 import { CatalogProductImage } from "@/components/catalog/CatalogProductImage";
@@ -70,13 +77,13 @@ export function ProductImageGallery({
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [lightboxMounted, setLightboxMounted] = useState(false);
   const [magnifierOn, setMagnifierOn] = useState(false);
-  const [magnifierOrigin, setMagnifierOrigin] = useState("50% 50%");
   const [lensStyle, setLensStyle] = useState<{
     width: number;
     height: number;
     left: number;
     top: number;
   } | null>(null);
+  const [zoomPaneStyle, setZoomPaneStyle] = useState<CSSProperties | null>(null);
   const touchStartX = useRef<number | null>(null);
   const stageRef = useRef<HTMLDivElement | null>(null);
   const zoomFactor = 2.45;
@@ -157,24 +164,31 @@ export function ProductImageGallery({
     if (!rect || rect.width < 8 || rect.height < 8) return;
     const xPx = event.clientX - rect.left;
     const yPx = event.clientY - rect.top;
-    const x = (xPx / rect.width) * 100;
-    const y = (yPx / rect.height) * 100;
-    setMagnifierOrigin(
-      `${Math.min(100, Math.max(0, x)).toFixed(2)}% ${Math.min(100, Math.max(0, y)).toFixed(2)}%`,
-    );
     const lensW = rect.width / zoomFactor;
     const lensH = rect.height / zoomFactor;
+    const left = Math.min(Math.max(0, xPx - lensW / 2), rect.width - lensW);
+    const top = Math.min(Math.max(0, yPx - lensH / 2), rect.height - lensH);
     setLensStyle({
       width: lensW,
       height: lensH,
-      left: Math.min(Math.max(0, xPx - lensW / 2), rect.width - lensW),
-      top: Math.min(Math.max(0, yPx - lensH / 2), rect.height - lensH),
+      left,
+      top,
+    });
+    if (!activeImage) return;
+    const zoomSrc = galleryDisplayUrl(activeImage, "detail");
+    setZoomPaneStyle({
+      backgroundImage: `url("${zoomSrc}")`,
+      backgroundRepeat: "no-repeat",
+      backgroundSize: `${rect.width * zoomFactor}px ${rect.height * zoomFactor}px`,
+      backgroundPosition: `${-left * zoomFactor}px ${-top * zoomFactor}px`,
     });
   }
 
   function handleTouchStart(event: React.TouchEvent) {
     touchStartX.current = event.touches[0]?.clientX ?? null;
     setMagnifierOn(false);
+    setZoomPaneStyle(null);
+    setLensStyle(null);
   }
 
   function handleTouchEnd(event: React.TouchEvent) {
@@ -266,6 +280,7 @@ export function ProductImageGallery({
         onMouseLeave={() => {
           setMagnifierOn(false);
           setLensStyle(null);
+          setZoomPaneStyle(null);
         }}
         onClick={
           onMediaClick || canEnlarge
@@ -381,26 +396,12 @@ export function ProductImageGallery({
         ) : null}
       </div>
 
-      {isDetail && magnifierOn ? (
-        <div className="product-image-gallery-zoom-pane" aria-hidden>
-          <div
-            className="product-image-gallery-zoom-pane-inner"
-            style={{
-              transform: `scale(${zoomFactor})`,
-              transformOrigin: magnifierOrigin,
-            }}
-          >
-            <CatalogProductImage
-              src={galleryDisplayUrl(activeImage, "detail")}
-              previewSrc={activeImage.thumb_url}
-              alt=""
-              className={imageClassName}
-              loading="eager"
-              sizes="800px"
-              priority
-            />
-          </div>
-        </div>
+      {isDetail && magnifierOn && zoomPaneStyle ? (
+        <div
+          className="product-image-gallery-zoom-pane"
+          style={zoomPaneStyle}
+          aria-hidden
+        />
       ) : null}
 
       {showThumbs ? (

@@ -94,7 +94,7 @@ export function MercadoProductGallery({
             fallbackClassName ??
             "product-detail-gallery-fallback mercado-card-media-fallback text-4xl"
           }
-          sizes={sizes ?? "(max-width: 1023px) 100vw, 640px"}
+          sizes={sizes ?? "(max-width: 1023px) 100vw, 450px"}
           loading={loading ?? "eager"}
         />
       </section>

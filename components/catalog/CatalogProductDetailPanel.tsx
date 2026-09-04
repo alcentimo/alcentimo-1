@@ -629,7 +629,7 @@ export function CatalogProductDetailPanel({
                   }}
                   mode="detail"
                   loading="eager"
-                  sizes="(max-width: 768px) 100vw, 500px"
+                  sizes="(max-width: 768px) 100vw, 450px"
                 />
               </div>
 

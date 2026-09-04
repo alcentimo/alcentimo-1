@@ -3021,9 +3021,9 @@ html:has(.landing-shell) {
   top: 0;
   left: 0;
   z-index: 12;
-  border: 1px solid rgb(255 255 255 / 0.85);
-  background: rgb(255 255 255 / 0.32);
-  box-shadow: inset 0 0 0 1px rgb(24 24 27 / 0.08);
+  border: 1px solid rgb(255 255 255 / 0.9);
+  background: rgb(255 255 255 / 0.28);
+  box-shadow: inset 0 0 0 1px rgb(0 0 0 / 0.06);
 }
 
 .product-image-gallery-zoom-pane {
@@ -3064,11 +3064,11 @@ html:has(.landing-shell) {
 }
 
 .product-image-gallery-thumb {
-  @apply relative h-8 w-8 shrink-0 overflow-hidden rounded-md border border-zinc-200/90 opacity-90 transition hover:opacity-100 dark:border-zinc-700;
+  @apply relative h-8 w-8 shrink-0 overflow-hidden rounded-sm border border-zinc-200 opacity-90 transition hover:opacity-100 dark:border-zinc-700;
 }
 
 .product-image-gallery-thumb-active {
-  @apply border-teal-500 opacity-100 ring-2 ring-teal-400/70;
+  @apply border-zinc-800 opacity-100 ring-0 dark:border-zinc-200;
 }
 
 .product-image-gallery-thumb-image {
@@ -3076,7 +3076,7 @@ html:has(.landing-shell) {
 }
 
 .product-image-gallery-detail {
-  @apply relative inset-auto grid w-full max-w-full overflow-visible rounded-xl bg-white;
+  @apply relative inset-auto grid w-full max-w-full overflow-visible rounded-none bg-transparent;
   grid-template-areas:
     "stage"
     "thumbs";
@@ -3094,17 +3094,23 @@ html:has(.landing-shell) {
   .product-image-gallery-detail.product-image-gallery-multi {
     aspect-ratio: auto;
     width: max-content;
-    max-width: 100%;
-    height: 500px;
-    min-height: 500px;
-    max-height: 500px;
+    max-width: none;
+    height: 450px;
+    min-height: 450px;
+    max-height: none;
+    overflow: visible;
+    background: transparent;
     grid-template-areas: "thumbs stage";
-    grid-template-columns: 4.5rem 500px;
-    grid-template-rows: 500px;
+    grid-template-columns: 3.5rem 450px;
+    grid-template-rows: 450px;
+    column-gap: 1.5rem;
+    row-gap: 0;
   }
 
   .product-image-gallery-detail .product-image-gallery-thumbs-detail {
-    @apply flex flex-col overflow-x-hidden overflow-y-auto border-r-0 border-t-0 bg-transparent px-0 py-0;
+    @apply flex flex-col overflow-x-hidden overflow-y-auto border-0 bg-transparent p-0;
+    width: 3.5rem;
+    gap: 0.5rem;
   }
 
   .product-image-gallery-thumbs-single {
@@ -3112,8 +3118,15 @@ html:has(.landing-shell) {
   }
 
   .product-image-gallery-detail .product-image-gallery-stage {
-    width: 500px;
-    height: 500px;
+    width: 450px;
+    min-width: 450px;
+    max-width: 450px;
+    height: 450px;
+    min-height: 450px;
+    max-height: 450px;
+    border-radius: 0.25rem;
+    background: #f5f5f5;
+    box-shadow: none;
   }
 
   .product-image-gallery-detail .product-image-gallery-nav,
@@ -3125,6 +3138,8 @@ html:has(.landing-shell) {
 
 .product-image-gallery-detail .product-image-gallery-thumbs-detail {
   grid-area: thumbs;
+  position: relative;
+  z-index: 4;
 }
 
 .product-image-gallery-detail.product-image-gallery-multi .product-image-gallery-dots {
@@ -3214,43 +3229,35 @@ html:has(.landing-shell) {
 
   .product-image-gallery-zoom-pane {
     display: block;
+    grid-area: stage;
     position: absolute;
-    left: calc(100% + 0.75rem);
+    left: calc(100% + 1.5rem);
     top: 0;
-    z-index: 70;
-    width: 22rem;
-    height: 22rem;
-    max-width: 22rem;
-    max-height: 22rem;
+    z-index: 80;
+    width: 450px;
+    height: 450px;
+    max-width: 450px;
+    max-height: 450px;
     overflow: hidden;
-    border: 1px solid rgb(228 228 231);
-    border-radius: 0.35rem;
-    background: #fff;
-    box-shadow: 0 18px 50px rgb(24 24 27 / 0.18);
+    border: 1px solid #e5e5e5;
+    border-radius: 0.25rem;
+    background-color: #fff;
+    background-repeat: no-repeat;
+    box-shadow: none;
     pointer-events: none;
-  }
-
-  .product-image-gallery-zoom-pane-inner {
-    position: relative;
-    width: 100%;
-    height: 100%;
-    will-change: transform;
-  }
-
-  .product-image-gallery-zoom-pane .product-detail-gallery-image,
-  .product-image-gallery-zoom-pane .store-product-image,
-  .product-image-gallery-zoom-pane img {
-    object-fit: contain;
-    object-position: center;
   }
 
   .product-image-gallery-stage-zooming {
     cursor: crosshair;
   }
+
+  .product-image-gallery-detail.product-image-gallery-zooming .product-image-gallery-zoom {
+    opacity: 0;
+  }
 }
 
 .product-image-gallery-thumb-lg {
-  @apply h-12 w-12 rounded-lg;
+  @apply h-12 w-12 rounded-sm;
 }
 
 /* Botón + flotante sobre la imagen: retirado del diseño actual. */
@@ -3484,10 +3491,10 @@ html:has(.landing-shell) {
 @media (min-width: 1024px) {
   .product-detail-ml {
     display: grid;
-    grid-template-columns: auto minmax(280px, 1fr);
+    grid-template-columns: max-content minmax(280px, 1fr);
     align-items: start;
-    gap: 1.25rem;
-    padding: 1.25rem 1.25rem 0;
+    gap: 1.5rem;
+    padding: 1.5rem 1.5rem 0;
   }
 
   .product-detail-media {
@@ -3500,8 +3507,8 @@ html:has(.landing-shell) {
     position: sticky;
     top: 1rem;
     align-self: start;
-    min-height: 500px;
-    border: 1px solid rgb(228 228 231);
+    min-height: 450px;
+    border: 1px solid #e5e5e5;
     border-radius: 8px;
     background: #fff;
     padding: 1.25rem 1.15rem;
@@ -3843,19 +3850,27 @@ html:has(.landing-shell) {
 
   .product-detail-top {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(18rem, 22.5rem);
-    gap: 1.25rem;
+    grid-template-columns: max-content minmax(18rem, 1fr);
+    gap: 1.5rem;
     align-items: start;
   }
 
   .product-detail-media {
-    @apply rounded-md bg-white p-4;
-    min-width: 0;
+    @apply rounded-none bg-transparent p-0;
+    min-width: max-content;
+    overflow: visible;
+    position: relative;
+    z-index: 30;
   }
 
   .product-detail-body {
-    @apply space-y-3 rounded-md border border-zinc-200/90 bg-white px-4 py-4 sm:px-5 sm:py-5;
+    @apply space-y-3 rounded-md border border-[#e5e5e5] bg-white px-4 py-4 sm:px-5 sm:py-5;
     overflow: visible;
+    position: sticky;
+    top: 1rem;
+    align-self: start;
+    min-height: 450px;
+    z-index: 1;
   }
 
   .product-detail-below {
@@ -3900,12 +3915,12 @@ html:has(.landing-shell) {
   .product-detail-media .product-image-gallery {
     position: relative;
     inset: auto;
-    height: auto;
-    max-height: 32rem;
+    height: 450px;
+    max-height: none;
   }
 
   .product-detail-media .product-image-gallery-thumb-lg {
-    @apply h-14 w-14;
+    @apply h-14 w-14 rounded-sm;
   }
 }
 
@@ -15740,11 +15755,11 @@ button.mercado-mp-card-btn {
 }
 
 .mercado-mp-detail-grid {
-  @apply grid gap-5 lg:grid-cols-[auto_minmax(18rem,1fr)] lg:items-start;
+  @apply grid gap-6 lg:grid-cols-[max-content_minmax(18rem,1fr)] lg:items-start;
 }
 
 .mercado-mp-detail-gallery {
-  @apply w-full min-w-0 max-w-full overflow-visible rounded-2xl border border-[var(--mo-border)] bg-white p-3 shadow-sm sm:p-4;
+  @apply w-full min-w-0 max-w-full overflow-visible rounded-none border-0 bg-transparent p-0 shadow-none sm:p-0;
 }
 
 .mercado-mp-detail-hero {
@@ -15764,7 +15779,7 @@ button.mercado-mp-card-btn {
 }
 
 .mercado-mp-detail-info {
-  @apply space-y-3 rounded-2xl border border-[var(--mo-border)] bg-white p-5 shadow-sm;
+  @apply space-y-3 rounded-lg border border-[#e5e5e5] bg-white p-5 shadow-none;
 }
 
 .mercado-mp-official-pill {
