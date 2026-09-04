@@ -3218,8 +3218,10 @@ html:has(.landing-shell) {
     left: calc(100% + 0.75rem);
     top: 0;
     z-index: 70;
-    width: min(32rem, 42vw);
-    height: 500px;
+    width: 22rem;
+    height: 22rem;
+    max-width: 22rem;
+    max-height: 22rem;
     overflow: hidden;
     border: 1px solid rgb(228 228 231);
     border-radius: 0.35rem;
@@ -3302,12 +3304,12 @@ html:has(.landing-shell) {
 @media (min-width: 1024px) {
   .product-detail-overlay--immersive,
   .product-detail-page--immersive {
-    background: #ebebeb;
+    background: #ededed;
     align-items: flex-start;
     justify-content: center;
     overflow-x: hidden;
     overflow-y: auto;
-    padding: 1.25rem 1.5rem 2.5rem;
+    padding: 0;
   }
 
   .product-detail-page--immersive {
@@ -3322,13 +3324,14 @@ html:has(.landing-shell) {
   .product-detail-overlay--immersive .product-detail-panel,
   .product-detail-page--immersive .product-detail-panel {
     width: 100%;
-    max-width: 75rem;
+    max-width: none;
     height: auto;
     max-height: none;
     margin-inline: auto;
     overflow: visible;
-    border-radius: 0.5rem;
-    box-shadow: 0 8px 28px rgb(24 24 27 / 0.08);
+    border-radius: 0;
+    box-shadow: none;
+    background: #ededed;
   }
 
   .product-detail-overlay--immersive .product-detail-panel {
@@ -3343,6 +3346,9 @@ html:has(.landing-shell) {
     pointer-events: auto;
     --product-header-progress: 0;
     border-bottom: 1px solid rgb(244 244 245);
+    max-width: 80rem;
+    margin-inline: auto;
+    width: 100%;
   }
 
   .product-detail-page--immersive .product-detail-header::before,
@@ -3354,6 +3360,7 @@ html:has(.landing-shell) {
   .product-detail-overlay--immersive .product-detail-scroll {
     overflow: visible;
     flex: none;
+    display: block;
   }
 
   .product-detail-page--immersive .product-detail-body,
@@ -3442,15 +3449,16 @@ html:has(.landing-shell) {
 }
 
 .product-detail-related {
-  @apply border-t border-zinc-100 px-4 py-6 sm:px-6;
+  @apply mt-4 min-w-0 border-t border-zinc-100 bg-white px-4 py-5 sm:px-6 lg:mt-4 lg:rounded-md lg:border-0 lg:px-6 lg:py-6;
 }
 
 .product-detail-related-title {
-  @apply m-0 mb-4 text-base font-semibold text-zinc-900;
+  @apply mb-4 break-words text-base font-semibold leading-snug text-zinc-900 sm:text-lg;
 }
 
 .product-detail-related-track {
-  @apply m-0 grid list-none grid-cols-2 gap-3 p-0 sm:grid-cols-3 lg:grid-cols-5;
+  @apply m-0 flex list-none gap-3 overflow-x-auto p-0 pb-1;
+  scrollbar-width: thin;
 }
 
 .product-detail-related-item {
@@ -3786,10 +3794,57 @@ html:has(.landing-shell) {
 }
 
 .product-detail-scroll {
-  @apply relative grid min-h-0 min-w-0 flex-1 grid-cols-1 overflow-x-hidden overflow-y-auto;
+  @apply relative min-h-0 min-w-0 flex-1 overflow-x-hidden overflow-y-auto;
   -webkit-overflow-scrolling: touch;
   scroll-timeline-name: --product-detail-scroll;
   scroll-timeline-axis: block;
+}
+
+.product-detail-master {
+  @apply mx-auto w-full max-w-7xl px-0 py-0;
+}
+
+.product-detail-top {
+  @apply grid min-w-0 grid-cols-1;
+}
+
+.product-detail-below {
+  @apply space-y-6 px-4 py-5 sm:px-6;
+}
+
+.product-detail-below-title {
+  @apply mb-3 break-words text-base font-semibold leading-snug text-zinc-900 sm:text-lg;
+}
+
+.product-detail-specs {
+  @apply min-w-0;
+}
+
+@media (min-width: 1024px) {
+  .product-detail-master {
+    @apply px-4 py-6;
+  }
+
+  .product-detail-top {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(18rem, 22.5rem);
+    gap: 1.25rem;
+    align-items: start;
+  }
+
+  .product-detail-media {
+    @apply rounded-md bg-white p-4;
+    min-width: 0;
+  }
+
+  .product-detail-body {
+    @apply space-y-3 rounded-md border border-zinc-200/90 bg-white px-4 py-4 sm:px-5 sm:py-5;
+    overflow: visible;
+  }
+
+  .product-detail-below {
+    @apply mt-4 rounded-md bg-white px-6 py-6;
+  }
 }
 
 .product-detail-media {
@@ -3825,6 +3880,19 @@ html:has(.landing-shell) {
   @apply max-w-full;
 }
 
+@media (min-width: 1024px) {
+  .product-detail-media .product-image-gallery {
+    position: relative;
+    inset: auto;
+    height: auto;
+    max-height: 32rem;
+  }
+
+  .product-detail-media .product-image-gallery-thumb-lg {
+    @apply h-14 w-14;
+  }
+}
+
 .product-detail-gallery {
   @apply relative mx-auto w-full;
 }
@@ -3838,15 +3906,15 @@ html:has(.landing-shell) {
 }
 
 .product-detail-body {
-  @apply space-y-4 px-4 py-4 sm:px-6 sm:py-5;
+  @apply min-w-0 space-y-4 px-4 py-4 sm:px-6 sm:py-5;
 }
 
 .product-detail-title {
-  @apply text-[1.35rem] font-semibold leading-snug tracking-tight text-zinc-900 sm:text-[1.65rem];
+  @apply break-words text-lg font-semibold leading-snug tracking-tight text-zinc-900 sm:text-xl lg:text-[1.35rem] lg:leading-snug;
 }
 
 .product-detail-brand {
-  @apply m-0 text-[11px] font-semibold uppercase tracking-[0.16em] text-[var(--mo-gold,theme(colors.amber.700))];
+  @apply m-0 truncate text-[11px] font-semibold uppercase tracking-[0.16em] text-[var(--mo-gold,theme(colors.amber.700))];
 }
 
 .product-detail-brand-link {
@@ -3870,11 +3938,11 @@ html:has(.landing-shell) {
 }
 
 .product-detail-price {
-  @apply text-3xl font-bold tracking-tight text-zinc-900 sm:text-4xl;
+  @apply min-w-0 break-words text-2xl font-bold tracking-tight text-zinc-900 sm:text-3xl lg:text-[2rem];
 }
 
 .product-detail-pricing--sale .product-detail-price {
-  @apply text-3xl font-extrabold tracking-tight text-orange-700 sm:text-4xl;
+  @apply text-2xl font-extrabold tracking-tight text-orange-700 sm:text-3xl lg:text-[2rem];
 }
 
 .product-detail-price-compare {
@@ -3948,15 +4016,15 @@ html:has(.landing-shell) {
 }
 
 .product-detail-attributes dd {
-  @apply mt-0.5 font-medium text-zinc-800;
+  @apply mt-0.5 break-words font-medium text-zinc-800;
 }
 
 .product-detail-description h3 {
-  @apply text-sm font-semibold text-zinc-900;
+  @apply break-words text-sm font-semibold text-zinc-900 sm:text-base lg:text-lg;
 }
 
 .product-detail-description p {
-  @apply mt-2 whitespace-pre-wrap text-sm leading-relaxed text-zinc-600;
+  @apply mt-2 whitespace-pre-wrap break-words text-sm leading-relaxed text-zinc-600;
 }
 
 .product-detail-loading {
@@ -3975,12 +4043,47 @@ html:has(.landing-shell) {
   @apply border-t border-zinc-100 bg-white p-4 lg:hidden;
 }
 
+.product-detail-related {
+  @apply mt-4 min-w-0 bg-white px-4 py-5 sm:px-6 lg:mt-4 lg:rounded-md lg:px-6 lg:py-6;
+}
+
+.product-detail-related-title {
+  @apply mb-4 break-words text-base font-semibold leading-snug text-zinc-900 sm:text-lg;
+}
+
+.product-detail-related-track {
+  @apply flex gap-3 overflow-x-auto pb-1;
+  scrollbar-width: thin;
+}
+
+.product-detail-related-card {
+  @apply flex w-[9.5rem] shrink-0 flex-col gap-2 rounded-lg border border-zinc-200/90 bg-white p-2 text-left transition hover:border-zinc-300 hover:shadow-sm sm:w-[10.5rem];
+}
+
+.product-detail-related-media {
+  @apply relative block aspect-square w-full overflow-hidden rounded-md bg-zinc-50;
+}
+
+.product-detail-related-image,
+.product-detail-related-fallback {
+  @apply absolute inset-0 h-full w-full object-contain object-center;
+}
+
+.product-detail-related-name {
+  @apply line-clamp-2 min-h-[2.5rem] break-words text-xs font-medium leading-snug text-zinc-800;
+}
+
+.product-detail-related-price {
+  @apply truncate text-sm font-semibold tracking-tight text-zinc-900;
+}
+
 .product-detail-add-btn {
-  @apply flex w-full touch-manipulation items-center justify-center gap-2 rounded-xl bg-teal-600 px-4 py-3.5 text-sm font-semibold text-white shadow-sm transition hover:bg-teal-700 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60 disabled:active:scale-100;
+  @apply flex w-full min-w-0 touch-manipulation items-center justify-center gap-2 rounded-xl bg-teal-600 px-4 py-3.5 text-sm font-semibold text-white shadow-sm transition hover:bg-teal-700 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60 disabled:active:scale-100;
 }
 
 .product-detail-cart-btn {
-  @apply flex w-full touch-manipulation items-center justify-center gap-2 rounded-xl border-2 border-teal-600 bg-white px-4 py-3 text-sm font-semibold text-teal-700 transition hover:bg-teal-50 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60 disabled:active:scale-100;
+  @apply flex w-full min-w-0 touch-manipulation items-center justify-center gap-2 rounded-xl border-2 border-teal-600 bg-white px-4 py-3 text-sm font-semibold text-teal-700 transition hover:bg-teal-50 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60 disabled:active:scale-100;
+  text-wrap: balance;
 }
 
 .product-detail-add-btn-in-cart {

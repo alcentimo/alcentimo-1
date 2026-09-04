@@ -9,10 +9,8 @@ import type { CatalogListItem } from "@/lib/database.types";
 import type { CatalogVariantOption } from "@/lib/products/variants";
 import type { CartModifierSelection } from "@/lib/catalog/cart-types";
 import { MercadoProductGallery } from "@/components/mercado-oculto/MercadoProductGallery";
-import {
-  CatalogRelatedProducts,
-  pickRelatedCatalogProducts,
-} from "@/components/catalog/CatalogRelatedProducts";
+import { CatalogRelatedProducts } from "@/components/catalog/CatalogRelatedProducts";
+import { pickRelatedCatalogProducts } from "@/lib/catalog/related-catalog-products";
 import type { PublicPurchaseInfo } from "@/lib/store-settings/purchase-info";
 import { RubroCatalogVariantSlot } from "@/components/rubros/RubroCatalogVariantSlot";
 import { GiftCardAmountPicker } from "@/components/catalog/GiftCardAmountPicker";
@@ -112,7 +110,9 @@ interface CatalogProductDetailPanelProps {
   catalogHref?: string;
   onClose?: () => void;
   onSelectBrand?: (brand: string) => void;
+  catalogProducts?: CatalogListItem[];
   relatedProducts?: CatalogListItem[];
+  onSelectRelated?: (product: CatalogListItem) => void;
   purchaseInfo?: Pick<PublicPurchaseInfo, "payments" | "installments"> | null;
   onAddToCart?: (
     product: CatalogListItem,
@@ -224,7 +224,9 @@ export function CatalogProductDetailPanel({
   catalogHref,
   onClose,
   onSelectBrand,
-  relatedProducts,
+  catalogProducts,
+  relatedProducts: relatedCatalog,
+  onSelectRelated,
   purchaseInfo = null,
   onAddToCart,
 }: CatalogProductDetailPanelProps) {
@@ -427,6 +429,12 @@ export function CatalogProductDetailPanel({
     product.short_description?.trim() ||
     null;
 
+  const suggestedProducts = useMemo(
+    () =>
+      pickRelatedCatalogProducts(product, catalogProducts ?? relatedCatalog),
+    [product, catalogProducts, relatedCatalog],
+  );
+
   const shareUrl = useMemo(() => {
     if (typeof window === "undefined") return "";
     const path = getStoreProductDeepLinkPath(
@@ -489,10 +497,6 @@ export function CatalogProductDetailPanel({
 
   const isPage = layout === "page";
   const backHref = catalogHref || "/";
-  const suggestedProducts = useMemo(
-    () => pickRelatedCatalogProducts(product, relatedProducts, 10),
-    [product, relatedProducts],
-  );
   const paymentOptions = purchaseInfo?.payments ?? [];
   const installments = purchaseInfo?.installments;
 
@@ -550,6 +554,7 @@ export function CatalogProductDetailPanel({
             >
               <ArrowLeft className="h-5 w-5" aria-hidden="true" />
             </button>
+
             <div className="product-detail-header-actions">
               {shellNav ? (
                 <button
@@ -598,233 +603,235 @@ export function CatalogProductDetailPanel({
         )}
 
         <div ref={scrollRef} className="product-detail-scroll">
-          <div className="product-detail-ml">
-            <div className="product-detail-media">
-              <MercadoProductGallery
-                productName={product.product_name}
-                images={detailImages.length > 0 ? detailImages : undefined}
-                product={{
-                  thumb_url: product.thumb_url,
-                  image_alt: product.image_alt,
-                  gallery_images: product.gallery_images,
-                  product_slug: product.product_slug,
-                  metadata: product.metadata,
-                  category_slug: product.category_slug,
-                }}
-                mode="detail"
-                loading="eager"
-                sizes="(max-width: 768px) 100vw, 500px"
-              />
+          <div className="product-detail-master">
+            <div className="product-detail-top">
+              <div className="product-detail-media">
+                <MercadoProductGallery
+                  productName={product.product_name}
+                  images={detailImages.length > 0 ? detailImages : undefined}
+                  product={{
+                    thumb_url: product.thumb_url,
+                    image_alt: product.image_alt,
+                    gallery_images: product.gallery_images,
+                    product_slug: product.product_slug,
+                    metadata: product.metadata,
+                    category_slug: product.category_slug,
+                  }}
+                  mode="detail"
+                  loading="eager"
+                  sizes="(max-width: 768px) 100vw, 500px"
+                />
+              </div>
+
+              <div className="product-detail-body">
+                {brandName ? (
+                  onSelectBrand ? (
+                    <button
+                      type="button"
+                      className="product-detail-brand product-detail-brand-link"
+                      onClick={() => {
+                        onSelectBrand(brandName);
+                        onClose?.();
+                      }}
+                    >
+                      {brandName}
+                    </button>
+                  ) : (
+                    <p className="product-detail-brand">{brandName}</p>
+                  )
+                ) : null}
+
+                {isPage ? (
+                  <h1 className="product-detail-title">{product.product_name}</h1>
+                ) : (
+                  <h2 className="product-detail-title">{product.product_name}</h2>
+                )}
+
+                <div className="product-detail-stock-row">
+                  {outOfStock ? (
+                    <span className="product-detail-stock-badge product-detail-stock-badge--out">
+                      <span className="product-detail-stock-dot" aria-hidden="true" />
+                      Agotado
+                    </span>
+                  ) : shouldShowExactStockQuantity(displayStock) &&
+                    displayStock <= threshold ? (
+                    <span className="product-detail-stock-badge product-detail-stock-badge--low">
+                      <span className="product-detail-stock-dot" aria-hidden="true" />
+                      En stock · Quedan {displayStock}
+                    </span>
+                  ) : (
+                    <span className="product-detail-stock-badge product-detail-stock-badge--in">
+                      <span className="product-detail-stock-dot" aria-hidden="true" />
+                      Disponible
+                    </span>
+                  )}
+                  {isPage ? (
+                    <CatalogProductShareMenu
+                      className="ml-auto"
+                      variant="icon"
+                      productName={product.product_name}
+                      shareUrl={shareUrl || (typeof window !== "undefined" ? window.location.href : "")}
+                      priceUsd={displayPriceUsd}
+                      storeName={product.store_name}
+                    />
+                  ) : null}
+                </div>
+
+                {storeUsesRubroProductModule(storeRubro, "tecnologia") ? (
+                  <TechSpecsChips product={product} />
+                ) : null}
+                {storeUsesRubroProductModule(storeRubro, "coleccionables") ? (
+                  <CollectibleBadges product={product} />
+                ) : null}
+                {storeUsesRubroProductModule(storeRubro, "salud-belleza") ? (
+                  <BeautyBadges product={product} />
+                ) : null}
+                {storeUsesRubroProductModule(storeRubro, "papeleria-libreria-oficina") ? (
+                  <StationeryBadges product={product} />
+                ) : null}
+
+                <div
+                  className={
+                    hasDiscount
+                      ? "product-detail-pricing product-detail-pricing--sale"
+                      : "product-detail-pricing"
+                  }
+                >
+                  {hasDiscount ? (
+                    <span className="product-detail-sale-badge">OFERTA</span>
+                  ) : null}
+                  <div className="product-detail-price-row">
+                    {hasDiscount && product.compare_at_usd != null ? (
+                      <p
+                        className="product-detail-price-compare"
+                        aria-label={`Precio regular ${formatUsd(product.compare_at_usd)}`}
+                      >
+                        {formatUsd(product.compare_at_usd)}
+                      </p>
+                    ) : null}
+                    <p
+                      className="product-detail-price"
+                      aria-label={`Precio actual ${formatUsd(displayPriceUsd)}`}
+                    >
+                      {formatUsd(displayPriceUsd)}
+                    </p>
+                  </div>
+
+                  {showBsConversion && priceVes != null ? (
+                    <p className="product-detail-price-ves">{formatApproxBs(priceVes)}</p>
+                  ) : null}
+                  {showOfficialRate &&
+                  activeExchangeRate != null &&
+                  Number.isFinite(activeExchangeRate) &&
+                  activeExchangeRate > 0 ? (
+                    <p className="product-detail-rate">
+                      Tasa oficial BCV: Bs. {formatExchangeRate(activeExchangeRate)} / USD
+                    </p>
+                  ) : null}
+                </div>
+
+                {paymentOptions.length > 0 || installments?.enabled ? (
+                  <div className="product-detail-payments">
+                    <h3>
+                      <CreditCard className="h-4 w-4" aria-hidden="true" />
+                      Medios de pago
+                    </h3>
+                    {paymentOptions.length > 0 ? (
+                      <ul>
+                        {paymentOptions.map((method) => (
+                          <li key={method.key}>{method.label}</li>
+                        ))}
+                      </ul>
+                    ) : null}
+                    {installments?.enabled ? (
+                      <p className="product-detail-installments">
+                        Hasta {installments.maxInstallments} cuotas
+                        {installments.minUsd
+                          ? ` desde ${formatUsd(Number(installments.minUsd) || 0)}`
+                          : ""}
+                        {installments.conditions ? ` · ${installments.conditions}` : ""}
+                      </p>
+                    ) : null}
+                  </div>
+                ) : null}
+
+                {showOrderOptions ? (
+                  <div className="product-detail-options">
+                    {isGiftCard ? (
+                      <GiftCardAmountPicker
+                        product={product}
+                        variantOptions={variantOptions}
+                        selectedVariantId={selectedVariantId}
+                        onSelectVariant={setSelectedVariantId}
+                        selectedModifiers={selectedModifiers}
+                        onModifiersChange={setSelectedModifiers}
+                      />
+                    ) : (
+                      <RubroCatalogVariantSlot
+                        rubro={storeRubro}
+                        product={product}
+                        variantOptions={variantOptions}
+                        selectedVariantId={selectedVariantId}
+                        onSelect={setSelectedVariantId}
+                        selectedModifiers={selectedModifiers}
+                        onModifiersChange={setSelectedModifiers}
+                        showVariants={showVariantSelector}
+                        density="detail"
+                      />
+                    )}
+                  </div>
+                ) : null}
+
+                {isGiftCard && !giftDeliveryValid && onAddToCart ? (
+                  <p className="mt-2 break-words text-xs text-amber-700 dark:text-amber-300">
+                    Completa el correo del destinatario, de parte de y el mensaje
+                    para añadir al carrito.
+                  </p>
+                ) : null}
+
+                {showFooter ? (
+                  <div className="product-detail-actions">{actionButtons}</div>
+                ) : null}
+              </div>
             </div>
 
-            <aside className="product-detail-buybox">
-              {brandName ? (
-                onSelectBrand ? (
-                  <button
-                    type="button"
-                    className="product-detail-brand product-detail-brand-link"
-                    onClick={() => {
-                      onSelectBrand(brandName);
-                      onClose?.();
-                    }}
-                  >
-                    {brandName}
-                  </button>
-                ) : (
-                  <p className="product-detail-brand">{brandName}</p>
-                )
-              ) : null}
-
-              {isPage ? (
-                <h1 className="product-detail-title">{product.product_name}</h1>
-              ) : (
-                <h2 className="product-detail-title">{product.product_name}</h2>
-              )}
-
-              <div className="product-detail-stock-row">
-                {outOfStock ? (
-                  <span className="product-detail-stock-badge product-detail-stock-badge--out">
-                    <span className="product-detail-stock-dot" aria-hidden="true" />
-                    Agotado
-                  </span>
-                ) : shouldShowExactStockQuantity(displayStock) &&
-                  displayStock <= threshold ? (
-                  <span className="product-detail-stock-badge product-detail-stock-badge--low">
-                    <span className="product-detail-stock-dot" aria-hidden="true" />
-                    En stock · Quedan {displayStock}
-                  </span>
-                ) : (
-                  <span className="product-detail-stock-badge product-detail-stock-badge--in">
-                    <span className="product-detail-stock-dot" aria-hidden="true" />
-                    Disponible
-                  </span>
-                )}
-                {isPage ? (
-                  <CatalogProductShareMenu
-                    className="ml-auto"
-                    variant="icon"
-                    productName={product.product_name}
-                    shareUrl={shareUrl || (typeof window !== "undefined" ? window.location.href : "")}
-                    priceUsd={displayPriceUsd}
-                    storeName={product.store_name}
-                  />
-                ) : null}
-              </div>
-
-              <div
-                className={
-                  hasDiscount
-                    ? "product-detail-pricing product-detail-pricing--sale"
-                    : "product-detail-pricing"
-                }
-              >
-                {hasDiscount ? (
-                  <span className="product-detail-sale-badge">OFERTA</span>
-                ) : null}
-                <div className="product-detail-price-row">
-                  {hasDiscount && product.compare_at_usd != null ? (
-                    <p
-                      className="product-detail-price-compare"
-                      aria-label={`Precio regular ${formatUsd(product.compare_at_usd)}`}
-                    >
-                      {formatUsd(product.compare_at_usd)}
-                    </p>
-                  ) : null}
-                  <p
-                    className="product-detail-price"
-                    aria-label={`Precio actual ${formatUsd(displayPriceUsd)}`}
-                  >
-                    {formatUsd(displayPriceUsd)}
-                  </p>
-                </div>
-
-                {showBsConversion && priceVes != null ? (
-                  <p className="product-detail-price-ves">{formatApproxBs(priceVes)}</p>
-                ) : null}
-                {showOfficialRate &&
-                activeExchangeRate != null &&
-                Number.isFinite(activeExchangeRate) &&
-                activeExchangeRate > 0 ? (
-                  <p className="product-detail-rate">
-                    Tasa oficial BCV: Bs. {formatExchangeRate(activeExchangeRate)} / USD
-                  </p>
-                ) : null}
-              </div>
-
-              {paymentOptions.length > 0 || installments?.enabled ? (
-                <div className="product-detail-payments">
-                  <h3>
-                    <CreditCard className="h-4 w-4" aria-hidden="true" />
-                    Medios de pago
-                  </h3>
-                  {paymentOptions.length > 0 ? (
-                    <ul>
-                      {paymentOptions.map((method) => (
-                        <li key={method.key}>{method.label}</li>
+            {attributeEntries.length > 0 || descriptionText || detailLoading ? (
+              <div className="product-detail-below">
+                {attributeEntries.length > 0 ? (
+                  <section className="product-detail-specs">
+                    <h3 className="product-detail-below-title">Características principales</h3>
+                    <dl className="product-detail-attributes">
+                      {attributeEntries.map(([key, value]) => (
+                        <div key={key}>
+                          <dt>{formatAttributeLabel(key)}</dt>
+                          <dd>{value as string}</dd>
+                        </div>
                       ))}
-                    </ul>
-                  ) : null}
-                  {installments?.enabled ? (
-                    <p className="product-detail-installments">
-                      Hasta {installments.maxInstallments} cuotas
-                      {installments.minUsd
-                        ? ` desde ${formatUsd(Number(installments.minUsd) || 0)}`
-                        : ""}
-                      {installments.conditions ? ` · ${installments.conditions}` : ""}
-                    </p>
-                  ) : null}
-                </div>
-              ) : null}
+                    </dl>
+                  </section>
+                ) : null}
 
-              {showOrderOptions ? (
-                <div className="product-detail-options">
-                  {isGiftCard ? (
-                    <GiftCardAmountPicker
-                      product={product}
-                      variantOptions={variantOptions}
-                      selectedVariantId={selectedVariantId}
-                      onSelectVariant={setSelectedVariantId}
-                      selectedModifiers={selectedModifiers}
-                      onModifiersChange={setSelectedModifiers}
-                    />
-                  ) : (
-                    <RubroCatalogVariantSlot
-                      rubro={storeRubro}
-                      product={product}
-                      variantOptions={variantOptions}
-                      selectedVariantId={selectedVariantId}
-                      onSelect={setSelectedVariantId}
-                      selectedModifiers={selectedModifiers}
-                      onModifiersChange={setSelectedModifiers}
-                      showVariants={showVariantSelector}
-                      density="detail"
-                    />
-                  )}
-                </div>
-              ) : null}
-
-              {isGiftCard && !giftDeliveryValid && onAddToCart ? (
-                <p className="mt-2 text-xs text-amber-700 dark:text-amber-300">
-                  Completa el correo del destinatario, de parte de y el mensaje
-                  para añadir al carrito.
-                </p>
-              ) : null}
-
-              {showFooter ? (
-                <div className="product-detail-actions">{actionButtons}</div>
-              ) : null}
-            </aside>
-          </div>
-
-          <div className="product-detail-extra">
-            {storeUsesRubroProductModule(storeRubro, "tecnologia") ? (
-              <TechSpecsChips product={product} />
-            ) : null}
-            {storeUsesRubroProductModule(storeRubro, "coleccionables") ? (
-              <CollectibleBadges product={product} />
-            ) : null}
-            {storeUsesRubroProductModule(storeRubro, "salud-belleza") ? (
-              <BeautyBadges product={product} />
-            ) : null}
-            {storeUsesRubroProductModule(storeRubro, "papeleria-libreria-oficina") ? (
-              <StationeryBadges product={product} />
-            ) : null}
-
-            {attributeEntries.length > 0 ? (
-              <dl className="product-detail-attributes">
-                {attributeEntries.map(([key, value]) => (
-                  <div key={key}>
-                    <dt>{formatAttributeLabel(key)}</dt>
-                    <dd>{value as string}</dd>
+                {descriptionText ? (
+                  <section className="product-detail-description">
+                    <h3 className="product-detail-below-title">Descripción</h3>
+                    <p>{descriptionText}</p>
+                  </section>
+                ) : detailLoading ? (
+                  <div className="product-detail-loading">
+                    <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+                    Cargando descripción…
                   </div>
-                ))}
-              </dl>
-            ) : null}
-
-            {descriptionText ? (
-              <section className="product-detail-description">
-                <h3>Descripción</h3>
-                <p>{descriptionText}</p>
-              </section>
-            ) : detailLoading ? (
-              <div className="product-detail-loading">
-                <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
-                Cargando descripción…
+                ) : null}
               </div>
             ) : null}
-          </div>
 
-          {suggestedProducts.length > 0 ? (
-            <CatalogRelatedProducts
-              products={suggestedProducts}
-              storeSlug={product.store_slug}
-              exchangeRate={activeExchangeRate}
-              showBsConversion={showBsConversion}
-              storeRubro={storeRubro}
-              wholesaleEnabled={wholesaleEnabled}
-              onAddToCart={onAddToCart}
-            />
-          ) : null}
+            {suggestedProducts.length > 0 && onSelectRelated ? (
+              <CatalogRelatedProducts
+                products={suggestedProducts}
+                onSelect={onSelectRelated}
+              />
+            ) : null}
+          </div>
         </div>
 
         {showFooter ? (

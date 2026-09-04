@@ -11,6 +11,7 @@ import type {
 import type { StoreLocation, VariantLocationStock } from "@/lib/locations/types";
 import type { CatalogCategoryOption } from "@/lib/catalog/extract-categories";
 import { CatalogProductDetailPanel } from "@/components/catalog/CatalogProductDetailPanel";
+import { getStoreCatalogBasePath, getStoreProductDeepLinkPath } from "@/lib/store-host";
 import { useCart } from "@/components/catalog-transactional/CartProvider";
 import {
   CatalogCartHost,
@@ -29,7 +30,6 @@ import {
   getCatalogDesignClasses,
   getCatalogThemeStyle,
 } from "@/lib/store-settings/catalog-theme";
-import { getStoreCatalogBasePath } from "@/lib/store-host";
 import { cn } from "@/lib/cn";
 
 interface CatalogStoreProductViewProps {
@@ -160,6 +160,14 @@ function CatalogStoreProductViewInner({
         relatedProducts={products}
         purchaseInfo={purchaseInfo}
         onAddToCart={addItem}
+        catalogProducts={products}
+        onSelectRelated={(next) =>
+          router.push(
+            getStoreProductDeepLinkPath(store.slug, next.product_slug, {
+              pathname,
+            }),
+          )
+        }
         onClose={() => router.push(catalogHref)}
       />
       <CatalogCartHost
