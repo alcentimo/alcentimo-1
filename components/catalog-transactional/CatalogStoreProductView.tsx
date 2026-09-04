@@ -48,6 +48,7 @@ interface CatalogStoreProductViewProps {
 export function CatalogStoreProductView({
   store,
   product,
+  products = [],
   exchangeRate,
   purchaseInfo,
   catalogDesign,
@@ -64,6 +65,7 @@ export function CatalogStoreProductView({
       <CatalogStoreProductViewInner
         store={store}
         product={product}
+        products={products}
         exchangeRate={exchangeRate}
         purchaseInfo={purchaseInfo}
         catalogDesign={catalogDesign}
@@ -76,6 +78,7 @@ export function CatalogStoreProductView({
 function CatalogStoreProductViewInner({
   store,
   product,
+  products = [],
   exchangeRate,
   purchaseInfo,
   catalogDesign,
@@ -83,6 +86,7 @@ function CatalogStoreProductViewInner({
 }: {
   store: Store;
   product: CatalogListItem;
+  products?: CatalogListItem[];
   exchangeRate: ExchangeRate | null;
   purchaseInfo: PublicPurchaseInfo;
   catalogDesign: CatalogDesignSettings;
@@ -153,6 +157,8 @@ function CatalogStoreProductViewInner({
         wholesaleEnabled={false}
         checkoutType={purchaseInfo.checkoutType}
         whatsappPhone={purchaseInfo.whatsappPhone}
+        relatedProducts={products}
+        purchaseInfo={purchaseInfo}
         onAddToCart={addItem}
         onClose={() => router.push(catalogHref)}
       />

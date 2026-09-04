@@ -3047,10 +3047,20 @@ html:has(.landing-shell) {
   scrollbar-width: thin;
 }
 
+@media (min-width: 768px) and (max-width: 1023px) {
+  .product-image-gallery-detail .product-image-gallery-thumbs-detail {
+    @apply flex-row overflow-x-auto overflow-y-hidden;
+  }
+}
+
 @media (min-width: 1024px) {
   .product-image-gallery-detail .product-image-gallery-thumbs-detail {
-    @apply flex-col overflow-x-hidden overflow-y-auto border-r border-t-0 px-1.5 py-2;
+    @apply flex-col overflow-x-hidden overflow-y-auto border-r-0 border-t-0 bg-transparent px-0 py-0;
   }
+}
+
+.product-image-gallery-thumbs-single {
+  display: none;
 }
 
 .product-image-gallery-thumb {
@@ -3066,7 +3076,7 @@ html:has(.landing-shell) {
 }
 
 .product-image-gallery-detail {
-  @apply relative grid w-full max-w-full overflow-hidden rounded-xl bg-zinc-50;
+  @apply relative inset-auto grid w-full max-w-full overflow-visible rounded-xl bg-white;
   grid-template-areas:
     "stage"
     "thumbs";
@@ -3074,24 +3084,43 @@ html:has(.landing-shell) {
   aspect-ratio: 1 / 1;
 }
 
-@media (min-width: 1024px) {
-  .product-image-gallery-detail {
-    aspect-ratio: auto;
-    min-height: 32rem;
-    overflow: visible;
-    grid-template-areas: "thumbs stage";
-    grid-template-columns: 4.75rem minmax(0, 1fr);
-    grid-template-rows: minmax(28rem, 1fr);
-  }
-
-  .product-image-gallery-detail:not(.product-image-gallery-multi) {
-    grid-template-columns: 4.75rem minmax(0, 1fr);
-  }
-}
-
 .product-image-gallery-detail .product-image-gallery-stage {
   grid-area: stage;
-  @apply bg-zinc-100;
+  @apply overflow-hidden rounded-lg bg-zinc-100;
+}
+
+@media (min-width: 1024px) {
+  .product-image-gallery-detail,
+  .product-image-gallery-detail.product-image-gallery-multi {
+    aspect-ratio: auto;
+    width: max-content;
+    max-width: 100%;
+    height: 500px;
+    min-height: 500px;
+    max-height: 500px;
+    grid-template-areas: "thumbs stage";
+    grid-template-columns: 4.5rem 500px;
+    grid-template-rows: 500px;
+  }
+
+  .product-image-gallery-detail .product-image-gallery-thumbs-detail {
+    @apply flex flex-col overflow-x-hidden overflow-y-auto border-r-0 border-t-0 bg-transparent px-0 py-0;
+  }
+
+  .product-image-gallery-thumbs-single {
+    display: flex;
+  }
+
+  .product-image-gallery-detail .product-image-gallery-stage {
+    width: 500px;
+    height: 500px;
+  }
+
+  .product-image-gallery-detail .product-image-gallery-nav,
+  .product-image-gallery-detail .product-image-gallery-count,
+  .product-image-gallery-detail .product-image-gallery-dots {
+    display: none;
+  }
 }
 
 .product-image-gallery-detail .product-image-gallery-thumbs-detail {
@@ -3190,7 +3219,7 @@ html:has(.landing-shell) {
     top: 0;
     z-index: 70;
     width: min(32rem, 42vw);
-    height: min(32rem, 72vh);
+    height: 500px;
     overflow: hidden;
     border: 1px solid rgb(228 228 231);
     border-radius: 0.35rem;
@@ -3353,6 +3382,123 @@ html:has(.landing-shell) {
 
 .product-detail-page--immersive {
   @apply mx-0 max-w-none p-0;
+}
+
+.product-detail-page--marketplace {
+  @apply relative z-0 mx-auto w-full max-w-none overflow-visible px-3 py-4 sm:px-6 sm:py-6;
+  background: #ededed;
+}
+
+.product-detail-page--marketplace .product-detail-panel {
+  @apply mx-auto w-full overflow-visible rounded-xl bg-white shadow-[0_1px_2px_rgba(0,0,0,0.08)];
+  max-width: 1180px;
+  max-height: none;
+  height: auto;
+}
+
+.product-detail-page--marketplace .product-detail-scroll {
+  @apply flex flex-col overflow-visible;
+  flex: none;
+}
+
+.product-detail-breadcrumb {
+  @apply flex min-w-0 items-center gap-1.5 px-4 pt-4 text-xs text-zinc-500 sm:px-5;
+}
+
+.product-detail-breadcrumb a {
+  @apply shrink-0 text-teal-700 no-underline hover:underline;
+}
+
+.product-detail-ml {
+  @apply flex flex-col;
+}
+
+.product-detail-buybox {
+  @apply space-y-4 px-4 py-4 sm:px-6 sm:py-5;
+}
+
+.product-detail-extra {
+  @apply space-y-4 border-t border-zinc-100 px-4 py-5 sm:px-6;
+}
+
+.product-detail-payments {
+  @apply space-y-2 rounded-xl border border-zinc-100 bg-white p-4;
+}
+
+.product-detail-payments h3 {
+  @apply m-0 flex items-center gap-2 text-sm font-semibold text-zinc-900;
+}
+
+.product-detail-payments ul {
+  @apply m-0 flex list-none flex-wrap gap-2 p-0;
+}
+
+.product-detail-payments li {
+  @apply rounded-full border border-zinc-200 bg-zinc-50 px-2.5 py-1 text-xs font-medium text-zinc-700;
+}
+
+.product-detail-installments {
+  @apply m-0 text-xs text-zinc-500;
+}
+
+.product-detail-related {
+  @apply border-t border-zinc-100 px-4 py-6 sm:px-6;
+}
+
+.product-detail-related-title {
+  @apply m-0 mb-4 text-base font-semibold text-zinc-900;
+}
+
+.product-detail-related-track {
+  @apply m-0 grid list-none grid-cols-2 gap-3 p-0 sm:grid-cols-3 lg:grid-cols-5;
+}
+
+.product-detail-related-item {
+  @apply min-w-0;
+}
+
+@media (min-width: 1024px) {
+  .product-detail-ml {
+    display: grid;
+    grid-template-columns: auto minmax(280px, 1fr);
+    align-items: start;
+    gap: 1.25rem;
+    padding: 1.25rem 1.25rem 0;
+  }
+
+  .product-detail-media {
+    overflow: visible;
+    padding: 0;
+    background: transparent;
+  }
+
+  .product-detail-buybox {
+    position: sticky;
+    top: 1rem;
+    align-self: start;
+    min-height: 500px;
+    border: 1px solid rgb(228 228 231);
+    border-radius: 8px;
+    background: #fff;
+    padding: 1.25rem 1.15rem;
+  }
+
+  .product-detail-page--marketplace .product-detail-footer {
+    display: none;
+  }
+
+  .product-detail-overlay--immersive .product-detail-panel {
+    max-width: 1180px;
+    max-height: 92dvh;
+    margin: auto;
+    height: auto;
+    border-radius: 12px;
+    overflow: visible;
+  }
+
+  .product-detail-overlay--immersive .product-detail-ml {
+    padding-top: 3.5rem;
+  }
 }
 
 .product-detail-enter {
@@ -3578,6 +3724,38 @@ html:has(.landing-shell) {
   @apply cursor-zoom-in;
 }
 
+.product-image-gallery-zoom-panel {
+  display: none;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  @media (min-width: 1024px) {
+    .product-image-gallery-zoom-panel {
+      display: block;
+      position: absolute;
+      left: calc(100% + 12px);
+      top: 0;
+      z-index: 60;
+      width: min(32rem, calc(100vw - 720px));
+      min-width: 18rem;
+      height: 500px;
+      border-radius: 6px;
+      border: 1px solid rgb(228 228 231);
+      background-color: #fff;
+      background-repeat: no-repeat;
+      background-size: 250%;
+      box-shadow: 0 18px 48px rgb(24 24 27 / 0.18);
+      pointer-events: none;
+    }
+
+    .product-image-gallery-detail .product-image-gallery-stage-magnifying .product-detail-gallery-image,
+    .product-image-gallery-detail .product-image-gallery-stage-magnifying .store-product-image,
+    .product-image-gallery-detail .product-image-gallery-stage-magnifying img {
+      object-fit: contain;
+    }
+  }
+}
+
 .product-gallery-lightbox {
   @apply fixed inset-0 z-[80] flex items-center justify-center p-3 sm:p-6;
 }
@@ -3608,14 +3786,14 @@ html:has(.landing-shell) {
 }
 
 .product-detail-scroll {
-  @apply relative grid min-h-0 min-w-0 flex-1 grid-cols-1 overflow-x-hidden overflow-y-auto lg:grid-cols-[minmax(0,1.35fr)_minmax(20rem,0.9fr)] lg:overflow-visible;
+  @apply relative grid min-h-0 min-w-0 flex-1 grid-cols-1 overflow-x-hidden overflow-y-auto;
   -webkit-overflow-scrolling: touch;
   scroll-timeline-name: --product-detail-scroll;
   scroll-timeline-axis: block;
 }
 
 .product-detail-media {
-  @apply max-w-full bg-white p-0 sm:p-5 lg:overflow-visible;
+  @apply max-w-full overflow-visible bg-white p-0 sm:p-5;
 }
 
 @media (max-width: 1023px) {
@@ -3640,11 +3818,11 @@ html:has(.landing-shell) {
 }
 
 .product-detail-media .mercado-mp-detail-gallery {
-  @apply mx-auto w-full max-w-none rounded-none border-0 bg-transparent p-0 shadow-none;
+  @apply mx-auto w-max max-w-full rounded-none border-0 bg-transparent p-0 shadow-none;
 }
 
 .product-detail-media .mercado-mp-detail-gallery .product-image-gallery-detail {
-  @apply w-full;
+  @apply max-w-full;
 }
 
 .product-detail-gallery {
@@ -3660,7 +3838,7 @@ html:has(.landing-shell) {
 }
 
 .product-detail-body {
-  @apply space-y-4 px-4 py-4 sm:px-6 sm:py-5 lg:overflow-y-auto;
+  @apply space-y-4 px-4 py-4 sm:px-6 sm:py-5;
 }
 
 .product-detail-title {
@@ -15443,11 +15621,11 @@ button.mercado-mp-card-btn {
 }
 
 .mercado-mp-detail-grid {
-  @apply grid gap-5 lg:grid-cols-[minmax(0,1.35fr)_minmax(20rem,0.9fr)] lg:items-start;
+  @apply grid gap-5 lg:grid-cols-[auto_minmax(18rem,1fr)] lg:items-start;
 }
 
 .mercado-mp-detail-gallery {
-  @apply w-full min-w-0 max-w-full space-y-3 overflow-hidden rounded-2xl border border-[var(--mo-border)] bg-white p-3 shadow-sm sm:p-4 lg:overflow-visible;
+  @apply w-full min-w-0 max-w-full overflow-visible rounded-2xl border border-[var(--mo-border)] bg-white p-3 shadow-sm sm:p-4;
 }
 
 .mercado-mp-detail-hero {
