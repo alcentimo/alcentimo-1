@@ -43,7 +43,7 @@ export interface StorefrontMoricheChromeProps {
 
 /**
  * Shell marketplace único de las tiendas públicas de dropshippers:
- * cabecera fija (logo + buscador + Carrito / Pedidos / Cuenta),
+ * cabecera fija (logo + buscador + carrito / cuenta),
  * banner, categorías visuales y listado. Color, logo y banner vienen
  * de la configuración de cada tienda.
  */
@@ -53,7 +53,7 @@ export function StorefrontMoricheChrome({
   storeDescription = null,
   logoUrl = null,
   primaryColor = null,
-  eyebrow = "Catálogo",
+  eyebrow: _eyebrow = "Catálogo",
   searchQuery,
   onSearchQueryChange,
   onSearchSubmit,
@@ -98,7 +98,7 @@ export function StorefrontMoricheChrome({
         <MercadoBrandHeader
           brandHref={brandHref}
           brandTitle={storeName}
-          brandKicker={eyebrow}
+          brandKicker=""
           brandMarkText={markText}
           logoUrl={logoUrl}
           search={

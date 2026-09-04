@@ -21,14 +21,14 @@ interface StorefrontAccountChromeProps {
 
 /**
  * Cabecera Moriche sin hero (cuenta, perfil, registro).
- * Mantiene Pedidos / Carrito / Cuenta visibles fuera del catálogo.
+ * Mantiene carrito y cuenta fuera del catálogo.
  */
 export function StorefrontAccountChrome({
   storeSlug,
   storeName,
   logoUrl = null,
   primaryColor = null,
-  eyebrow = "Mi cuenta",
+  eyebrow: _eyebrow = "Mi cuenta",
   children,
   className,
   style,
@@ -49,7 +49,7 @@ export function StorefrontAccountChrome({
       <MercadoBrandHeader
         brandHref={brandHref}
         brandTitle={storeName}
-        brandKicker={eyebrow}
+        brandKicker=""
         brandMarkText={markText}
         logoUrl={logoUrl}
         nav={<StorefrontMoricheNav storeSlug={storeSlug} compact />}
