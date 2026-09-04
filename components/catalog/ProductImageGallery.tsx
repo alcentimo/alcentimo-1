@@ -276,6 +276,11 @@ export function ProductImageGallery({
         >
           <CatalogProductImage
             src={galleryDisplayUrl(activeImage, mode)}
+            previewSrc={
+              isDetail && activeImage.thumb_url
+                ? activeImage.thumb_url
+                : null
+            }
             alt={alt}
             className={imageClassName}
             loading={loading}
@@ -421,10 +426,12 @@ export function ProductImageGallery({
                 <div className="product-gallery-lightbox-stage">
                   <CatalogProductImage
                     src={galleryDisplayUrl(activeImage, "detail")}
+                    previewSrc={activeImage.thumb_url}
                     alt={alt}
                     className="product-gallery-lightbox-image"
                     loading="eager"
                     sizes="100vw"
+                    priority
                   />
                   {hasMultiple ? (
                     <>

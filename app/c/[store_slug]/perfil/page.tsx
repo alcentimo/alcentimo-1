@@ -11,6 +11,7 @@ import {
 } from "@/lib/customers/phone-auth";
 import { resolveCustomerPasswordCapability } from "@/lib/customers/resolve-customer-password-capability";
 import { getPublicStoreBySlug } from "@/lib/stores";
+import { resolveStoreLogoUrl } from "@/lib/stores/logo-url";
 import { createClient } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
@@ -62,7 +63,7 @@ export default async function CustomerProfilePage({
     <StorefrontAccountChrome
       storeSlug={store.slug}
       storeName={store.name}
-      logoUrl={store.logo_url}
+      logoUrl={resolveStoreLogoUrl(store)}
       primaryColor={themeContext?.catalogDesign.primaryColor ?? null}
       eyebrow="Mi perfil"
       className="txn-catalog txn-catalog--moriche-native"

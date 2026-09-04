@@ -3670,7 +3670,7 @@ html:has(.landing-shell) {
 }
 
 .catalog-product-image-placeholder {
-  @apply absolute inset-0 z-[1] overflow-hidden;
+  @apply absolute inset-0 z-0 overflow-hidden;
   background: linear-gradient(
     135deg,
     color-mix(in srgb, var(--pc-media-bg) 78%, var(--pc-fg-meta) 22%) 0%,
@@ -3686,7 +3686,15 @@ html:has(.landing-shell) {
 }
 
 .catalog-product-image-el {
-  transition: opacity 220ms ease-out;
+  z-index: 1;
+}
+
+.catalog-product-image-preview {
+  z-index: 1;
+}
+
+.catalog-product-image-hires-pending {
+  opacity: 0;
 }
 
 .catalog-product-image-shimmer {

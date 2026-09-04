@@ -23,6 +23,7 @@ import { CatalogStoreBrandingProvider } from "@/components/catalog/CatalogStoreB
 import { CustomerPromoBanner } from "@/components/catalog-transactional/CustomerPromoBanner";
 import { usePromotionContext } from "@/components/catalog-transactional/PromotionProvider";
 import { getStoreProductDeepLinkPath } from "@/lib/store-host";
+import { resolveStoreLogoUrl } from "@/lib/stores/logo-url";
 
 interface StoreCatalogProps {
   store: Store;
@@ -45,12 +46,7 @@ export function StoreCatalog({
 }: StoreCatalogProps) {
   return (
     <CatalogStoreBrandingProvider
-      logoUrl={
-        store.pwa_icon_192_url ??
-        store.pwa_icon_512_url ??
-        store.logo_url ??
-        null
-      }
+      logoUrl={resolveStoreLogoUrl(store)}
       storeName={store.name}
     >
       <CatalogFulfillmentProvider

@@ -39,6 +39,7 @@ import { officialBrandsToCatalogOptions } from "@/lib/catalog/product-brand";
 import type { OfficialBrandPublic } from "@/lib/official-brands/types";
 import { applyLocationStockToProduct } from "@/lib/locations/apply-catalog-stock";
 import { normalizeCatalogHeaderSettings } from "@/lib/store-settings/catalog-header";
+import { resolveStoreLogoUrl } from "@/lib/stores/logo-url";
 import { cn } from "@/lib/cn";
 
 interface CatalogCategoriesViewProps {
@@ -260,7 +261,7 @@ function CatalogCategoriesPageContent({
         storeSlug={store.slug}
         storeName={store.name}
         storeDescription={store.description}
-        logoUrl={store.logo_url}
+        logoUrl={resolveStoreLogoUrl(store)}
         primaryColor={catalogDesign.primaryColor}
         eyebrow="Categorías"
         searchQuery={browse.searchQuery}

@@ -25,6 +25,7 @@ import { getCustomerStoreCredit } from "@/lib/gift-cards/wallet-actions";
 import { getOpenAiApiKey } from "@/lib/env/server";
 import { getPublicStoreSettingsConfig } from "@/lib/store-settings/get-public-store-settings";
 import { getStorefrontSupportBranding } from "@/lib/catalog/get-storefront-support-branding";
+import { resolveStoreLogoUrl } from "@/lib/stores/logo-url";
 
 const moricheDisplay = Fraunces({
   subsets: ["latin"],
@@ -134,12 +135,7 @@ export default async function TransactionalCatalogLayout({
     void recordCatalogVisit(storeSlug, cartAuth.storeId, cartAuth.userId);
   }
 
-  // Preferir logo_url para UI (puede ser GIF animado). Los iconos PWA quedan para el manifest.
-  const storeLogoUrl =
-    store?.logo_url ??
-    store?.pwa_icon_192_url ??
-    store?.pwa_icon_512_url ??
-    null;
+  const storeLogoUrl = resolveStoreLogoUrl(store);
   const origin = await getRequestOrigin();
   const manifestAbsoluteUrl = getStoreCatalogManifestAbsoluteUrl(
     storeSlug,

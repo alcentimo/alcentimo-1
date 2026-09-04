@@ -1,16 +1,14 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
-import { useEffect, useState } from "react";
 import { Cpu, ShoppingBag } from "lucide-react";
 import { StoreOpenBadge } from "@/components/catalog/StoreOpenBadge";
-import { getCatalogStoreInitials } from "@/components/catalog/CatalogStoreBrandingContext";
+import { StoreBrandMark } from "@/components/catalog/StoreBrandMark";
 import type { Store } from "@/lib/database.types";
 import type { LocationHoursSettings } from "@/lib/store-settings/types";
-import { isGifImageUrl } from "@/lib/media/is-gif-url";
 import { storeHasPCBuilderFromStore } from "@/lib/rubros/modules/tecnologia/pc-builder";
 import { getStoreCatalogUrl } from "@/lib/stores";
+import { resolveStoreLogoUrl } from "@/lib/stores/logo-url";
 import { useHideOnScroll } from "@/lib/hooks/useHideOnScroll";
 import { cn } from "@/lib/cn";
 
@@ -22,58 +20,15 @@ interface StoreHeaderProps {
 }
 
 function StoreLogo({ store }: { store: Store }) {
-  const [logoReady, setLogoReady] = useState(false);
-  const logoUrl = store.logo_url?.trim() || null;
-
-  useEffect(() => {
-    setLogoReady(false);
-  }, [logoUrl]);
-
-  const initials = (
-    <span
-      className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-zinc-900 text-[11px] font-semibold tracking-tight text-white"
-      aria-hidden="true"
-    >
-      {getCatalogStoreInitials(store.name)}
-    </span>
-  );
-
-  if (!logoUrl) {
-    return initials;
-  }
-
   return (
-    <>
-      <Image
-        src={logoUrl}
-        alt=""
-        width={1}
-        height={1}
-        className="sr-only"
-        unoptimized={isGifImageUrl(logoUrl)}
-        onLoad={(event) => {
-          if (event.currentTarget.naturalWidth > 0) {
-            setLogoReady(true);
-          }
-        }}
-        onError={() => setLogoReady(false)}
-      />
-      {logoReady ? (
-        <span className="inline-flex h-10 max-h-10 w-auto max-w-[11rem] shrink-0 items-center justify-center overflow-hidden rounded-lg bg-transparent">
-          <Image
-            src={logoUrl}
-            alt=""
-            width={176}
-            height={40}
-            sizes="176px"
-            className="h-full max-h-8 w-auto max-w-[10.5rem] object-contain object-left"
-            unoptimized={isGifImageUrl(logoUrl)}
-          />
-        </span>
-      ) : (
-        initials
-      )}
-    </>
+    <StoreBrandMark
+      logoUrl={resolveStoreLogoUrl(store)}
+      storeName={store.name}
+      className="inline-flex shrink-0 items-center justify-center overflow-hidden rounded-lg"
+      initialsClassName="h-9 w-9 bg-zinc-900 text-[11px] font-semibold tracking-tight text-white"
+      logoClassName="h-10 max-h-10 w-auto max-w-[11rem] bg-transparent"
+      imageClassName="h-full max-h-8 w-auto max-w-[10.5rem] object-contain object-left"
+    />
   );
 }
 
