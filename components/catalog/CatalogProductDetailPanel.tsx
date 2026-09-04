@@ -326,9 +326,19 @@ export function CatalogProductDetailPanel({
     }
 
     const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
+    const desktopQuery = window.matchMedia("(min-width: 1024px)");
+
+    function applyBodyLock() {
+      document.body.style.overflow = desktopQuery.matches
+        ? previousOverflow
+        : "hidden";
+    }
+
+    applyBodyLock();
+    desktopQuery.addEventListener("change", applyBodyLock);
     return () => {
       document.body.style.overflow = previousOverflow;
+      desktopQuery.removeEventListener("change", applyBodyLock);
       window.removeEventListener("keydown", handleKeyDown);
     };
   }, [layout, onClose]);

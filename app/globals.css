@@ -3316,9 +3316,25 @@ html:has(.landing-shell) {
     position: relative;
     inset: auto;
     z-index: auto;
-    min-height: 100dvh;
+    min-height: 0;
     height: auto;
     max-height: none;
+  }
+
+  .catalog-pdp-host--open .product-detail-overlay--immersive {
+    position: relative;
+    inset: auto;
+    z-index: auto;
+    min-height: 0;
+    height: auto;
+    max-height: none;
+  }
+
+  .catalog-pdp-host--open .storefront-hero-stage,
+  .catalog-pdp-host--open .storefront-mp-lead,
+  .catalog-pdp-host--open .storefront-brand-rail,
+  .catalog-pdp-host--open .mercado-mp-main {
+    display: none;
   }
 
   .product-detail-overlay--immersive .product-detail-panel,

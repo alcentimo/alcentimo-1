@@ -11,6 +11,7 @@ import type { CartModifierSelection } from "@/lib/catalog/cart-types";
 import type { CheckoutType } from "@/lib/store-settings/types";
 import type { PublicPurchaseInfo } from "@/lib/store-settings/purchase-info";
 import type { ReactNode } from "react";
+import { cn } from "@/lib/cn";
 
 interface CatalogProductDetailHostProps {
   children: ReactNode;
@@ -71,6 +72,47 @@ function CatalogProductDetailLayer({
   );
 }
 
+function CatalogProductDetailHostLayout({
+  children,
+  exchangeRate,
+  showBsConversion,
+  showOfficialRate,
+  storeRubro,
+  wholesaleEnabled,
+  checkoutType,
+  whatsappPhone,
+  onAddToCart,
+  onSelectBrand,
+  catalogProducts,
+  purchaseInfo,
+}: CatalogProductDetailHostProps) {
+  const { selectedProduct } = useCatalogProductDetail();
+
+  return (
+    <div
+      className={cn(
+        "catalog-pdp-host",
+        selectedProduct && "catalog-pdp-host--open",
+      )}
+    >
+      {children}
+      <CatalogProductDetailLayer
+        exchangeRate={exchangeRate}
+        showBsConversion={showBsConversion}
+        showOfficialRate={showOfficialRate}
+        storeRubro={storeRubro}
+        wholesaleEnabled={wholesaleEnabled}
+        checkoutType={checkoutType}
+        whatsappPhone={whatsappPhone}
+        onAddToCart={onAddToCart}
+        onSelectBrand={onSelectBrand}
+        catalogProducts={catalogProducts}
+        purchaseInfo={purchaseInfo}
+      />
+    </div>
+  );
+}
+
 export function CatalogProductDetailHost({
   children,
   storeId,
@@ -94,8 +136,9 @@ export function CatalogProductDetailHost({
       storeSlug={storeSlug}
       syncProductUrl={syncProductUrl}
     >
-      {children}
-      <CatalogProductDetailLayer
+      <CatalogProductDetailHostLayout
+        storeId={storeId}
+        storeSlug={storeSlug}
         exchangeRate={exchangeRate}
         showBsConversion={showBsConversion}
         showOfficialRate={showOfficialRate}
@@ -107,7 +150,9 @@ export function CatalogProductDetailHost({
         onSelectBrand={onSelectBrand}
         catalogProducts={catalogProducts}
         purchaseInfo={purchaseInfo}
-      />
+      >
+        {children}
+      </CatalogProductDetailHostLayout>
     </CatalogProductDetailProvider>
   );
 }
