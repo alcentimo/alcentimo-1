@@ -85,11 +85,11 @@ export function MercadoProductGrid({
                   <MercadoCardMedia
                     product={product}
                     onOpen={activate}
-                    priority={index < 8}
+                    priority={index < 4}
                   />
                 ) : (
                   <Link href={href} className="block" prefetch>
-                    <MercadoCardMedia product={product} priority={index < 8} />
+                    <MercadoCardMedia product={product} priority={index < 4} />
                   </Link>
                 )}
               </div>

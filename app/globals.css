@@ -2916,6 +2916,7 @@ html:has(.landing-shell) {
 .store-product-grid {
   @apply grid min-w-0 max-w-full grid-cols-1 items-stretch sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 2xl:grid-cols-4;
   gap: var(--pc-grid-gap);
+  contain: content;
 }
 
 .store-product-card {
@@ -2925,7 +2926,16 @@ html:has(.landing-shell) {
   container-type: inline-size;
   container-name: product-card;
   --pc-media-h-factor: 1;
-  @apply relative flex h-full flex-col overflow-hidden border shadow-sm transition-shadow duration-300 hover:shadow-lg;
+  @apply relative flex h-full flex-col overflow-hidden border shadow-sm;
+  content-visibility: auto;
+  contain-intrinsic-size: auto 22rem;
+  contain: layout style paint;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .store-product-card {
+    @apply transition-shadow duration-300 hover:shadow-lg;
+  }
 }
 
 .store-product-media-frame {
@@ -3193,20 +3203,20 @@ html:has(.landing-shell) {
   text-underline-offset: 2px;
 }
 
-.product-detail-overlay {
+.product-detail-overlay,
+.product-detail-page--immersive {
   @apply fixed inset-0 z-[60] flex max-w-full items-stretch justify-center overflow-hidden;
 }
 
 .product-detail-overlay--immersive .product-detail-backdrop {
-  @apply bg-black/45 backdrop-blur-[3px];
-  animation: product-detail-fade-in 280ms ease both;
+  @apply bg-black/45;
 }
 
-.product-detail-overlay--immersive .product-detail-panel {
+.product-detail-overlay--immersive .product-detail-panel,
+.product-detail-page--immersive .product-detail-panel {
   @apply max-h-none h-full max-w-none w-full rounded-none shadow-none sm:rounded-none;
   height: 100dvh;
   max-height: 100dvh;
-  animation: product-detail-sheet-in 340ms cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
 .product-detail-page {
@@ -3214,7 +3224,7 @@ html:has(.landing-shell) {
 }
 
 .product-detail-enter {
-  animation: product-detail-page-in 320ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation: none;
 }
 
 @keyframes product-detail-fade-in {
@@ -3256,17 +3266,17 @@ html:has(.landing-shell) {
   }
 }
 
-.mercado-mp-main .product-detail-page {
+.mercado-mp-main .product-detail-page:not(.product-detail-page--immersive) {
   padding-inline: 0;
 }
 
-.product-detail-page .product-detail-panel {
+.product-detail-page:not(.product-detail-page--immersive) .product-detail-panel {
   @apply max-h-none overflow-visible rounded-2xl shadow-md;
   max-width: none;
   height: auto;
 }
 
-.product-detail-page .product-detail-scroll {
+.product-detail-page:not(.product-detail-page--immersive) .product-detail-scroll {
   @apply min-h-0 overflow-visible lg:overflow-visible;
   flex: none;
 }
@@ -3276,7 +3286,28 @@ html:has(.landing-shell) {
 }
 
 .product-detail-back {
-  @apply mb-1 inline-flex items-center gap-1.5 text-sm font-medium text-zinc-600 transition hover:text-zinc-900;
+  @apply mb-1 inline-flex items-center gap-1.5 text-sm font-medium text-zinc-800;
+  min-height: 2.5rem;
+  border-radius: 999px;
+  padding: 0.35rem 0.7rem 0.35rem 0.45rem;
+  background: color-mix(
+    in srgb,
+    white calc((1 - var(--product-header-progress)) * 92%),
+    transparent
+  );
+  box-shadow: 0 4px 14px
+    color-mix(
+      in srgb,
+      rgb(24 24 27 / 0.16) calc((1 - var(--product-header-progress)) * 100%),
+      transparent
+    );
+}
+
+.product-detail-back-label {
+  max-width: calc(var(--product-header-progress) * 12rem);
+  overflow: hidden;
+  white-space: nowrap;
+  opacity: var(--product-header-progress);
 }
 
 .product-detail-backdrop {
@@ -3289,33 +3320,69 @@ html:has(.landing-shell) {
 }
 
 .product-detail-header {
-  @apply flex items-start justify-between gap-3 border-b border-zinc-100 px-4 py-3 sm:px-6;
-  max-height: 8rem;
-  overflow: hidden;
-  transition:
-    opacity 0.28s ease,
-    transform 0.28s ease,
-    max-height 0.28s ease,
-    padding 0.28s ease,
-    border-color 0.28s ease;
+  --product-header-progress: 0;
+  position: absolute;
+  inset-inline: 0;
+  top: 0;
+  z-index: 30;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: calc(0.65rem + env(safe-area-inset-top, 0px)) 0.85rem 0.65rem;
+  pointer-events: none;
+  transform: translate3d(0, calc((1 - var(--product-header-progress)) * -10px), 0);
+  will-change: transform;
+}
+
+.product-detail-header::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: color-mix(in srgb, white calc(var(--product-header-progress) * 100%), transparent);
+  border-bottom: 1px solid
+    color-mix(in srgb, rgb(244 244 245) calc(var(--product-header-progress) * 100%), transparent);
+  box-shadow: 0 8px 24px
+    color-mix(in srgb, rgb(24 24 27 / 0.08) calc(var(--product-header-progress) * 100%), transparent);
+  opacity: var(--product-header-progress);
+  transform: translate3d(0, 0, 0);
+}
+
+.product-detail-header[data-at-top] {
+  pointer-events: none;
+}
+
+.product-detail-header .product-detail-back-wrap,
+.product-detail-header .product-detail-header-actions {
+  position: relative;
+  z-index: 1;
+  pointer-events: auto;
 }
 
 .product-detail-header--scroll-hidden {
-  max-height: 0;
   opacity: 0;
   pointer-events: none;
-  padding-top: 0;
-  padding-bottom: 0;
-  border-bottom-color: transparent;
-  transform: translateY(-8px);
 }
 
 .product-detail-kicker {
   @apply text-[11px] font-semibold uppercase tracking-[0.14em] text-zinc-500;
+  opacity: var(--product-header-progress);
 }
 
 .product-detail-close {
-  @apply shrink-0 rounded-lg p-2 text-zinc-500 transition hover:bg-zinc-100 hover:text-zinc-800;
+  @apply shrink-0 rounded-full p-2 text-zinc-800;
+  background: color-mix(
+    in srgb,
+    white calc((1 - var(--product-header-progress)) * 92%),
+    transparent
+  );
+  box-shadow: 0 4px 14px
+    color-mix(
+      in srgb,
+      rgb(24 24 27 / 0.16) calc((1 - var(--product-header-progress)) * 100%),
+      transparent
+    );
 }
 
 .product-detail-header-actions {
@@ -3323,7 +3390,18 @@ html:has(.landing-shell) {
 }
 
 .product-detail-share-cluster {
-  @apply inline-flex items-stretch overflow-hidden rounded-full border border-zinc-200 bg-white shadow-sm;
+  @apply inline-flex items-stretch overflow-hidden rounded-full border border-zinc-200/80;
+  background: color-mix(
+    in srgb,
+    white calc((0.55 + var(--product-header-progress) * 0.45) * 100%),
+    transparent
+  );
+  box-shadow: 0 4px 14px
+    color-mix(
+      in srgb,
+      rgb(24 24 27 / 0.12) calc((1 - var(--product-header-progress)) * 100%),
+      transparent
+    );
 }
 
 .product-detail-share-btn {
@@ -3376,11 +3454,33 @@ html:has(.landing-shell) {
 }
 
 .product-detail-scroll {
-  @apply grid min-h-0 min-w-0 flex-1 grid-cols-1 overflow-x-hidden overflow-y-auto lg:grid-cols-[minmax(0,1.15fr)_minmax(18rem,0.95fr)] lg:overflow-hidden;
+  @apply relative grid min-h-0 min-w-0 flex-1 grid-cols-1 overflow-x-hidden overflow-y-auto lg:grid-cols-[minmax(0,1.15fr)_minmax(18rem,0.95fr)] lg:overflow-hidden;
+  -webkit-overflow-scrolling: touch;
 }
 
 .product-detail-media {
-  @apply max-w-full bg-zinc-50 p-3 sm:p-5 lg:overflow-y-auto;
+  @apply max-w-full bg-white p-0 sm:p-5 lg:overflow-y-auto;
+}
+
+@media (max-width: 1023px) {
+  .product-detail-overlay--immersive .product-detail-media,
+  .product-detail-page--immersive .product-detail-media {
+    padding: 0;
+    background: #fff;
+  }
+
+  .product-detail-overlay--immersive .product-image-gallery-detail,
+  .product-detail-page--immersive .product-image-gallery-detail {
+    aspect-ratio: 1 / 1;
+    width: 100%;
+    min-height: min(100vw, calc(100dvh - 11rem));
+    border-radius: 0;
+  }
+
+  .product-detail-overlay--immersive .product-image-gallery-count,
+  .product-detail-page--immersive .product-image-gallery-count {
+    top: 4.75rem;
+  }
 }
 
 .product-detail-media .mercado-mp-detail-gallery {
@@ -3593,7 +3693,13 @@ html:has(.landing-shell) {
     color-mix(in srgb, white 35%, transparent) 50%,
     transparent 100%
   );
-  animation: catalog-image-shimmer 1.4s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .catalog-product-image-placeholder:not(.catalog-product-image-placeholder-done)
+    .catalog-product-image-shimmer {
+    animation: catalog-image-shimmer 1.4s ease-in-out infinite;
+  }
 }
 
 @keyframes catalog-image-shimmer {
@@ -14126,6 +14232,7 @@ button.catalog-profile-footer-link {
   .mercado-mp-header,
   .product-detail-header {
     transition: none;
+    transform: none;
   }
 }
 
@@ -15013,10 +15120,20 @@ button.mercado-mp-card-btn {
 
 .mercado-mp-grid {
   @apply grid w-full min-w-0 max-w-full grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-5 xl:grid-cols-4;
+  contain: content;
 }
 
 .mercado-mp-card {
-  @apply flex h-full min-w-0 max-w-full flex-col overflow-hidden rounded-[1.35rem] border border-[var(--mo-border)]/70 bg-[color-mix(in_srgb,var(--mo-surface)_88%,transparent)] shadow-[0_8px_28px_rgba(20,32,28,0.05)] backdrop-blur-sm transition duration-300 ease-out hover:-translate-y-1.5 hover:border-[color-mix(in_srgb,var(--mo-gold)_35%,var(--mo-border))] hover:shadow-[0_22px_44px_rgba(6,40,31,0.12)];
+  @apply flex h-full min-w-0 max-w-full flex-col overflow-hidden rounded-[1.35rem] border border-[var(--mo-border)]/70 bg-[color-mix(in_srgb,var(--mo-surface)_88%,transparent)] shadow-[0_8px_28px_rgba(20,32,28,0.05)];
+  content-visibility: auto;
+  contain-intrinsic-size: auto 26rem;
+  contain: layout style paint;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .mercado-mp-card {
+    @apply backdrop-blur-sm transition duration-300 ease-out hover:-translate-y-1.5 hover:border-[color-mix(in_srgb,var(--mo-gold)_35%,var(--mo-border))] hover:shadow-[0_22px_44px_rgba(6,40,31,0.12)];
+  }
 }
 
 .mercado-mp-card-media {

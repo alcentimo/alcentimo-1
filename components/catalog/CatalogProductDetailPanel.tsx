@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState, type UIEvent } from "react";
+import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import Link from "next/link";
 import { ArrowLeft, Check, Loader2, MessageCircle, Plus, X } from "lucide-react";
 import { CatalogProductShareMenu } from "@/components/catalog/CatalogProductShareMenu";
@@ -65,7 +65,7 @@ import {
 import { useCartOptional } from "@/components/catalog-transactional/CartProvider";
 import { useCatalogShellNavigationOptional } from "@/components/catalog-transactional/CatalogShellNavigation";
 import dynamic from "next/dynamic";
-import { useHideOnScroll } from "@/lib/hooks/useHideOnScroll";
+import { useProductHeaderFade } from "@/lib/hooks/useProductHeaderFade";
 import { cn } from "@/lib/cn";
 
 const TechSpecsChips = dynamic(
@@ -267,8 +267,9 @@ export function CatalogProductDetailPanel({
   >([]);
   const [justAdded, setJustAdded] = useState(false);
   const justAddedTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const [headerHidden, setHeaderHidden] = useState(false);
-  const lastScrollYRef = useRef(0);
+  const { headerRef, onScroll: handleDetailScroll, reset: resetHeaderFade } =
+    useProductHeaderFade();
+  const scrollRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     return () => {
@@ -301,8 +302,11 @@ export function CatalogProductDetailPanel({
   }, [product.product_id, product.product_slug, product.store_slug]);
 
   useEffect(() => {
-    if (layout !== "overlay") return;
+    if (scrollRef.current) scrollRef.current.scrollTop = 0;
+    resetHeaderFade();
+  }, [product.product_id, resetHeaderFade]);
 
+  useEffect(() => {
     const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
 
@@ -315,7 +319,7 @@ export function CatalogProductDetailPanel({
       document.body.style.overflow = previousOverflow;
       window.removeEventListener("keydown", handleKeyDown);
     };
-  }, [layout, onClose]);
+  }, [onClose]);
 
   const selectedVariant = useMemo(
     () =>
@@ -479,30 +483,14 @@ export function CatalogProductDetailPanel({
     giftDeliveryValid;
 
   const isPage = layout === "page";
-  const windowHeaderHidden = useHideOnScroll(isPage);
-  const headerCollapsed = isPage ? windowHeaderHidden : headerHidden;
-
   const backHref = catalogHref || "/";
-
-  function handleDetailScroll(event: UIEvent<HTMLDivElement>) {
-    const y = event.currentTarget.scrollTop;
-    const last = lastScrollYRef.current;
-    const diff = y - last;
-    lastScrollYRef.current = y;
-    if (y < 16) {
-      setHeaderHidden(false);
-      return;
-    }
-    if (diff > 8) setHeaderHidden(true);
-    else if (diff < -8) setHeaderHidden(false);
-  }
 
   return (
     <div
       className={
         isPage
-          ? "product-detail-page product-detail-enter"
-          : "product-detail-overlay product-detail-overlay--immersive product-detail-enter"
+          ? "product-detail-page product-detail-page--immersive"
+          : "product-detail-overlay product-detail-overlay--immersive"
       }
       role={isPage ? undefined : "dialog"}
       aria-modal={isPage ? undefined : true}
@@ -518,16 +506,16 @@ export function CatalogProductDetailPanel({
 
       <div className="product-detail-panel">
         <header
-          className={cn(
-            "product-detail-header",
-            headerCollapsed && "product-detail-header--scroll-hidden",
-          )}
+          ref={headerRef}
+          className="product-detail-header"
+          data-at-top=""
+          style={{ "--product-header-progress": 0 } as CSSProperties}
         >
           {isPage ? (
             <div className="product-detail-back-wrap">
               <Link href={backHref} className="product-detail-back">
                 <ArrowLeft className="h-4 w-4" aria-hidden="true" />
-                Volver al catálogo
+                <span className="product-detail-back-label">Volver al catálogo</span>
               </Link>
               {publicCategoryLabel ? (
                 <p className="product-detail-kicker">{publicCategoryLabel}</p>
@@ -541,7 +529,7 @@ export function CatalogProductDetailPanel({
                 onClick={onClose}
               >
                 <ArrowLeft className="h-4 w-4" aria-hidden="true" />
-                Volver al catálogo
+                <span className="product-detail-back-label">Volver al catálogo</span>
               </button>
               {publicCategoryLabel ? (
                 <p className="product-detail-kicker">{publicCategoryLabel}</p>
@@ -568,7 +556,11 @@ export function CatalogProductDetailPanel({
           </div>
         </header>
 
-        <div className="product-detail-scroll" onScroll={handleDetailScroll}>
+        <div
+          ref={scrollRef}
+          className="product-detail-scroll"
+          onScroll={handleDetailScroll}
+        >
           <div className="product-detail-media">
             <MercadoProductGallery
               productName={product.product_name}
