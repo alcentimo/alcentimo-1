@@ -276,7 +276,10 @@ export function ProductImageGallery({
           setMagnifierOn(true);
           updateMagnifier(event);
         }}
-        onMouseMove={canEnlarge ? updateMagnifier : undefined}
+        onMouseMove={(event) => {
+          if (!canEnlarge || !canUseHoverZoom()) return;
+          updateMagnifier(event);
+        }}
         onMouseLeave={() => {
           setMagnifierOn(false);
           setLensStyle(null);

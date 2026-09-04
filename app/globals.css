@@ -3914,28 +3914,140 @@ html:has(.landing-shell) {
 }
 
 @media (max-width: 1023px) {
+  .product-detail-top,
+  .product-detail-ml,
+  .mercado-mp-detail-grid {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0;
+    grid-template-columns: none;
+    column-gap: 0;
+  }
+
+  .product-detail-media,
+  .product-detail-media .mercado-mp-detail-gallery,
+  .product-detail-media .product-image-gallery-detail,
+  .product-detail-body,
+  .mercado-mp-detail-grid > .mercado-mp-detail-gallery,
+  .mercado-mp-detail-grid .product-image-gallery-detail,
+  .mercado-mp-detail-info {
+    grid-column: auto;
+    grid-template-columns: none;
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+    height: auto;
+    min-height: 0;
+  }
+
   .product-detail-overlay--immersive .product-detail-media,
-  .product-detail-page--immersive .product-detail-media {
+  .product-detail-page--immersive .product-detail-media,
+  .product-detail-page--marketplace .product-detail-media {
     padding: 0;
+    background: #fff;
+    overflow: hidden;
+    z-index: auto;
+    position: relative;
+  }
+
+  .product-image-gallery-detail,
+  .product-image-gallery-detail.product-image-gallery-multi,
+  .product-detail-overlay--immersive .product-image-gallery-detail,
+  .product-detail-page--immersive .product-image-gallery-detail,
+  .product-detail-page--marketplace .product-image-gallery-detail {
+    display: grid;
+    grid-template-areas:
+      "stage"
+      "thumbs";
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1fr) auto;
+    aspect-ratio: 1 / 1;
+    width: 100%;
+    max-width: 100%;
+    height: auto;
+    min-height: min(100vw, calc(100dvh - 11rem));
+    max-height: none;
+    overflow: hidden;
+    border-radius: 0;
     background: #fff;
   }
 
-  .product-detail-overlay--immersive .product-image-gallery-detail,
-  .product-detail-page--immersive .product-image-gallery-detail {
-    aspect-ratio: 1 / 1;
+  .product-image-gallery-detail .product-image-gallery-stage {
     width: 100%;
-    min-height: min(100vw, calc(100dvh - 11rem));
+    min-width: 0;
+    max-width: none;
+    height: auto;
+    min-height: 0;
+    max-height: none;
     border-radius: 0;
+    justify-self: stretch;
+  }
+
+  .product-image-gallery-detail .product-image-gallery-thumbs-detail {
+    width: 100%;
+    flex-direction: row;
+    overflow-x: auto;
+    overflow-y: hidden;
+    justify-self: stretch;
+    align-self: stretch;
+  }
+
+  .product-image-gallery-zoom-pane,
+  .product-image-gallery-zoom-lens {
+    display: none !important;
+  }
+
+  .product-image-gallery-detail .product-image-gallery-stage-zoomable {
+    cursor: pointer;
+    touch-action: manipulation;
   }
 
   .product-detail-overlay--immersive .product-image-gallery-count,
   .product-detail-page--immersive .product-image-gallery-count {
     top: 3.65rem;
   }
+
+  .product-detail-body {
+    position: static;
+    min-height: 0;
+    border-width: 0;
+    border-radius: 0;
+    z-index: auto;
+  }
+
+  .product-detail-overlay--immersive .product-detail-panel,
+  .product-detail-page--immersive .product-detail-panel {
+    overflow-x: hidden;
+    overflow-y: hidden;
+  }
+
+  .product-detail-overlay--immersive .product-detail-scroll,
+  .product-detail-page--immersive .product-detail-scroll {
+    overflow-x: hidden;
+    overflow-y: auto;
+    flex: 1 1 auto;
+    min-height: 0;
+  }
+
+  .product-detail-page--marketplace {
+    padding-inline: 0;
+    padding-top: 0;
+  }
+
+  .product-detail-page--marketplace .product-detail-panel {
+    border-radius: 0;
+    max-width: none;
+    overflow-x: hidden;
+  }
+
+  .product-detail-footer {
+    padding-bottom: max(0.75rem, env(safe-area-inset-bottom));
+  }
 }
 
 .product-detail-media .mercado-mp-detail-gallery {
-  @apply mx-auto w-max max-w-full rounded-none border-0 bg-transparent p-0 shadow-none;
+  @apply mx-auto w-full max-w-full rounded-none border-0 bg-transparent p-0 shadow-none;
 }
 
 .product-detail-media .mercado-mp-detail-gallery .product-image-gallery-detail {
@@ -15822,8 +15934,37 @@ button.mercado-mp-card-btn {
   }
 }
 
+@media (max-width: 1023px) {
+  .mercado-mp-detail-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+  }
+
+  .mercado-mp-detail-grid > .mercado-mp-detail-gallery,
+  .mercado-mp-detail-grid .product-image-gallery-detail,
+  .mercado-mp-detail-info {
+    grid-column: auto;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    height: auto;
+    min-height: 0;
+  }
+
+  .mercado-mp-detail-gallery {
+    overflow: hidden;
+  }
+}
+
 .mercado-mp-detail-gallery {
-  @apply w-full min-w-0 max-w-full overflow-visible rounded-none border-0 bg-transparent p-0 shadow-none sm:p-0;
+  @apply w-full min-w-0 max-w-full overflow-hidden rounded-none border-0 bg-transparent p-0 shadow-none sm:p-0;
+}
+
+@media (min-width: 1024px) {
+  .mercado-mp-detail-gallery {
+    overflow: visible;
+  }
 }
 
 .mercado-mp-detail-hero {
