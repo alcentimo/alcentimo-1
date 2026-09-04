@@ -3015,19 +3015,25 @@ html:has(.landing-shell) {
   @apply absolute inset-0;
 }
 
-.product-image-gallery-stage-magnifying .product-image-gallery-magnifier {
-  will-change: transform;
+.product-image-gallery-zoom-lens {
+  pointer-events: none;
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 12;
+  border: 1px solid rgb(255 255 255 / 0.85);
+  background: rgb(255 255 255 / 0.32);
+  box-shadow: inset 0 0 0 1px rgb(24 24 27 / 0.08);
 }
 
-.product-image-gallery-stage-magnifying .product-detail-gallery-image,
-.product-image-gallery-stage-magnifying .store-product-image,
-.product-image-gallery-stage-magnifying img {
-  @apply object-cover;
+.product-image-gallery-zoom-pane {
+  display: none;
 }
 
 @media (hover: none), (pointer: coarse) {
-  .product-image-gallery-magnifier {
-    transform: none !important;
+  .product-image-gallery-zoom-lens,
+  .product-image-gallery-zoom-pane {
+    display: none !important;
   }
 }
 
@@ -3044,6 +3050,12 @@ html:has(.landing-shell) {
 @media (min-width: 768px) and (max-width: 1023px) {
   .product-image-gallery-detail .product-image-gallery-thumbs-detail {
     @apply flex-row overflow-x-auto overflow-y-hidden;
+  }
+}
+
+@media (min-width: 1024px) {
+  .product-image-gallery-detail .product-image-gallery-thumbs-detail {
+    @apply flex-col overflow-x-hidden overflow-y-auto border-r-0 border-t-0 bg-transparent px-0 py-0;
   }
 }
 
@@ -3185,6 +3197,56 @@ html:has(.landing-shell) {
   @apply gap-2 px-3 py-2;
 }
 
+.product-image-gallery-detail:not(.product-image-gallery-multi) .product-image-gallery-thumbs-detail {
+  display: none;
+}
+
+@media (min-width: 1024px) {
+  .product-image-gallery-detail:not(.product-image-gallery-multi) .product-image-gallery-thumbs-detail {
+    display: flex;
+  }
+
+  .product-image-gallery-detail .product-image-gallery-count,
+  .product-image-gallery-detail .product-image-gallery-nav,
+  .product-image-gallery-detail .product-image-gallery-dots {
+    display: none;
+  }
+
+  .product-image-gallery-zoom-pane {
+    display: block;
+    position: absolute;
+    left: calc(100% + 0.75rem);
+    top: 0;
+    z-index: 70;
+    width: min(32rem, 42vw);
+    height: 500px;
+    overflow: hidden;
+    border: 1px solid rgb(228 228 231);
+    border-radius: 0.35rem;
+    background: #fff;
+    box-shadow: 0 18px 50px rgb(24 24 27 / 0.18);
+    pointer-events: none;
+  }
+
+  .product-image-gallery-zoom-pane-inner {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    will-change: transform;
+  }
+
+  .product-image-gallery-zoom-pane .product-detail-gallery-image,
+  .product-image-gallery-zoom-pane .store-product-image,
+  .product-image-gallery-zoom-pane img {
+    object-fit: contain;
+    object-position: center;
+  }
+
+  .product-image-gallery-stage-zooming {
+    cursor: crosshair;
+  }
+}
+
 .product-image-gallery-thumb-lg {
   @apply h-12 w-12 rounded-lg;
 }
@@ -3235,6 +3297,83 @@ html:has(.landing-shell) {
   @apply max-h-none h-full max-w-none w-full rounded-none shadow-none sm:rounded-none;
   height: 100dvh;
   max-height: 100dvh;
+}
+
+@media (min-width: 1024px) {
+  .product-detail-overlay--immersive,
+  .product-detail-page--immersive {
+    background: #ebebeb;
+    align-items: flex-start;
+    justify-content: center;
+    overflow-x: hidden;
+    overflow-y: auto;
+    padding: 1.25rem 1.5rem 2.5rem;
+  }
+
+  .product-detail-page--immersive {
+    position: relative;
+    inset: auto;
+    z-index: auto;
+    min-height: 100dvh;
+    height: auto;
+    max-height: none;
+  }
+
+  .product-detail-overlay--immersive .product-detail-panel,
+  .product-detail-page--immersive .product-detail-panel {
+    width: 100%;
+    max-width: 75rem;
+    height: auto;
+    max-height: none;
+    margin-inline: auto;
+    overflow: visible;
+    border-radius: 0.5rem;
+    box-shadow: 0 8px 28px rgb(24 24 27 / 0.08);
+  }
+
+  .product-detail-overlay--immersive .product-detail-panel {
+    max-height: none;
+    overflow: visible;
+  }
+
+  .product-detail-page--immersive .product-detail-header,
+  .product-detail-overlay--immersive .product-detail-header {
+    position: relative;
+    background: #fff;
+    pointer-events: auto;
+    --product-header-progress: 0;
+    border-bottom: 1px solid rgb(244 244 245);
+  }
+
+  .product-detail-page--immersive .product-detail-header::before,
+  .product-detail-overlay--immersive .product-detail-header::before {
+    display: none;
+  }
+
+  .product-detail-page--immersive .product-detail-scroll,
+  .product-detail-overlay--immersive .product-detail-scroll {
+    overflow: visible;
+    flex: none;
+  }
+
+  .product-detail-page--immersive .product-detail-body,
+  .product-detail-overlay--immersive .product-detail-body {
+    position: sticky;
+    top: 0.75rem;
+    align-self: start;
+    z-index: 1;
+  }
+
+  .product-detail-page--immersive .product-detail-media,
+  .product-detail-overlay--immersive .product-detail-media {
+    position: relative;
+    z-index: 20;
+  }
+
+  .product-detail-media .mercado-mp-detail-gallery,
+  .mercado-mp-detail-gallery {
+    overflow: visible;
+  }
 }
 
 .product-detail-page {

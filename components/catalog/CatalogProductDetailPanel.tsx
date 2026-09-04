@@ -329,7 +329,7 @@ export function CatalogProductDetailPanel({
       document.body.style.overflow = previousOverflow;
       window.removeEventListener("keydown", handleKeyDown);
     };
-  }, [onClose, layout]);
+  }, [layout, onClose]);
 
   const selectedVariant = useMemo(
     () =>
