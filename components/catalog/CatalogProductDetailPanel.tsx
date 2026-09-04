@@ -303,18 +303,26 @@ export function CatalogProductDetailPanel({
 
   useEffect(() => {
     const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
+    const desktopQuery = window.matchMedia("(min-width: 1024px)");
+
+    function applyBodyLock() {
+      const unlockPageScroll = layout === "page" && desktopQuery.matches;
+      document.body.style.overflow = unlockPageScroll ? previousOverflow : "hidden";
+    }
 
     function handleKeyDown(event: KeyboardEvent) {
       if (event.key === "Escape") onClose?.();
     }
 
+    applyBodyLock();
+    desktopQuery.addEventListener("change", applyBodyLock);
     window.addEventListener("keydown", handleKeyDown);
     return () => {
       document.body.style.overflow = previousOverflow;
+      desktopQuery.removeEventListener("change", applyBodyLock);
       window.removeEventListener("keydown", handleKeyDown);
     };
-  }, [onClose]);
+  }, [layout, onClose]);
 
   const selectedVariant = useMemo(
     () =>
@@ -575,7 +583,7 @@ export function CatalogProductDetailPanel({
               }}
               mode="detail"
               loading="eager"
-              sizes="(max-width: 768px) 100vw, 560px"
+              sizes="(max-width: 1023px) 100vw, 640px"
             />
           </div>
 
