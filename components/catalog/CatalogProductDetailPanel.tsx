@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { ArrowLeft, Check, CreditCard, Loader2, MessageCircle, Plus, Search, ShoppingCart } from "lucide-react";
+import { Check, CreditCard, Loader2, MessageCircle, Plus } from "lucide-react";
 import { CatalogProductShareMenu } from "@/components/catalog/CatalogProductShareMenu";
 import { getStoreProductDeepLinkPath } from "@/lib/store-host";
 import type { CatalogListItem } from "@/lib/database.types";
@@ -65,7 +65,6 @@ import { useCartOptional } from "@/components/catalog-transactional/CartProvider
 import { useCatalogShellNavigationOptional } from "@/components/catalog-transactional/CatalogShellNavigation";
 import dynamic from "next/dynamic";
 import { cn } from "@/lib/cn";
-import { useProductHeaderFade } from "@/lib/hooks/useProductHeaderFade";
 
 const TechSpecsChips = dynamic(
   () =>
@@ -274,9 +273,7 @@ export function CatalogProductDetailPanel({
   >([]);
   const [justAdded, setJustAdded] = useState(false);
   const justAddedTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const headerRef = useRef<HTMLElement | null>(null);
   const scrollRef = useRef<HTMLDivElement | null>(null);
-  useProductHeaderFade(headerRef, scrollRef, product.product_id);
 
   useEffect(() => {
     return () => {
@@ -547,70 +544,19 @@ export function CatalogProductDetailPanel({
         />
       )}
 
-      <div className="product-detail-panel">
-        {isPage ? (
-          <nav className="product-detail-breadcrumb" aria-label="Navegación">
-            <Link href={backHref}>Volver al catálogo</Link>
-            <span aria-hidden="true">›</span>
-            <span className="truncate">{product.product_name}</span>
-          </nav>
+      <nav className="product-detail-breadcrumb" aria-label="Navegación">
+        {onClose ? (
+          <button type="button" onClick={onClose}>
+            Volver al catálogo
+          </button>
         ) : (
-          <header ref={headerRef} className="product-detail-header">
-            <button
-              type="button"
-              className="product-detail-icon-btn"
-              onClick={onClose}
-              aria-label="Volver"
-            >
-              <ArrowLeft className="h-5 w-5" aria-hidden="true" />
-            </button>
-
-            <div className="product-detail-header-actions">
-              {shellNav ? (
-                <button
-                  type="button"
-                  className="product-detail-icon-btn"
-                  aria-label="Buscar"
-                  onClick={() => {
-                    onClose?.();
-                    shellNav.focusSearch();
-                  }}
-                >
-                  <Search className="h-5 w-5" aria-hidden="true" />
-                </button>
-              ) : null}
-              <CatalogProductShareMenu
-                variant="icon"
-                productName={product.product_name}
-                shareUrl={shareUrl || (typeof window !== "undefined" ? window.location.href : "")}
-                priceUsd={displayPriceUsd}
-                storeName={product.store_name}
-              />
-              {shellNav ? (
-                <button
-                  type="button"
-                  className="product-detail-icon-btn product-detail-cart-icon"
-                  onClick={() => {
-                    onClose?.();
-                    shellNav.openCart();
-                  }}
-                  aria-label={
-                    (cartContext?.itemCount ?? 0) > 0
-                      ? `Carrito, ${cartContext?.itemCount} artículos`
-                      : "Carrito"
-                  }
-                >
-                  <ShoppingCart className="h-5 w-5" aria-hidden="true" />
-                  {(cartContext?.itemCount ?? 0) > 0 ? (
-                    <span className="product-detail-cart-badge">
-                      {(cartContext?.itemCount ?? 0) > 99 ? "99+" : cartContext?.itemCount}
-                    </span>
-                  ) : null}
-                </button>
-              ) : null}
-            </div>
-          </header>
+          <Link href={backHref}>Volver al catálogo</Link>
         )}
+        <span aria-hidden="true">›</span>
+        <span className="truncate">{product.product_name}</span>
+      </nav>
+
+      <div className="product-detail-panel">
 
         <div ref={scrollRef} className="product-detail-scroll">
           <div className="product-detail-master">
@@ -675,16 +621,14 @@ export function CatalogProductDetailPanel({
                       Disponible
                     </span>
                   )}
-                  {isPage ? (
-                    <CatalogProductShareMenu
-                      className="ml-auto"
-                      variant="icon"
-                      productName={product.product_name}
-                      shareUrl={shareUrl || (typeof window !== "undefined" ? window.location.href : "")}
-                      priceUsd={displayPriceUsd}
-                      storeName={product.store_name}
-                    />
-                  ) : null}
+                  <CatalogProductShareMenu
+                    className="ml-auto"
+                    variant="icon"
+                    productName={product.product_name}
+                    shareUrl={shareUrl || (typeof window !== "undefined" ? window.location.href : "")}
+                    priceUsd={displayPriceUsd}
+                    storeName={product.store_name}
+                  />
                 </div>
 
                 {storeUsesRubroProductModule(storeRubro, "tecnologia") ? (

@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState, type MutableRefObject } from "react";
+import { usePathname } from "next/navigation";
 import type { CatalogListItem, ExchangeRate, Store } from "@/lib/database.types";
 import type { PublicPurchaseInfo } from "@/lib/store-settings/purchase-info";
 import type { CatalogDesignSettings, CatalogCurrencySettings } from "@/lib/store-settings/types";
@@ -13,6 +14,7 @@ import {
   getCatalogDesignClasses,
   getCatalogThemeStyle,
 } from "@/lib/store-settings/catalog-theme";
+import { CatalogProductDetailPanel } from "@/components/catalog/CatalogProductDetailPanel";
 import {
   CatalogProductDetailHost,
   useCatalogProductDetail,
@@ -41,6 +43,7 @@ import { mapCatalogListItemToMercadoCard } from "@/lib/catalog/map-catalog-to-me
 import { officialBrandsToCatalogOptions } from "@/lib/catalog/product-brand";
 import type { OfficialBrandPublic } from "@/lib/official-brands/types";
 import { applyLocationStockToProduct } from "@/lib/locations/apply-catalog-stock";
+import { getStoreCatalogBasePath } from "@/lib/store-host";
 import { isGiftCardCatalogItem } from "@/lib/gift-cards/catalog";
 import { storeUsesRubroProductModule } from "@/lib/rubros/registry";
 import { normalizeCatalogHeaderSettings } from "@/lib/store-settings/catalog-header";
@@ -232,7 +235,7 @@ function TransactionalCatalogContent({
   showOfficialRate,
   showBsConversion,
   wholesaleEnabled: _wholesaleEnabled,
-  addItem: _addItem,
+  addItem,
   brandFilterRef,
 }: Omit<TransactionalCatalogProps, "locations" | "locationStocks"> & {
   liveExchangeRate: number | null;
@@ -242,6 +245,7 @@ function TransactionalCatalogContent({
   addItem: ReturnType<typeof useCart>["addItem"];
   brandFilterRef: MutableRefObject<(brand: string) => void>;
 }) {
+  const pathname = usePathname();
   const { openProduct, closeProduct, selectedProduct } = useCatalogProductDetail();
   const openProductById = useOpenCatalogProductById(
     store.slug,
@@ -403,6 +407,8 @@ function TransactionalCatalogContent({
   const coverUrl = header.coverImageUrl?.startsWith("http")
     ? header.coverImageUrl
     : null;
+  const catalogHref = getStoreCatalogBasePath(store.slug, { pathname });
+  const showingProduct = Boolean(selectedProduct);
 
   return (
     <div
@@ -417,22 +423,29 @@ function TransactionalCatalogContent({
       <StorefrontMoricheChrome
         storeSlug={store.slug}
         storeName={store.name}
-        storeDescription={store.description}
+        storeDescription={showingProduct ? null : store.description}
         logoUrl={resolveStoreLogoUrl(store)}
         primaryColor={effectiveDesign.primaryColor}
         eyebrow={identityEyebrow}
         searchQuery={browse.searchQuery}
         onSearchQueryChange={browse.setSearchQuery}
-        onSearchSubmit={browse.commitSearchQuery}
+        onSearchSubmit={() => {
+          closeProduct();
+          browse.commitSearchQuery();
+        }}
         categories={categoryOptions}
         activeCategoryId={browse.categorySlug}
-        onSelectCategory={browse.setCategorySlug}
-        brands={brandOptions}
+        onSelectCategory={(id) => {
+          closeProduct();
+          browse.setCategorySlug(id);
+        }}
+        brands={showingProduct ? [] : brandOptions}
         activeBrand={browse.brand}
         onSelectBrand={handleSelectBrand}
         pending={browse.loadingFilter}
-        pinNavigation={Boolean(selectedProduct)}
+        pinNavigation={showingProduct}
         banner={
+          showingProduct ? null : (
           <>
             <StorefrontCoverBanner url={coverUrl} storeName={store.name} />
             {giftCardProduct ? (
@@ -453,8 +466,30 @@ function TransactionalCatalogContent({
             />
             {!previewMode ? <CatalogLocationPicker /> : null}
           </>
+          )
         }
       >
+        {selectedProduct ? (
+          <CatalogProductDetailPanel
+            product={selectedProduct}
+            layout="page"
+            catalogHref={catalogHref}
+            exchangeRate={liveExchangeRate}
+            showBsConversion={showBsConversion}
+            showOfficialRate={showOfficialRate}
+            storeRubro={store.rubro_tienda}
+            wholesaleEnabled={false}
+            checkoutType={purchaseInfo.checkoutType}
+            whatsappPhone={purchaseInfo.whatsappPhone}
+            catalogProducts={catalogProducts}
+            purchaseInfo={purchaseInfo}
+            onSelectBrand={(brand) => brandFilterRef.current(brand)}
+            onSelectRelated={openProduct}
+            onAddToCart={referenceMode ? undefined : addItem}
+            onClose={closeProduct}
+          />
+        ) : (
+          <>
         <StorefrontCatalogListing
           browse={browse}
           catalogProducts={catalogProducts}
@@ -484,6 +519,8 @@ function TransactionalCatalogContent({
           faq={effectiveDesign.faq ?? catalogDesign.faq}
           storeName={store.name}
         />
+          </>
+        )}
       </StorefrontMoricheChrome>
 
       {!previewMode || enableCart ? (
