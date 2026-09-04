@@ -18,6 +18,10 @@ import {
 import { useCartOptional } from "@/components/catalog-transactional/CartProvider";
 import { useCatalogShellNavigationOptional } from "@/components/catalog-transactional/CatalogShellNavigation";
 import { useCustomerSessionOptional } from "@/components/catalog-transactional/CustomerSessionProvider";
+import {
+  DropdownMenu,
+  DropdownMenuItem,
+} from "@/components/ui/dropdown-menu";
 
 interface StorefrontMoricheNavProps {
   storeSlug: string;
@@ -27,11 +31,10 @@ interface StorefrontMoricheNavProps {
 
 /**
  * Accesos superiores de la plantilla marketplace:
- * Pedidos · Carrito · Cuenta | Entrar + Crear cuenta
+ * carrito + menú de cuenta (Pedidos, Categorías, autenticación).
  */
 export function StorefrontMoricheNav({
   storeSlug,
-  compact = false,
 }: StorefrontMoricheNavProps) {
   const pathname = usePathname();
   const router = useRouter();
@@ -81,26 +84,8 @@ export function StorefrontMoricheNav({
     <>
       <button
         type="button"
-        className="mercado-nav-link"
-        onClick={goToCategories}
-      >
-        <LayoutGrid className="h-4 w-4" aria-hidden="true" />
-        <span className="mercado-nav-label">Categorías</span>
-      </button>
-
-      <button
-        type="button"
-        className={cn("mercado-nav-link", onAccount && "mercado-nav-link-active")}
-        onClick={goToOrders}
-      >
-        <ShoppingBag className="h-4 w-4" aria-hidden="true" />
-        <span className="mercado-nav-label">Pedidos</span>
-      </button>
-
-      <button
-        type="button"
         className={cn(
-          "mercado-nav-link mercado-mp-cart-link",
+          "mercado-nav-link mercado-nav-icon-btn mercado-mp-cart-link",
           shellNav?.cartActive && "mercado-nav-link-active",
         )}
         onClick={() => shellNav?.openCart()}
@@ -110,52 +95,94 @@ export function StorefrontMoricheNav({
             : "Carrito de compras"
         }
       >
-        <ShoppingCart className="h-4 w-4" aria-hidden="true" />
-        <span className="mercado-nav-label">Carrito</span>
+        <ShoppingCart className="h-[1.15rem] w-[1.15rem]" aria-hidden="true" />
         {itemCount > 0 ? (
-          <span className="mercado-mp-cart-badge">{itemCount}</span>
+          <span className="mercado-mp-cart-badge">
+            {itemCount > 99 ? "99+" : itemCount}
+          </span>
         ) : null}
       </button>
 
-      {isCustomer ? (
-        <Link
-          href={profileHref}
-          prefetch
-          className={cn(
-            "mercado-nav-link",
-            (pathname === profileHref ||
-              pathname.startsWith(`${profileHref}/`)) &&
-              "mercado-nav-link-active",
-          )}
-          title={customerSession?.displayName ?? "Cuenta"}
-        >
-          <UserRound className="h-4 w-4" aria-hidden="true" />
-          <span className="mercado-nav-label">
-            {compact ? "Cuenta" : "Mi cuenta"}
-          </span>
-        </Link>
-      ) : (
-        <>
+      <DropdownMenu
+        align="end"
+        className="storefront-mp-account-menu"
+        menuClassName="storefront-mp-account-dropdown"
+        trigger={
           <button
             type="button"
-            className="mercado-nav-link mercado-mp-auth-link"
-            onClick={() => shellNav?.openRegister("login")}
+            className={cn(
+              "mercado-nav-link mercado-nav-icon-btn",
+              onAccount && "mercado-nav-link-active",
+            )}
+            aria-haspopup="menu"
+            aria-label={
+              isCustomer
+                ? customerSession?.displayName
+                  ? `Cuenta de ${customerSession.displayName}`
+                  : "Mi cuenta"
+                : "Cuenta"
+            }
           >
-            <UserRound className="h-4 w-4" aria-hidden="true" />
-            <span className="mercado-nav-label">Entrar</span>
+            <UserRound className="h-[1.15rem] w-[1.15rem]" aria-hidden="true" />
           </button>
-          <button
-            type="button"
-            className="mercado-nav-link"
-            onClick={() => shellNav?.openRegister("register")}
-          >
-            <UserPlus className="h-4 w-4" aria-hidden="true" />
-            <span className="mercado-nav-label">
-              {compact ? "Crear" : "Crea tu cuenta"}
-            </span>
-          </button>
-        </>
-      )}
+        }
+      >
+        {(close) => (
+          <>
+            <DropdownMenuItem
+              onClick={() => {
+                close();
+                goToCategories();
+              }}
+            >
+              <LayoutGrid className="h-4 w-4 shrink-0 opacity-70" aria-hidden="true" />
+              Categorías
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={() => {
+                close();
+                goToOrders();
+              }}
+            >
+              <ShoppingBag className="h-4 w-4 shrink-0 opacity-70" aria-hidden="true" />
+              Pedidos
+            </DropdownMenuItem>
+            {isCustomer ? (
+              <Link
+                href={profileHref}
+                prefetch
+                role="menuitem"
+                onClick={close}
+                className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-zinc-700 transition hover:bg-zinc-50"
+              >
+                <UserRound className="h-4 w-4 shrink-0 opacity-70" aria-hidden="true" />
+                Mi cuenta
+              </Link>
+            ) : (
+              <>
+                <DropdownMenuItem
+                  onClick={() => {
+                    close();
+                    shellNav?.openRegister("login");
+                  }}
+                >
+                  <UserRound className="h-4 w-4 shrink-0 opacity-70" aria-hidden="true" />
+                  Entrar
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => {
+                    close();
+                    shellNav?.openRegister("register");
+                  }}
+                >
+                  <UserPlus className="h-4 w-4 shrink-0 opacity-70" aria-hidden="true" />
+                  Crear cuenta
+                </DropdownMenuItem>
+              </>
+            )}
+          </>
+        )}
+      </DropdownMenu>
     </>
   );
 }
