@@ -71,8 +71,15 @@ export function ProductImageGallery({
   const [lightboxMounted, setLightboxMounted] = useState(false);
   const [magnifierOn, setMagnifierOn] = useState(false);
   const [magnifierOrigin, setMagnifierOrigin] = useState("50% 50%");
+  const [lensStyle, setLensStyle] = useState<{
+    width: number;
+    height: number;
+    left: number;
+    top: number;
+  } | null>(null);
   const touchStartX = useRef<number | null>(null);
   const stageRef = useRef<HTMLDivElement | null>(null);
+  const zoomFactor = 2.45;
 
   const activeImage: CatalogProductGalleryImage | null =
     images[activeIndex] ?? images[0] ?? null;
@@ -84,7 +91,7 @@ export function ProductImageGallery({
   });
   const isDetail = mode === "detail";
   const hasMultiple = images.length > 1;
-  const showThumbs = isDetail && hasMultiple;
+  const showThumbs = isDetail && images.length > 0;
 
   const goTo = useCallback(
     (index: number) => {
@@ -134,21 +141,35 @@ export function ProductImageGallery({
     };
   }, [lightboxOpen, goPrev, goNext]);
 
+  function canUseHoverZoom() {
+    return (
+      typeof window !== "undefined" &&
+      window.matchMedia(
+        "(hover: hover) and (pointer: fine) and (min-width: 1024px)",
+      ).matches
+    );
+  }
+
   function updateMagnifier(event: React.MouseEvent<HTMLDivElement>) {
     if (!canEnlarge || lightboxOpen) return;
-    if (
-      typeof window !== "undefined" &&
-      !window.matchMedia("(hover: hover) and (pointer: fine)").matches
-    ) {
-      return;
-    }
+    if (!canUseHoverZoom()) return;
     const rect = stageRef.current?.getBoundingClientRect();
     if (!rect || rect.width < 8 || rect.height < 8) return;
-    const x = ((event.clientX - rect.left) / rect.width) * 100;
-    const y = ((event.clientY - rect.top) / rect.height) * 100;
+    const xPx = event.clientX - rect.left;
+    const yPx = event.clientY - rect.top;
+    const x = (xPx / rect.width) * 100;
+    const y = (yPx / rect.height) * 100;
     setMagnifierOrigin(
       `${Math.min(100, Math.max(0, x)).toFixed(2)}% ${Math.min(100, Math.max(0, y)).toFixed(2)}%`,
     );
+    const lensW = rect.width / zoomFactor;
+    const lensH = rect.height / zoomFactor;
+    setLensStyle({
+      width: lensW,
+      height: lensH,
+      left: Math.min(Math.max(0, xPx - lensW / 2), rect.width - lensW),
+      top: Math.min(Math.max(0, yPx - lensH / 2), rect.height - lensH),
+    });
   }
 
   function handleTouchStart(event: React.TouchEvent) {
@@ -216,13 +237,14 @@ export function ProductImageGallery({
 
   return (
     <div
-      className={cn(
-        "product-image-gallery",
-        isDetail && "product-image-gallery-detail",
-        !isDetail && "product-image-gallery-card",
-        hasMultiple && "product-image-gallery-multi",
-        className,
-      )}
+        className={cn(
+          "product-image-gallery",
+          isDetail && "product-image-gallery-detail",
+          !isDetail && "product-image-gallery-card",
+          hasMultiple && "product-image-gallery-multi",
+          magnifierOn && "product-image-gallery-zooming",
+          className,
+        )}
       onTouchStart={hasMultiple ? handleTouchStart : undefined}
       onTouchEnd={hasMultiple ? handleTouchEnd : undefined}
     >
@@ -232,20 +254,19 @@ export function ProductImageGallery({
           "product-image-gallery-stage",
           (onMediaClick || canEnlarge) && "cursor-pointer",
           canEnlarge && "product-image-gallery-stage-zoomable",
-          magnifierOn && "product-image-gallery-stage-magnifying",
+          magnifierOn && "product-image-gallery-stage-zooming",
         )}
         onMouseEnter={(event) => {
           if (!canEnlarge) return;
-          if (
-            !window.matchMedia("(hover: hover) and (pointer: fine)").matches
-          ) {
-            return;
-          }
+          if (!canUseHoverZoom()) return;
           setMagnifierOn(true);
           updateMagnifier(event);
         }}
         onMouseMove={canEnlarge ? updateMagnifier : undefined}
-        onMouseLeave={() => setMagnifierOn(false)}
+        onMouseLeave={() => {
+          setMagnifierOn(false);
+          setLensStyle(null);
+        }}
         onClick={
           onMediaClick || canEnlarge
             ? (event) => {
@@ -260,17 +281,7 @@ export function ProductImageGallery({
             : undefined
         }
       >
-        <div
-          className="product-image-gallery-magnifier"
-          style={
-            magnifierOn
-              ? {
-                  transform: "scale(2.35)",
-                  transformOrigin: magnifierOrigin,
-                }
-              : undefined
-          }
-        >
+        <div className="product-image-gallery-magnifier">
           <CatalogProductImage
             src={galleryDisplayUrl(activeImage, mode)}
             previewSrc={
@@ -285,6 +296,17 @@ export function ProductImageGallery({
             priority={loading === "eager"}
           />
         </div>
+        {magnifierOn && lensStyle ? (
+          <div
+            className="product-image-gallery-zoom-lens"
+            style={{
+              width: lensStyle.width,
+              height: lensStyle.height,
+              transform: `translate(${lensStyle.left}px, ${lensStyle.top}px)`,
+            }}
+            aria-hidden
+          />
+        ) : null}
 
         {canEnlarge ? (
           <button
@@ -358,6 +380,28 @@ export function ProductImageGallery({
           </>
         ) : null}
       </div>
+
+      {isDetail && magnifierOn ? (
+        <div className="product-image-gallery-zoom-pane" aria-hidden>
+          <div
+            className="product-image-gallery-zoom-pane-inner"
+            style={{
+              transform: `scale(${zoomFactor})`,
+              transformOrigin: magnifierOrigin,
+            }}
+          >
+            <CatalogProductImage
+              src={galleryDisplayUrl(activeImage, "detail")}
+              previewSrc={activeImage.thumb_url}
+              alt=""
+              className={imageClassName}
+              loading="eager"
+              sizes="800px"
+              priority
+            />
+          </div>
+        </div>
+      ) : null}
 
       {showThumbs ? (
         <div
