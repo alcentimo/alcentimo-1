@@ -84,7 +84,10 @@ export function ProductImageGallery({
   });
   const isDetail = mode === "detail";
   const hasMultiple = images.length > 1;
-  const showThumbs = isDetail && hasMultiple;
+  const showThumbs = isDetail && images.length > 0;
+  const zoomSrc = activeImage
+    ? galleryDisplayUrl(activeImage, "detail")
+    : null;
 
   const goTo = useCallback(
     (index: number) => {
@@ -263,7 +266,7 @@ export function ProductImageGallery({
         <div
           className="product-image-gallery-magnifier"
           style={
-            magnifierOn
+            magnifierOn && !isDetail
               ? {
                   transform: "scale(2.35)",
                   transformOrigin: magnifierOrigin,
@@ -359,11 +362,23 @@ export function ProductImageGallery({
         ) : null}
       </div>
 
+      {canEnlarge && magnifierOn && zoomSrc ? (
+        <div
+          className="product-image-gallery-zoom-panel"
+          aria-hidden="true"
+          style={{
+            backgroundImage: `url(${JSON.stringify(zoomSrc)})`,
+            backgroundPosition: magnifierOrigin,
+          }}
+        />
+      ) : null}
+
       {showThumbs ? (
         <div
           className={cn(
             "product-image-gallery-thumbs",
             "product-image-gallery-thumbs-detail",
+            !hasMultiple && "product-image-gallery-thumbs-single",
           )}
           role="tablist"
           aria-label="Miniaturas del producto"
