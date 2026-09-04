@@ -1,10 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import Image from "next/image";
+import { useState } from "react";
 import { CatalogProductMediaFallback } from "@/components/catalog/CatalogProductMediaFallback";
 import { cn } from "@/lib/cn";
-import { isGifImageUrl } from "@/lib/media/is-gif-url";
 
 interface CatalogProductImageProps {
   src: string;
@@ -17,20 +15,10 @@ interface CatalogProductImageProps {
   previewSrc?: string | null;
 }
 
-function markComplete(
-  element: HTMLImageElement | null,
-  onReady: () => void,
-): void {
-  if (element && element.complete && element.naturalWidth > 0) {
-    onReady();
-  }
-}
-
-export function CatalogProductImage({
+function CatalogProductImageInner({
   src,
   alt,
   className,
-  sizes = "(max-width: 640px) 50vw, (max-width: 1024px) 50vw, (max-width: 1536px) 33vw, 25vw",
   priority = false,
   loading = "lazy",
   previewSrc = null,
@@ -42,11 +30,6 @@ export function CatalogProductImage({
   const [failed, setFailed] = useState(false);
   const [hiResReady, setHiResReady] = useState(false);
 
-  useEffect(() => {
-    setFailed(false);
-    setHiResReady(false);
-  }, [src, preview]);
-
   if (failed && !preview) {
     return (
       <CatalogProductMediaFallback
@@ -56,49 +39,53 @@ export function CatalogProductImage({
     );
   }
 
+  const eager = priority || loading === "eager";
+  const nativeLoading: "lazy" | "eager" = eager ? "eager" : "lazy";
   const showPreview = Boolean(preview) && !hiResReady;
   const showHiRes = !failed;
 
   return (
     <>
       {showPreview ? (
-        <Image
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
           src={preview!}
           alt=""
-          fill
-          sizes={sizes}
-          quality={72}
-          unoptimized={isGifImageUrl(preview)}
+          loading="eager"
+          decoding="async"
           className={cn(
-            "object-contain object-center catalog-product-image-el catalog-product-image-preview",
+            "catalog-product-image-el catalog-product-image-preview",
             className,
           )}
           aria-hidden
         />
       ) : null}
       {showHiRes ? (
-        <Image
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
           src={src}
           alt={alt}
-          fill
-          sizes={sizes}
-          quality={72}
-          priority={priority}
-          loading={priority ? undefined : loading}
+          loading={nativeLoading}
           decoding="async"
-          unoptimized={isGifImageUrl(src)}
+          fetchPriority={priority ? "high" : "auto"}
           className={cn(
-            "object-contain object-center catalog-product-image-el",
+            "catalog-product-image-el",
             showPreview && "catalog-product-image-hires-pending",
             className,
           )}
           onLoad={() => setHiResReady(true)}
           onError={() => setFailed(true)}
-          ref={(element) => {
-            markComplete(element, () => setHiResReady(true));
-          }}
         />
       ) : null}
     </>
+  );
+}
+
+export function CatalogProductImage(props: CatalogProductImageProps) {
+  return (
+    <CatalogProductImageInner
+      key={`${props.src}|${props.previewSrc ?? ""}`}
+      {...props}
+    />
   );
 }

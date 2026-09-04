@@ -268,10 +268,7 @@ export function ProductImageGallery({
                   transform: "scale(2.35)",
                   transformOrigin: magnifierOrigin,
                 }
-              : {
-                  transform: "scale(1)",
-                  transformOrigin: magnifierOrigin,
-                }
+              : undefined
           }
         >
           <CatalogProductImage
