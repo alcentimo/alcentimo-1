@@ -12,7 +12,7 @@ interface StorefrontMarketplaceSearchProps {
   pending?: boolean;
 }
 
-/** Buscador central de la barra de tienda. */
+/** Buscador central de la barra marketplace (estilo Mercado Libre). */
 export function StorefrontMarketplaceSearch({
   storeName,
   value,
@@ -44,7 +44,7 @@ export function StorefrontMarketplaceSearch({
       }}
     >
       <span className="storefront-mp-search-icon" aria-hidden="true">
-        <Search className="h-[18px] w-[18px]" strokeWidth={1.5} />
+        <Search className="h-5 w-5" />
       </span>
       <input
         ref={inputRef}
@@ -52,7 +52,7 @@ export function StorefrontMarketplaceSearch({
         type="search"
         value={value}
         onChange={(event) => onChange(event.target.value)}
-        placeholder="Buscar"
+        placeholder="Buscar productos, marcas y más…"
         aria-label={`Buscar en ${storeName}`}
         className="storefront-mp-search-input"
         aria-busy={pending || undefined}
@@ -63,13 +63,8 @@ export function StorefrontMarketplaceSearch({
         type="submit"
         className="storefront-mp-search-btn"
         disabled={pending}
-        aria-label="Buscar"
       >
-        <Search
-          className="storefront-mp-search-btn-icon h-[18px] w-[18px]"
-          strokeWidth={1.5}
-          aria-hidden="true"
-        />
+        <Search className="storefront-mp-search-btn-icon h-5 w-5" aria-hidden="true" />
         <span className="storefront-mp-search-btn-label">Buscar</span>
       </button>
     </form>
