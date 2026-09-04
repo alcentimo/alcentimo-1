@@ -3330,13 +3330,6 @@ html:has(.landing-shell) {
     max-height: none;
   }
 
-  .catalog-pdp-host--open .storefront-hero-stage,
-  .catalog-pdp-host--open .storefront-mp-lead,
-  .catalog-pdp-host--open .storefront-brand-rail,
-  .catalog-pdp-host--open .mercado-mp-main {
-    display: none;
-  }
-
   .product-detail-overlay--immersive .product-detail-panel,
   .product-detail-page--immersive .product-detail-panel {
     width: 100%;
@@ -3412,6 +3405,11 @@ html:has(.landing-shell) {
   background: #ededed;
 }
 
+.product-detail-page--marketplace .product-detail-breadcrumb {
+  @apply mx-auto w-full px-1 pb-3 pt-0 sm:px-0;
+  max-width: 1180px;
+}
+
 .product-detail-page--marketplace .product-detail-panel {
   @apply mx-auto w-full overflow-visible rounded-xl bg-white shadow-[0_1px_2px_rgba(0,0,0,0.08)];
   max-width: 1180px;
@@ -3425,11 +3423,12 @@ html:has(.landing-shell) {
 }
 
 .product-detail-breadcrumb {
-  @apply flex min-w-0 items-center gap-1.5 px-4 pt-4 text-xs text-zinc-500 sm:px-5;
+  @apply flex min-w-0 items-center gap-1.5 text-xs text-zinc-500;
 }
 
-.product-detail-breadcrumb a {
-  @apply shrink-0 text-teal-700 no-underline hover:underline;
+.product-detail-breadcrumb a,
+.product-detail-breadcrumb button {
+  @apply shrink-0 cursor-pointer border-0 bg-transparent p-0 text-teal-700 no-underline hover:underline;
 }
 
 .product-detail-ml {
