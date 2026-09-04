@@ -11,6 +11,7 @@ import {
   getStoreCustomerAccountPath,
 } from "@/lib/store-host";
 import { getPublicStoreBySlug } from "@/lib/stores";
+import { resolveStoreLogoUrl } from "@/lib/stores/logo-url";
 import { createClient } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
@@ -60,7 +61,7 @@ export default async function CustomerOrderDetailPage({
     <StorefrontAccountChrome
       storeSlug={store.slug}
       storeName={store.name}
-      logoUrl={store.logo_url}
+      logoUrl={resolveStoreLogoUrl(store)}
       primaryColor={themeContext?.catalogDesign.primaryColor ?? null}
       eyebrow="Pedido"
       className="txn-catalog txn-catalog--moriche-native"

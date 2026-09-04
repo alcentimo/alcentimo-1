@@ -18,6 +18,7 @@ import {
   getCatalogThemeStyle,
 } from "@/lib/store-settings/catalog-theme";
 import { CatalogStoreBrandingProvider } from "@/components/catalog/CatalogStoreBrandingContext";
+import { resolveStoreLogoUrl } from "@/lib/stores/logo-url";
 import { cn } from "@/lib/cn";
 
 interface CatalogLivePreviewProps {
@@ -113,12 +114,7 @@ export function CatalogLivePreview({
               style={themeStyle}
             >
               <CatalogStoreBrandingProvider
-                logoUrl={
-                  store.pwa_icon_192_url ??
-                  store.pwa_icon_512_url ??
-                  store.logo_url ??
-                  null
-                }
+                logoUrl={resolveStoreLogoUrl(store)}
                 storeName={store.name}
               >
                 <div className="catalog-live-preview-scroll">

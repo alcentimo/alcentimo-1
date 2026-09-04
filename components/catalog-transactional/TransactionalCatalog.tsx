@@ -44,6 +44,7 @@ import { applyLocationStockToProduct } from "@/lib/locations/apply-catalog-stock
 import { isGiftCardCatalogItem } from "@/lib/gift-cards/catalog";
 import { storeUsesRubroProductModule } from "@/lib/rubros/registry";
 import { normalizeCatalogHeaderSettings } from "@/lib/store-settings/catalog-header";
+import { resolveStoreLogoUrl } from "@/lib/stores/logo-url";
 import { cn } from "@/lib/cn";
 import type { MercadoProductCard } from "@/lib/mercado-oculto/types";
 
@@ -415,7 +416,7 @@ function TransactionalCatalogContent({
         storeSlug={store.slug}
         storeName={store.name}
         storeDescription={store.description}
-        logoUrl={store.logo_url}
+        logoUrl={resolveStoreLogoUrl(store)}
         primaryColor={effectiveDesign.primaryColor}
         eyebrow={identityEyebrow}
         searchQuery={browse.searchQuery}
