@@ -212,7 +212,7 @@ function CatalogStoreProductViewInner({
         categories={categoryOptions}
         activeCategoryId={product.category_slug}
         onSelectCategory={handleSelectCategory}
-        pinNavigation={false}
+        pinNavigation
       >
         <CatalogProductDetailPanel
           product={stockedProduct}

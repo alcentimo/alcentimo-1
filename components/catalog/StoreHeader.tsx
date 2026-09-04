@@ -2,10 +2,8 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useEffect, useState } from "react";
 import { Cpu, ShoppingBag } from "lucide-react";
 import { StoreOpenBadge } from "@/components/catalog/StoreOpenBadge";
-import { getCatalogStoreInitials } from "@/components/catalog/CatalogStoreBrandingContext";
 import type { Store } from "@/lib/database.types";
 import type { LocationHoursSettings } from "@/lib/store-settings/types";
 import { isGifImageUrl } from "@/lib/media/is-gif-url";
@@ -22,58 +20,25 @@ interface StoreHeaderProps {
 }
 
 function StoreLogo({ store }: { store: Store }) {
-  const [logoReady, setLogoReady] = useState(false);
-  const logoUrl = store.logo_url?.trim() || null;
-
-  useEffect(() => {
-    setLogoReady(false);
-  }, [logoUrl]);
-
-  const initials = (
-    <span
-      className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-zinc-900 text-[11px] font-semibold tracking-tight text-white"
-      aria-hidden="true"
-    >
-      {getCatalogStoreInitials(store.name)}
-    </span>
-  );
-
-  if (!logoUrl) {
-    return initials;
+  if (store.logo_url) {
+    return (
+      <div className="relative h-11 w-11 shrink-0 overflow-hidden rounded-full border border-zinc-200 bg-white shadow-sm">
+        <Image
+          src={store.logo_url}
+          alt={store.name}
+          fill
+          sizes="44px"
+          className="object-cover"
+          unoptimized={isGifImageUrl(store.logo_url)}
+        />
+      </div>
+    );
   }
 
   return (
-    <>
-      <Image
-        src={logoUrl}
-        alt=""
-        width={1}
-        height={1}
-        className="sr-only"
-        unoptimized={isGifImageUrl(logoUrl)}
-        onLoad={(event) => {
-          if (event.currentTarget.naturalWidth > 0) {
-            setLogoReady(true);
-          }
-        }}
-        onError={() => setLogoReady(false)}
-      />
-      {logoReady ? (
-        <span className="inline-flex h-10 max-h-10 w-auto max-w-[11rem] shrink-0 items-center justify-center overflow-hidden rounded-lg bg-transparent">
-          <Image
-            src={logoUrl}
-            alt=""
-            width={176}
-            height={40}
-            sizes="176px"
-            className="h-full max-h-8 w-auto max-w-[10.5rem] object-contain object-left"
-            unoptimized={isGifImageUrl(logoUrl)}
-          />
-        </span>
-      ) : (
-        initials
-      )}
-    </>
+    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-zinc-200 bg-zinc-100 text-sm font-bold text-zinc-800 shadow-sm">
+      {store.name.charAt(0).toUpperCase()}
+    </div>
   );
 }
 

@@ -2859,18 +2859,22 @@ html:has(.landing-shell) {
 }
 
 .store-header {
-  @apply sticky top-0 z-20 border-b border-zinc-200/80 bg-white/95;
-  transform: translate3d(0, 0, 0);
+  @apply sticky top-0 z-20 border-b border-zinc-200/80 bg-white/95 backdrop-blur-md;
+  max-height: 8rem;
+  overflow: hidden;
   transition:
-    opacity 0.22s ease,
-    transform 0.22s ease;
-  will-change: opacity, transform;
+    opacity 0.28s ease,
+    transform 0.28s ease,
+    max-height 0.28s ease,
+    border-color 0.28s ease;
 }
 
 .store-header--scroll-hidden {
+  max-height: 0;
   opacity: 0;
   pointer-events: none;
-  transform: translate3d(0, -100%, 0);
+  transform: translateY(-8px);
+  border-bottom-color: transparent;
 }
 
 .store-header-inner {
@@ -3190,27 +3194,27 @@ html:has(.landing-shell) {
 }
 
 .product-detail-overlay {
-  @apply fixed inset-0 z-[70] flex max-w-full items-stretch justify-center overflow-hidden;
+  @apply fixed inset-0 z-[60] flex max-w-full items-stretch justify-center overflow-hidden;
 }
 
 .product-detail-overlay--immersive .product-detail-backdrop {
-  @apply bg-black/50;
-  animation: product-detail-fade-in 220ms ease both;
+  @apply bg-black/45 backdrop-blur-[3px];
+  animation: product-detail-fade-in 280ms ease both;
 }
 
 .product-detail-overlay--immersive .product-detail-panel {
   @apply max-h-none h-full max-w-none w-full rounded-none shadow-none sm:rounded-none;
   height: 100dvh;
   max-height: 100dvh;
-  animation: product-detail-sheet-in 380ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation: product-detail-sheet-in 340ms cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
 .product-detail-page {
-  @apply relative mx-auto w-full max-w-6xl px-0 py-0 sm:px-0 sm:py-0;
+  @apply mx-auto w-full max-w-6xl px-0 py-4 sm:px-0 sm:py-6;
 }
 
 .product-detail-enter {
-  animation: product-detail-page-in 280ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation: product-detail-page-in 320ms cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
 @keyframes product-detail-fade-in {
@@ -3224,36 +3228,23 @@ html:has(.landing-shell) {
 
 @keyframes product-detail-sheet-in {
   from {
-    opacity: 0.72;
-    transform: translate3d(0, 100%, 0);
+    opacity: 0;
+    transform: scale(0.96) translateY(12px);
   }
   to {
     opacity: 1;
-    transform: translate3d(0, 0, 0);
+    transform: scale(1) translateY(0);
   }
 }
 
 @keyframes product-detail-page-in {
   from {
     opacity: 0;
-    transform: translate3d(0, 12px, 0);
+    transform: scale(0.985) translateY(8px);
   }
   to {
     opacity: 1;
-    transform: translate3d(0, 0, 0);
-  }
-}
-
-@media (min-width: 768px) {
-  @keyframes product-detail-sheet-in {
-    from {
-      opacity: 0;
-      transform: translate3d(0, 18px, 0);
-    }
-    to {
-      opacity: 1;
-      transform: translate3d(0, 0, 0);
-    }
+    transform: scale(1) translateY(0);
   }
 }
 
@@ -3276,13 +3267,8 @@ html:has(.landing-shell) {
 }
 
 .product-detail-page .product-detail-scroll {
-  @apply min-h-0 overflow-visible;
+  @apply min-h-0 overflow-visible lg:overflow-visible;
   flex: none;
-}
-
-.product-detail-page .product-detail-compact--visible {
-  position: sticky;
-  top: 0;
 }
 
 .product-detail-back-wrap {
@@ -3294,55 +3280,34 @@ html:has(.landing-shell) {
 }
 
 .product-detail-backdrop {
-  @apply absolute inset-0 border-0 bg-black/50;
+  @apply absolute inset-0 border-0 bg-black/50 backdrop-blur-[2px];
 }
 
 .product-detail-panel {
-  @apply relative z-10 flex max-h-[min(94dvh,920px)] w-full max-w-full flex-col overflow-hidden bg-white shadow-2xl;
+  @apply relative z-10 flex max-h-[min(94dvh,920px)] w-full max-w-full flex-col overflow-hidden rounded-t-2xl bg-white shadow-2xl sm:rounded-2xl;
   max-width: min(100%, 72rem);
 }
 
 .product-detail-header {
-  @apply absolute inset-x-0 top-0 z-20 flex items-start justify-between gap-3 px-4 py-3 sm:px-6;
-  background: linear-gradient(
-    to bottom,
-    rgb(255 255 255 / 0.96) 0%,
-    rgb(255 255 255 / 0.82) 55%,
-    rgb(255 255 255 / 0)
-  );
-  transform: translate3d(0, 0, 0);
+  @apply flex items-start justify-between gap-3 border-b border-zinc-100 px-4 py-3 sm:px-6;
+  max-height: 8rem;
+  overflow: hidden;
   transition:
-    opacity 0.22s ease,
-    transform 0.22s ease;
-  will-change: opacity, transform;
+    opacity 0.28s ease,
+    transform 0.28s ease,
+    max-height 0.28s ease,
+    padding 0.28s ease,
+    border-color 0.28s ease;
 }
 
 .product-detail-header--scroll-hidden {
+  max-height: 0;
   opacity: 0;
   pointer-events: none;
-  transform: translate3d(0, -12px, 0);
-}
-
-.product-detail-compact {
-  @apply pointer-events-none absolute inset-x-0 top-0 z-30 flex items-center gap-2 border-b border-zinc-200/80 bg-white/95 px-3 py-2 opacity-0 shadow-sm sm:px-4;
-  transform: translate3d(0, -8px, 0);
-  transition:
-    opacity 0.22s ease,
-    transform 0.22s ease;
-  will-change: opacity, transform;
-}
-
-.product-detail-compact--visible {
-  @apply pointer-events-auto opacity-100;
-  transform: translate3d(0, 0, 0);
-}
-
-.product-detail-compact-back {
-  @apply inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-zinc-700 transition hover:bg-zinc-100;
-}
-
-.product-detail-compact-title {
-  @apply m-0 min-w-0 flex-1 truncate text-sm font-semibold text-zinc-900;
+  padding-top: 0;
+  padding-bottom: 0;
+  border-bottom-color: transparent;
+  transform: translateY(-8px);
 }
 
 .product-detail-kicker {
@@ -3411,13 +3376,11 @@ html:has(.landing-shell) {
 }
 
 .product-detail-scroll {
-  @apply grid min-h-0 min-w-0 flex-1 grid-cols-1 overflow-x-hidden overflow-y-auto lg:grid-cols-[minmax(0,1.15fr)_minmax(18rem,0.95fr)];
-  overscroll-behavior: contain;
-  -webkit-overflow-scrolling: touch;
+  @apply grid min-h-0 min-w-0 flex-1 grid-cols-1 overflow-x-hidden overflow-y-auto lg:grid-cols-[minmax(0,1.15fr)_minmax(18rem,0.95fr)] lg:overflow-hidden;
 }
 
 .product-detail-media {
-  @apply max-w-full bg-zinc-50 p-3 pt-16 sm:p-5 sm:pt-16;
+  @apply max-w-full bg-zinc-50 p-3 sm:p-5 lg:overflow-y-auto;
 }
 
 .product-detail-media .mercado-mp-detail-gallery {
@@ -3441,7 +3404,7 @@ html:has(.landing-shell) {
 }
 
 .product-detail-body {
-  @apply space-y-4 px-4 py-4 sm:px-6 sm:py-5;
+  @apply space-y-4 px-4 py-4 sm:px-6 sm:py-5 lg:overflow-y-auto;
 }
 
 .product-detail-title {
@@ -13990,7 +13953,7 @@ button.catalog-profile-footer-link {
 }
 
 .mercado-brand-mark {
-  @apply flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[color-mix(in_srgb,var(--mo-header-fg)_16%,transparent)] text-[11px] font-semibold tracking-tight text-[var(--mo-header-fg)] ring-1 ring-[color-mix(in_srgb,var(--mo-header-fg)_22%,transparent)] sm:h-10 sm:w-10 sm:text-xs;
+  @apply flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-[var(--mo-emerald)] text-sm font-bold tracking-tight text-white shadow-[0_1px_2px_rgba(8,41,31,0.25)];
 }
 
 .mercado-eyebrow {
@@ -14140,17 +14103,23 @@ button.catalog-profile-footer-link {
 
 .mercado-mp-header {
   @apply sticky top-0 z-40 max-w-full overflow-x-clip border-b border-white/8 bg-[color-mix(in_srgb,var(--mo-forest)_92%,transparent)] shadow-[0_10px_30px_rgba(3,24,18,0.18)];
-  transform: translate3d(0, 0, 0);
+  backdrop-filter: blur(14px);
+  max-height: 16rem;
   transition:
-    opacity 0.22s ease,
-    transform 0.22s ease;
-  will-change: opacity, transform;
+    opacity 0.32s ease,
+    transform 0.32s ease,
+    max-height 0.32s ease,
+    border-color 0.32s ease,
+    box-shadow 0.32s ease;
 }
 
 .mercado-mp-header--scroll-hidden {
+  max-height: 0;
   opacity: 0;
   pointer-events: none;
-  transform: translate3d(0, -100%, 0);
+  transform: translateY(-10px);
+  border-bottom-color: transparent;
+  box-shadow: none;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -14197,15 +14166,15 @@ button.catalog-profile-footer-link {
 }
 
 .mercado-brand-mark {
-  @apply flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[color-mix(in_srgb,var(--mo-header-fg)_16%,transparent)] text-[11px] font-semibold tracking-tight text-[var(--mo-header-fg)] ring-1 ring-[color-mix(in_srgb,var(--mo-header-fg)_22%,transparent)] sm:h-10 sm:w-10 sm:text-xs;
+  @apply flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-[linear-gradient(145deg,var(--mo-warm),#8f6a3f)] text-sm font-bold tracking-tight text-[var(--mo-forest-deep)] shadow-[0_2px_8px_rgba(184,137,93,0.35)];
 }
 
 .mercado-brand-mark--logo {
-  @apply h-8 w-auto max-h-10 max-w-[9.5rem] overflow-hidden rounded-lg bg-transparent p-0 ring-0 sm:h-10 sm:max-w-[11.5rem];
+  @apply overflow-hidden bg-white p-0;
 }
 
 .mercado-brand-mark-img {
-  @apply block h-full max-h-8 w-auto max-w-[9rem] object-contain object-left sm:max-h-10 sm:max-w-[11rem];
+  @apply h-full w-full object-cover;
 }
 
 button.mercado-nav-link {
@@ -14336,7 +14305,7 @@ button.mercado-mp-card-btn {
   animation: catalog-image-shimmer 1.4s ease-in-out infinite;
 }
 
-/* ——— Vitrina de tiendas públicas (cabecera clara) ——— */
+/* ——— Vitrina marketplace (dropshippers · estilo Mercado Libre) ——— */
 
 .storefront-mp-shell {
   background: #ebebeb;
@@ -14344,20 +14313,21 @@ button.mercado-mp-card-btn {
 }
 
 .storefront-mp-shell .mercado-mp-header {
-  @apply border-b border-zinc-200/80 shadow-none;
-  background: #fff;
+  @apply border-b-0 shadow-[0_1px_0_rgba(0,0,0,0.06)];
+  background: var(--mo-forest);
   backdrop-filter: none;
 }
 
 .storefront-mp-shell .mercado-mp-header-top {
-  @apply gap-3 py-2.5 sm:gap-6 sm:py-3;
+  @apply gap-2 py-2 sm:gap-4 sm:py-2.5;
 }
 
 .storefront-mp-shell .mercado-mp-header-top--search {
   display: grid;
-  grid-template-columns: minmax(0, auto) 1fr auto;
+  grid-template-columns: minmax(0, auto) 1fr;
   grid-template-areas:
-    "brand search nav";
+    "brand nav"
+    "search search";
   align-items: center;
 }
 
@@ -14366,7 +14336,6 @@ button.mercado-mp-card-btn {
   order: unset;
   flex: 0 0 auto;
   min-width: 0;
-  color: #18181b;
 }
 
 .storefront-mp-shell .storefront-mp-search {
@@ -14381,107 +14350,93 @@ button.mercado-mp-card-btn {
   order: unset;
   margin-left: 0;
   justify-content: flex-end;
-  gap: 0.125rem;
 }
 
 .storefront-mp-shell .mercado-brand-mark {
-  @apply h-8 w-8 rounded-md bg-zinc-900 text-[11px] font-medium tracking-wide text-white shadow-none ring-0 sm:h-9 sm:w-9;
+  @apply h-9 w-9 rounded-md bg-white text-sm font-bold text-[var(--mo-emerald)] shadow-none sm:h-10 sm:w-10;
 }
 
 .storefront-mp-shell .mercado-brand-mark--logo {
-  @apply h-8 w-auto max-h-9 max-w-[9.5rem] rounded-none bg-transparent p-0 ring-0 sm:h-9 sm:max-w-[12rem];
-}
-
-.storefront-mp-shell .mercado-brand-mark-img {
-  @apply max-h-8 sm:max-h-9;
+  @apply bg-white p-0.5;
 }
 
 .storefront-mp-shell .mercado-title {
   font-family: var(--mo-sans);
-  @apply text-[13px] font-medium tracking-tight text-zinc-900 sm:text-[15px];
+  @apply text-[14px] font-semibold tracking-tight sm:text-[15px];
 }
 
 .storefront-mp-shell .mercado-mp-brand-kicker {
   display: none;
 }
 
+@media (min-width: 768px) {
+  .storefront-mp-shell .mercado-mp-brand-kicker {
+    display: block;
+    @apply text-[9px] font-semibold uppercase tracking-[0.16em];
+    color: color-mix(in srgb, var(--mo-header-fg) 72%, transparent);
+  }
+}
+
 .storefront-mp-shell .mercado-mp-nav .mercado-nav-link {
-  @apply rounded-full px-2 py-2 text-[13px] font-medium;
-  color: #3f3f46;
+  @apply rounded-md px-2 py-1.5 text-[13px] font-semibold;
+  color: color-mix(in srgb, var(--mo-header-fg) 88%, transparent);
 }
 
 .storefront-mp-shell .mercado-mp-nav .mercado-nav-link:hover {
-  @apply bg-zinc-100;
-  color: #18181b;
+  @apply bg-black/8;
+  color: var(--mo-header-fg);
 }
 
 .storefront-mp-shell .mercado-mp-nav .mercado-nav-link-active {
-  @apply bg-zinc-100;
-  color: #18181b;
+  @apply bg-black/10;
+  color: var(--mo-header-fg);
 }
 
-.storefront-mp-shell .storefront-mp-icon-btn {
-  @apply relative inline-flex h-10 w-10 items-center justify-center;
-}
+@media (max-width: 767px) {
+  .storefront-mp-shell .mercado-mp-nav {
+    display: none;
+  }
 
-.storefront-mp-shell .mercado-nav-label {
-  display: none !important;
-}
-
-.storefront-mp-shell .mercado-mp-cart-badge {
-  @apply absolute -right-0.5 -top-0.5 ml-0 min-h-[1.05rem] min-w-[1.05rem] rounded-full px-1 text-[9px] font-semibold tabular-nums text-white lg:absolute lg:ml-0;
-  background: var(--sf-brand, var(--mo-emerald));
-}
-
-.storefront-mp-account-dropdown {
-  @apply rounded-lg border-zinc-200/90 shadow-[0_12px_40px_rgba(24,24,27,0.1)];
-}
-
-.storefront-mp-account-dropdown-label {
-  @apply truncate px-3 pb-1 pt-2 text-[10px] font-medium uppercase tracking-[0.14em] text-zinc-400;
-}
-
-.storefront-mp-account-item {
-  @apply flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm text-zinc-700 no-underline transition hover:bg-zinc-50;
+  .storefront-mp-shell .mercado-mp-header-top--search {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas:
+      "brand"
+      "search";
+  }
 }
 
 .storefront-mp-search {
-  @apply flex min-w-0 items-center overflow-hidden rounded-full border border-zinc-200 bg-zinc-50;
+  @apply flex min-w-0 items-center overflow-hidden rounded-[2px] bg-white shadow-[0_1px_2px_rgba(0,0,0,0.2)];
 }
 
 .storefront-mp-search-icon {
-  @apply flex h-9 w-9 shrink-0 items-center justify-center text-zinc-400 sm:h-10 sm:w-10;
+  @apply hidden h-10 w-10 shrink-0 items-center justify-center text-zinc-400 sm:flex;
 }
 
 .storefront-mp-search-input {
-  @apply min-w-0 flex-1 border-0 bg-transparent px-0 py-2 text-[13px] text-zinc-900 outline-none placeholder:text-zinc-400 sm:text-[14px];
+  @apply min-w-0 flex-1 border-0 bg-transparent px-3 py-2 text-[15px] text-zinc-900 outline-none placeholder:text-zinc-400 sm:px-0;
 }
 
 .storefront-mp-search-btn {
-  @apply inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-none bg-transparent text-zinc-500 transition hover:text-zinc-800 disabled:opacity-60 sm:h-10 sm:w-auto sm:px-4;
+  @apply inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-none bg-[var(--mo-emerald-hover)] text-[var(--mo-header-fg,#fff)] transition hover:brightness-95 disabled:opacity-60 sm:h-10 sm:w-auto sm:px-5;
 }
 
 .storefront-mp-search-btn-label {
-  @apply hidden text-[12px] font-medium tracking-wide sm:inline;
+  @apply hidden text-sm font-semibold sm:inline;
 }
 
 .storefront-mp-search-btn-icon {
   @apply sm:hidden;
 }
 
-@media (max-width: 639px) {
-  .storefront-mp-shell .mercado-mp-header-top--search {
-    grid-template-columns: minmax(0, auto) auto;
-    grid-template-areas:
-      "brand nav"
-      "search search";
-    row-gap: 0.5rem;
-  }
-}
-
 @media (min-width: 768px) {
+  .storefront-mp-shell .mercado-mp-header-top--search {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    grid-template-areas: "brand search nav";
+  }
+
   .storefront-mp-search {
-    max-width: 36rem;
+    max-width: 52rem;
     margin-inline: auto;
   }
 }
@@ -14776,14 +14731,14 @@ button.mercado-mp-card-btn {
 
 .design-studio-phone--moriche .storefront-mp-shell .mercado-mp-header-top--search {
   display: grid;
-  grid-template-columns: minmax(0, auto) auto;
+  grid-template-columns: minmax(0, 1fr);
   grid-template-areas:
-    "brand nav"
-    "search search";
+    "brand"
+    "search";
 }
 
 .design-studio-phone--moriche .storefront-mp-shell .mercado-mp-nav {
-  display: flex;
+  display: none;
 }
 
 .design-studio-phone--moriche .storefront-mp-search-btn-label {
@@ -14795,7 +14750,7 @@ button.mercado-mp-card-btn {
 }
 
 .design-studio-phone--moriche .storefront-mp-search-icon {
-  display: flex;
+  display: none;
 }
 
 .design-studio-phone--moriche .storefront-mp-search-btn {
@@ -15056,26 +15011,12 @@ button.mercado-mp-card-btn {
   @apply grid w-full min-w-0 max-w-full grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-5 xl:grid-cols-4;
 }
 
-.mercado-mp-grid-item {
-  content-visibility: auto;
-  contain-intrinsic-size: auto 22rem;
-  contain: layout style paint;
-}
-
 .mercado-mp-card {
-  @apply flex h-full min-w-0 max-w-full flex-col overflow-hidden rounded-[1.35rem] border border-[var(--mo-border)]/70 bg-[var(--mo-surface)] shadow-[0_8px_28px_rgba(20,32,28,0.05)];
+  @apply flex h-full min-w-0 max-w-full flex-col overflow-hidden rounded-[1.35rem] border border-[var(--mo-border)]/70 bg-[color-mix(in_srgb,var(--mo-surface)_88%,transparent)] shadow-[0_8px_28px_rgba(20,32,28,0.05)] backdrop-blur-sm transition duration-300 ease-out hover:-translate-y-1.5 hover:border-[color-mix(in_srgb,var(--mo-gold)_35%,var(--mo-border))] hover:shadow-[0_22px_44px_rgba(6,40,31,0.12)];
 }
 
 .mercado-mp-card-media {
   @apply relative aspect-[4/5] overflow-hidden bg-[var(--mo-emerald-soft)] no-underline;
-}
-
-.mercado-mp-card-media-hit {
-  @apply absolute inset-0 block h-full w-full border-0 bg-transparent p-0;
-}
-
-.mercado-mp-card-image {
-  @apply object-contain object-center;
 }
 
 .mercado-mp-card-status-row {
